@@ -23,7 +23,7 @@ clean:
 	/bin/rm -rf $(OBJ_PATH)
 
 fclean: clean
-	bin/rm -f webserv
+	/bin/rm -f webserv
 
 re: fclean all
 

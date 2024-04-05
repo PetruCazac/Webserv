@@ -50,11 +50,26 @@ int acceptClient(int socket_server){
 void doStuff(int socket_client){
 	int		buffer = 1000;
 	char	sb[buffer];
-	size_t	bites_read;
+	// std::stringstream ss();
+	size_t	bytes_read;
 
-	bites_read = read(socket_client, sb, buffer);
-	std::cout << sb << std::endl;
-	std::cout << bites_read << std::endl;
+	bytes_read = read(socket_client, sb, buffer);
+	std::cout << "Request:\n" << sb << std::endl;
+	std::cout << "END REQUEST" << std::endl;
+	fflush(stdout);
+	bzero(sb, buffer);
+	std::cout << "here" << std::endl;
+	FILE *fd = fopen("test/index.html", "r");
+	if (fd == NULL)
+		std::cout << "file open error"  << std::endl;
+	bzero(sb, buffer);
+	while((bytes_read = fread(sb, 1, buffer, fd)) > 0){
+		write(socket_client, sb, bytes_read);
+		std::cout << "\n" << sb << "\n" << std::endl;
+	}
+	close(socket_client);
+	fclose(fd);
+	std::cout << "Closed connection" << std::endl;
 	return;
 }
 
@@ -63,11 +78,11 @@ int main(int argc, char** argv){
 		return 1;
 	init(argv);
 	int socket_server = initializeServer();
-	std::cout << "here" << std::endl;
 	while (true){
 		int socket_client = acceptClient(socket_server);
 		doStuff(socket_client);
 	}
+	close(socket_server);
 	return 0;
 }
 
