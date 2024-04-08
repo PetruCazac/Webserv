@@ -3,11 +3,15 @@
 
 #include "Webserv.hpp"
 
+typedef struct s_config{
+	std::string _context;
+	std::string _
+
+}	config;
+
 class Config {
 private:
 
-	std::string _context;
-	
 
 public:
 
