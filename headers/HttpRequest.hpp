@@ -37,7 +37,6 @@ void error(int &statusCode, e_errors err);
 
 /*
 TODO
-- check headers
-- max body size
-- URI, has to be at least /
+- check headers if needed
+- redo errors, should be exceptions
 */

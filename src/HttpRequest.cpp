@@ -40,7 +40,7 @@ e_errors parseStartLine(s_httpRequest &httpRequest, std::string &inputRequest, s
 			size_t urlEnd = startLine.find(' ', methodEnd + 1);
 			if (urlEnd != std::string::npos) {
 				httpRequest.uri = startLine.substr(methodEnd + 1, urlEnd - methodEnd - 1);
-				if (httpRequest.uri.size() == 0) {
+				if (httpRequest.uri.size() == 0 || httpRequest.uri[0] != '/') {
 					return URI_ERR;
 				}
 			} else {
