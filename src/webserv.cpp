@@ -50,12 +50,21 @@ int acceptClient(int socket_server){
 void doStuff(int socket_client){
 	int		buffer = 1000;
 	char	sb[buffer];
-	// std::stringstream ss();
 	size_t	bytes_read;
 
 	bytes_read = read(socket_client, sb, buffer);
 	std::cout << "Request:\n" << sb << std::endl;
 	std::cout << "END REQUEST" << std::endl;
+	std::string	input(sb);
+	s_httpRequest httpRequest = parseHttpRequest(input);
+	std::cout << "Method: [" << httpRequest.method << "]" << std::endl;
+    std::cout << "URI: [" << httpRequest.uri << "]" << std::endl;
+    std::cout << "HTTP Version: [" << httpRequest.httpVersion << "]" << std::endl;
+    for (std::map<std::string, std::string>::iterator it = httpRequest.headers.begin(); it != httpRequest.headers.end(); it++) {
+        std::cout << "Header: [" << it->first << ", " << it->second << "]" << std::endl;
+    }
+    std::cout << "Body: [" << httpRequest.body << "]" << std::endl;
+    std::cout << "Status code: " << httpRequest.statusCode << std::endl;
 	fflush(stdout);
 	bzero(sb, buffer);
 	std::cout << "here" << std::endl;
