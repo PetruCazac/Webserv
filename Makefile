@@ -3,8 +3,7 @@ NAME= webserv
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
 
-SRC= main.cpp \
-	HttpRequest.cpp
+SRC= webserv.cpp HttpRequest.cpp 
 
 VPATH= src/:obj/:headers/:http_request_parser/
 
