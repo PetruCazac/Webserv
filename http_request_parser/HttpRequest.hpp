@@ -39,4 +39,5 @@ void error(int &statusCode, e_errors err);
 TODO
 - check headers
 - max body size
+- URI, has to be at least /
 */
