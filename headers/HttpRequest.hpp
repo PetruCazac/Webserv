@@ -38,5 +38,9 @@ void error(int &statusCode, e_errors err);
 /*
 TODO
 - check headers if needed
+  Maybe: put all existing headers in a map, and add value if it's in http request
 - redo errors, should be exceptions
+- maybe redo body parsing:
+  Detects the end-of-headers blank line, ending in CRLF (if present)
+  Can be "\r\n\r\n" or just "\r\n"
 */
