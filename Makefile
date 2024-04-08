@@ -3,8 +3,7 @@ NAME= webserv
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
 
-SRC= main.cpp \
-	HttpRequest.cpp
+SRC= webserv.cpp HttpRequest.cpp 
 
 VPATH= src/:obj/:headers/:http_request_parser/
 
@@ -24,7 +23,7 @@ clean:
 	/bin/rm -rf $(OBJ_PATH)
 
 fclean: clean
-	bin/rm -f webserv
+	/bin/rm -f webserv
 
 re: fclean all
 
