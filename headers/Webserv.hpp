@@ -9,7 +9,12 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <vector>
+#include <map>
 
+
+#include "Server.hpp"
+#include "Config.hpp"
 #include "HttpRequest.hpp"
 
 class Http{
