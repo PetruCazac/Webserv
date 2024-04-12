@@ -1,40 +1,36 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: fkrug <fkrug@student.42heilbronn.de>       +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/12/11 15:07:34 by fkrug             #+#    #+#              #
-#    Updated: 2024/03/29 17:49:18 by fkrug            ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
+# Compiler settings
+CC = gcc
+CFLAGS = -Wall -Wextra -g -Werror
 
-CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -g -Werror
+# Executables
+EXECUTABLES = server client showip pollserver
 
-# Define targets for both server and client
-all: server client
+# Default target
+all: $(EXECUTABLES)
 
-# Rule to make server
+# Individual targets
+pollserver: pollserver.o
+	$(CC) $(CFLAGS) -o pollserver pollserver.o
 server: server.o
-	$(CXX) $(CXXFLAGS) -o server server.o
+	$(CC) $(CFLAGS) -o server server.o
 
-# Rule to make client
 client: client.o
-	$(CXX) $(CXXFLAGS) -o client client.o
+	$(CC) $(CFLAGS) -o client client.o
 
-# Generic rule for object files
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+showip: showip.o
+	$(CC) $(CFLAGS) -o showip showip.o
+
+# Pattern rule for object files
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean object files
 clean:
-	rm -f server.o client.o
+	rm -f *.o
 
 # Full clean (includes executables)
 fclean: clean
-	rm -f server client
+	rm -f $(EXECUTABLES)
 
 # Rebuild everything
 re: fclean all
