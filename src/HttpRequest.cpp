@@ -3,7 +3,6 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
-#include <array>
 #include <cstdlib>
 #include <map>
 
@@ -98,21 +97,23 @@ e_errors parseBody(s_httpRequest &httpRequest, std::string &inputRequest, size_t
 }
 
 bool ifMethod(std::string &method) {
-	const std::array<std::string, 7> validMethods = {"GET", "HEAD", "POST", "PUT", "TRACE", "OPTIONS", "DELETE"};
-	std::array<std::string, 1>::const_iterator it = std::find(validMethods.begin(), validMethods.end(), method);
-	if (it == validMethods.end()) {
-		return false;
+	std::string validMethods[7] = {"GET", "HEAD", "POST", "PUT", "TRACE", "OPTIONS", "DELETE"};
+	for (int i = 0; i != 7; i++) {
+		if (method == validMethods[i]) {
+			return true;
+		}
 	}
-	return true;
+	return false;
 }
 
 bool ifHttpVersion(std::string &httpVersion) {
-	const std::array<std::string, 5> validHttpVersions = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
-	std::array<std::string, 1>::const_iterator it = std::find(validHttpVersions.begin(), validHttpVersions.end(), httpVersion);
-	if (it == validHttpVersions.end()) {
-		return false;
+	std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
+	for (int i = 0; i != 5; i++) {
+		if (httpVersion == validHttpVersions[i]) {
+			return true;
+		}
 	}
-	return true;
+	return false;
 }
 
 bool ifValidBody(s_httpRequest &httpRequest) {
