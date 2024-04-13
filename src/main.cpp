@@ -2,6 +2,7 @@
 
 int main() {
     Logger::setLogLevel(DEBUG);
+    Logger::setLogFilename("log.txt");
     LOG_INFO("Hello, world!");
     LOG_DEBUG("This is a debug message.");
     LOG_ERROR("This is an error message.");
