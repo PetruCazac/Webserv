@@ -1,5 +1,6 @@
-# include "../headers/Webserv.hpp"
-#include "../headers/HttpRequest.hpp"
+#include "Webserv.hpp"
+#include "HttpRequest.hpp"
+#include "Logger.hpp"
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
@@ -69,14 +70,23 @@ void doStuff(int socket_client){
 	fflush(stdout);
 	bzero(sb, buffer);
 	std::cout << "here" << std::endl;
-	FILE *fd = fopen("test/index.html", "r");
+	// FILE *fd = fopen("test/index.html", "r");
+	FILE *fd = NULL;
+	// int i = 0;
+	// if (i == 0){
+	// 	fd = fopen("test/test1.html", "r");
+	// 	i++;
+	// }else
+		fd = fopen("test/images.jpeg", "r");
+
 	if (fd == NULL)
 		std::cout << "file open error"  << std::endl;
 	bzero(sb, buffer);
-	while((bytes_read = fread(sb, 1, buffer, fd)) > 0){
-		write(socket_client, sb, bytes_read);
-		std::cout << "\n" << sb << "\n" << std::endl;
-	}
+	bytes_read = fread(sb, sizeof(unsigned char), buffer, fd);
+	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nContent-Length: [length in bytes of the image]\r\n\r\n";
+	write(socket_client, pading.c_str(), pading.size());
+	write(socket_client, sb, bytes_read);
+	std::cout << "\n" << sb << "\n" << std::endl;
 	close(socket_client);
 	fclose(fd);
 	std::cout << "Closed connection" << std::endl;
