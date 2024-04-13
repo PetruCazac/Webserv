@@ -3,7 +3,7 @@ NAME= webserv
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
 
-SRC= webserv.cpp
+SRC= main.cpp Logger.cpp
 
 VPATH= src/:obj/:headers/
 
@@ -20,10 +20,10 @@ $(OBJ_PATH)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	/bin/rm -rf $(OBJ_PATH)
+	rm -rf $(OBJ_PATH)
 
 fclean: clean
-	bin/rm -f webserv
+	rm -f webserv
 
 re: fclean all
 
