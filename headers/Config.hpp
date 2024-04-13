@@ -2,45 +2,35 @@
 #define CONFIG_HPP
 
 #include "Webserv.hpp"
+#include <fstream>
+#include <sstream>
 
-enum SERVER_TYPE
-	{
-		EVENTS,
-		HTTP,
-		MAIL,
-		STREAM
-	};
-
-
-typedef struct s_config{
-	std::string	_user;
-	std::string	_worker_processes;
-	std::string	_error_log;
-	std::string	_pid;
-}	config;
 
 typedef struct s_server{
-	
 	std::string	_port;
 	std::string	_location;
 	std::string	_server_name;
 	std::string	_root;
 	std::string	_include;
-} server;
+}	server;
 
 class Config {
 private:
-	config				_engine_config;
 	std::vector<server>	_Servers;
 
 public:
 	Config();
+	Config(const char* configFile);
 	~Config();
-	Config& Config(const Config c);
-	Config& operator=(const Config c);
+	Config(const Config& c);
+	Config& operator=(const Config& c);
 
+	// Parser main functions
+	void getConfig(std::string& confString);
+	void getServerConfig(const std::string& filebuff);
+	
+	// Parser helper funcitons
 
 };
-
 
 #endif
