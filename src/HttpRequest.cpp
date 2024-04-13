@@ -1,4 +1,3 @@
-
 #include "HttpRequest.hpp"
 #include <iostream>
 #include <algorithm>

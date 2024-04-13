@@ -1,4 +1,5 @@
-#include "Webserv.hpp"
+# include "../headers/Webserv.hpp"
+#include "../headers/HttpRequest.hpp"
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
