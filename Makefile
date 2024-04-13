@@ -1,42 +1,30 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: fkrug <fkrug@student.42heilbronn.de>       +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/12/11 15:07:34 by fkrug             #+#    #+#              #
-#    Updated: 2024/03/29 17:49:18 by fkrug            ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
+NAME= webserv
 
-CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -g -Werror
+CXX= c++
+CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
 
-# Define targets for both server and client
-all: server client
+SRC= webserv.cpp
 
-# Rule to make server
-server: server.o
-	$(CXX) $(CXXFLAGS) -o server server.o
+VPATH= src/:obj/:headers/
 
-# Rule to make client
-client: client.o
-	$(CXX) $(CXXFLAGS) -o client client.o
+OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
+OBJ_PATH = obj
 
-# Generic rule for object files
-%.o: %.cpp
+all: $(NAME)
+
+$(NAME): $(OBJ)
+	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJ)
+
+$(OBJ_PATH)/%.o: %.cpp
+	mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean object files
 clean:
-	rm -f server.o client.o
+	/bin/rm -rf $(OBJ_PATH)
 
-# Full clean (includes executables)
 fclean: clean
-	rm -f server client
+	bin/rm -f webserv
 
-# Rebuild everything
 re: fclean all
 
 .PHONY: all clean fclean re
