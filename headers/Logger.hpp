@@ -15,8 +15,10 @@ class Logger {
     public:
         static void log(LogLevel level, const std::string &message, int line,
          const std::string &file);
+        static void setLogLevel(LogLevel level);
     private:
-        static std::string get_log_level(LogLevel level);
+        static std::string translateLogLevel(LogLevel level);
+        static LogLevel& getLogLevel();
 };
 
 #endif
