@@ -4,13 +4,13 @@
 #include "Configuration.hpp"
 
 class Socket {
-public:
-    Socket();
-    ~Socket();
-    void connect();
-    void send();
-    void receive();
-    void close();
+    public:
+        Socket();
+        ~Socket();
+        void connect();
+        void send();
+        void receive();
+        void close();
 };
 
 #endif

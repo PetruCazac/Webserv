@@ -2,7 +2,6 @@
 #define CONFIGURATION_HPP
 
 #include <string>
-
 typedef struct ConfigurationFile {
     // Add Constructor that calls function to read from file
     std::string server_name;
