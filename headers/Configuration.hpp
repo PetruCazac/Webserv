@@ -11,11 +11,11 @@ typedef struct ConfigurationFile {
     LogLevel log_level;
 } ConfigurationFile;
 
-typedef struct ServerConfiguration {
-    ServerConfiguration(const ConfigurationFile& config_file);
+typedef struct SocketConfiguration {
+    SocketConfiguration(const ConfigurationFile& config_file);
     std::string server_name;
     std::string listening_port;
     size_t max_data_size_incoming;
-} ServerConfiguration;
+} SocketConfiguration;
 
 #endif
