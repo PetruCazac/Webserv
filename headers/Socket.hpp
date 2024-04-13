@@ -7,10 +7,6 @@ class Socket {
     public:
         Socket();
         ~Socket();
-        void connect();
-        void send();
-        void receive();
-        void close();
 };
 
 #endif

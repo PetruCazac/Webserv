@@ -9,6 +9,7 @@ typedef struct ConfigurationFile {
     std::string listening_port;
     size_t max_data_size_incoming;
     LogLevel log_level;
+    std::string log_filename;
 } ConfigurationFile;
 
 typedef struct SocketConfiguration {
