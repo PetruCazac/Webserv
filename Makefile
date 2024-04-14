@@ -6,7 +6,7 @@ CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
 SRC= webserv.cpp HttpRequest.cpp 
 SRC+= main.cpp Logger.cpp
 
-VPATH= src/:obj/:headers/:http_request_parser/
+VPATH= src/:obj/:headers/:http_request_parser/:src/config/
 
 OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
 OBJ_PATH = obj
