@@ -45,43 +45,50 @@ void Socket::removeSocket() {
 }
 
 bool Socket::bindAndListen() {
-    if (socket_config->addr_info == NULL) {
-        LOG_ERROR("Address info not set up.");
-        return false;
-    }
+    addrinfo_t *p;
+    bool success = false;
+    for (p = socket_config->addr_info; p != NULL; p = p->ai_next) {
+        if (p == NULL) {
+            LOG_ERROR("Address info not set up.");
+            continue;
+        }
+        socket_config->sockfd = socket(p->ai_family,
+        p->ai_socktype,
+        p->ai_protocol);
+        if (socket_config->sockfd == -1) {
+            LOG_ERROR("Failed to create socket.");
+            continue;
+        }
 
-    socket_config->sockfd = socket(socket_config->addr_info->ai_family,
-     socket_config->addr_info->ai_socktype,
-     socket_config->addr_info->ai_protocol);
-    if (socket_config->sockfd == -1) {
-        LOG_ERROR("Failed to create socket.");
-        return false;
-    }
+        int yes = 1;
+        if (setsockopt(socket_config->sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+            LOG_ERROR("Failed to set socket options.");
+            removeSocket();
+            continue;
+        }
 
-    int yes = 1;
-    if (setsockopt(socket_config->sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-        LOG_ERROR("Failed to set socket options.");
-        removeSocket();
-        return false;
-    }
+        if (bind(socket_config->sockfd, p->ai_addr,
+        p->ai_addrlen) == -1) {
+            LOG_ERROR("Failed to bind socket.");
+            removeSocket();
+            continue;
+        }
 
-    if (bind(socket_config->sockfd, socket_config->addr_info->ai_addr,
-     socket_config->addr_info->ai_addrlen) == -1) {
-        LOG_ERROR("Failed to bind socket.");
-        removeSocket();
-        return false;
+        if (listen(socket_config->sockfd, 10) == -1) {
+            LOG_ERROR("Failed to listen on socket.");
+            removeSocket();
+            continue;
+        }
+        success = true;
+        break;
     }
-
-    if (listen(socket_config->sockfd, 10) == -1) {
-        LOG_ERROR("Failed to listen on socket.");
-        removeSocket();
+    if (!success)
         return false;
-    }
-
     LOG_DEBUG("Successfully bound and listening on socket.");
     return true;
 }
 
+// probably add sockaddr_storage_t as a parameter
 int Socket::acceptIncoming(std::string& client_ip) {
     sockaddr_storage_t client_addr;
     socklen_t addr_size = sizeof(client_addr);

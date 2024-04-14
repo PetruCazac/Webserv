@@ -21,18 +21,18 @@ int main() {
     Socket serverSocket(&config);
 
     if (!serverSocket.setupAddrInfo()) {
-        std::cerr << "Failed to initialize the server socket." << std::endl;
+        LOG_DEBUG("Failed to initialize the server socket.");
         return 1;
     }
-
+    LOG_DEBUG("Server socket initialized.");
     if (!serverSocket.bindAndListen()) {
-        std::cerr << "Failed to bind or listen on port " << port << "." << std::endl;
+        LOG_DEBUG("Failed to bind or listen on port " + port);
         return 1;
     }
-
-    std::cout << "Server listening on port " << port << std::endl;
-
+    LOG_DEBUG("Server socket bound and listening on port " + port);
+    LOG_INFO("Server listening on port " + port);
     // Main loop to accept and handle data from clients
+    std::string buffer[1024];
     while (true) {
         std::string clientIP;
         int clientFd = serverSocket.acceptIncoming(clientIP);
@@ -45,7 +45,6 @@ int main() {
         std::cout << "Accepted new connection from " << clientIP << std::endl;
 
         // Receive data from the client
-        std::string buffer[1024];
         int bytesRead;
         bool success = serverSocket.receive(clientFd ,buffer, sizeof(buffer), bytesRead);
         std::cout << "Success: " << success << " Bytes Read: " << bytesRead << std::endl;
@@ -53,9 +52,9 @@ int main() {
             std::cout << "Received data: " << buffer << std::endl;
 
             // Echo the data back to the client
-            if (!serverSocket.sendtoClient(buffer, bytesRead)) {
-                std::cerr << "Failed to send data back to client." << std::endl;
-            }
+            // if (!serverSocket.sendtoClient(buffer, bytesRead)) {
+            //     std::cerr << "Failed to send data back to client." << std::endl;
+            // }
         } else if (bytesRead == 0) {
             std::cout << "Client closed the connection." << std::endl;
             serverSocket.removeSocket(); // Close the client socket

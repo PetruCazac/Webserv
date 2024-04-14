@@ -6,8 +6,11 @@
 #include <sstream>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
+#include <map>
 #include <netdb.h>
 #include <unistd.h>
+#include <list>
 #include "Logger.hpp"
 
 //Remove this Header before submission; Just for debugging purposes
@@ -16,6 +19,7 @@
 
 typedef struct addrinfo addrinfo_t;
 typedef struct sockaddr_storage sockaddr_storage_t;
+typedef struct pollfd pollfd_t;
 typedef struct ConfigurationFile {
     // Add Constructor that calls function to read from file
     std::string server_name;
@@ -33,6 +37,11 @@ typedef struct SocketConfiguration {
     size_t max_data_size_incoming;
     int sockfd;
     addrinfo_t* addr_info;
+    // remove server name
+    // add socket_type
 } SocketConfiguration;
 
+typedef struct ServerConfiguration {
+    SocketConfiguration* socket_config;
+} ServerConfiguration;
 #endif

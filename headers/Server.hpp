@@ -5,14 +5,16 @@
 
 class Server {
     public:
-        Server(SocketConfiguration *input_config);
+        Server(ServerConfiguration *input_config);
         ~Server();
 
         bool start();
         void stop();
 
     private:
-        Socket *socket;
+        std::list<pollfd_t> poll_fds;
+        ServerConfiguration *server_config;
+        std::map<pollfd_t, Socket*> socket_map;
 };
 
 #endif
