@@ -1,14 +1,13 @@
 #include "Socket.hpp"
 
-Socket::Socket(SocketConfiguration *input_config, SocketType socket_type) : _sockfd(-1), _socket_type(socket_type) {
+Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     socket_config = input_config;
-    if (socket_type == SERVER) {
-        if (!setupAddrInfo()) {
-            LOG_ERROR("Failed to setup address info.");
-        }
-        if (!bindAndListen()) {
-            LOG_ERROR("Failed to bind and listen on socket.");
-        }
+    _socket_type = SERVER;
+    if (!setupAddrInfo()) {
+        LOG_ERROR("Failed to setup address info.");
+    }
+    if (!bindAndListen()) {
+        LOG_ERROR("Failed to bind and listen on socket.");
     }
 }
 

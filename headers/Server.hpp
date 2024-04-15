@@ -9,10 +9,10 @@ class Server {
         ~Server();
 
         bool addListeningSocket();
-        void stop();
+        void socketHandler();
 
     private:
-        std::list<pollfd_t> poll_fds;
+        std::vector<pollfd_t> poll_fds;
         ServerConfiguration *server_config;
         std::map<pollfd_t, Socket*> socket_map;
 };

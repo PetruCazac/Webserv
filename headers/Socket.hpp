@@ -11,7 +11,7 @@ enum SocketType {
 };
 class Socket {
     public:
-        Socket(SocketConfiguration *input_config, SocketType socket_type);
+        Socket(SocketConfiguration *input_config);
         ~Socket();
 
         void removeSocket();
