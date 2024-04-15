@@ -34,7 +34,8 @@ Config::Config(const char* configFile){
 	std::string confString;
 	fileBuff << fs.rdbuf();
 	fileBuff >> confString;
-	getBlocks(confString);
+	if(!getBlocks(confString))
+		LOG_ERROR();
 	// getServerConfig(confString);
 }
 
@@ -56,12 +57,25 @@ void Config::getServerConfig(std::string& confString){
 // 	}
 }
 
-std::deque<std::string>::iterator& Config::getBlocks(std::string& confString)
+bool Config::getBlocks(std::string& confString, int& index)
 {
-	int bracketLevel = 0;
-	std::deque<std::string>::iterator it = directives.begin();
-	while(it != directives.end()){
-		if(it)
+	while (index < confString.length()) {
+		char current = confString[index];
+
+		if (current == '(') {
+			index++;
+			if (!getBlocks(confString, index)) {
+				return false;
+			}
+		} else if (current == ')') {
+			index++;
+
+			return true;
+		} else {
+			index++;
+		}
 	}
 
+
+	return false;
 }
