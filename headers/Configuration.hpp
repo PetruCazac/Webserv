@@ -31,17 +31,13 @@ typedef struct ConfigurationFile {
 
 typedef struct SocketConfiguration {
     SocketConfiguration(const ConfigurationFile& config_file);
-    SocketConfiguration(std::string server_name, std::string listening_port, size_t max_data_size_incoming) : server_name(server_name), listening_port(listening_port), max_data_size_incoming(max_data_size_incoming), sockfd(-1), addr_info(NULL) {}
+    SocketConfiguration(std::string server_name, std::string listening_port, size_t max_data_size_incoming) : server_name(server_name), listening_port(listening_port), max_data_size_incoming(max_data_size_incoming){}
     std::string server_name;
     std::string listening_port;
     size_t max_data_size_incoming;
-    int sockfd;
-    addrinfo_t* addr_info;
-    // remove server name
-    // add socket_type
 } SocketConfiguration;
 
 typedef struct ServerConfiguration {
-    SocketConfiguration* socket_config;
+    SocketConfiguration* server_socket_config;
 } ServerConfiguration;
 #endif

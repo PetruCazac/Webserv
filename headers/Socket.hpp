@@ -16,12 +16,13 @@ class Socket {
 
         void removeSocket();
         bool bindAndListen();
-        int acceptIncoming(std::string& client_ip);
+        int acceptIncoming();
         bool sendtoClient(const std::string* data, size_t len);
         bool receive(int client_fd, std::string* buffer, size_t buffer_size, int& bytes_read);
-        // int getFd() const;
+        int getSockFd() const;
         void* get_in_addr(struct sockaddr *sa);
         bool setupAddrInfo();
+        SocketType getSocketType() const;
 
     private:
         SocketConfiguration *socket_config;

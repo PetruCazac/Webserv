@@ -93,7 +93,7 @@ bool Socket::bindAndListen() {
 }
 
 // probably add sockaddr_storage_t as a parameter
-int Socket::acceptIncoming(std::string& client_ip) {
+int Socket::acceptIncoming() {
     sockaddr_storage_t client_addr;
     socklen_t addr_size = sizeof(client_addr);
     int client_fd = accept(_sockfd, (struct sockaddr*)&client_addr, &addr_size);
@@ -101,11 +101,6 @@ int Socket::acceptIncoming(std::string& client_ip) {
         LOG_ERROR("Failed to accept connection.");
         return -1;
     }
-//Remove this before submission; Just for debugging purposes
-    char ip[INET6_ADDRSTRLEN];
-    inet_ntop(client_addr.ss_family, &(((sockaddr_in*)&client_addr)->sin_addr), ip, sizeof(ip));
-    client_ip = ip;
-    LOG_DEBUG("Accepted connection from " + client_ip);
     return client_fd;
 }
 
@@ -149,4 +144,12 @@ void* Socket::get_in_addr(struct sockaddr *sa) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
     }
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+int Socket::getSockFd() const {
+    return _sockfd;
+}
+
+SocketType Socket::getSocketType() const {
+    return _socket_type;
 }
