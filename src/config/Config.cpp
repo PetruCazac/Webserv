@@ -30,52 +30,50 @@ Config::Config(const char* configFile){
 	if(!fs.is_open()){
 		LOG_ERROR("Failed to open config file.");
 	}
+	stringDeque directives;
 	std::stringstream fileBuff;
-	std::string confString;
+	std::string temp;
 	fileBuff << fs.rdbuf();
-	fileBuff >> confString;
-	if(!getBlocks(confString))
-		LOG_ERROR();
-	// getServerConfig(confString);
+	while(fileBuff >> temp){
+		directives.push_back(temp);
+		temp.clear();
+	}
+	if(!directives.size()){
+		LOG_ERROR("Server config file is empty.");
+	}
+	getConfig(directives);
 }
 
-void Config::getServerConfig(std::string& confString){
-	// std::deque<std::string> directives;
-	// while(fileBuff.eof()){
-	// 	fileBuff >> temp;
-	// 	directives.push_back(temp);
-	// 	temp.clear();
-	// }
-	// if(!directives.size()){
-	// 	LOG_ERROR("Server config file is empty.");
-	// }
-	// std::deque<std::string>::iterator it = directives.begin();
-	// while(it <= directives.end()){
-	// 	it = getBlock(directives, it);
-	// }
-		
-// 	}
+void Config::getConfig(stringDeque& directives){
+	iteratorDeque it = directives.begin();
+	try{
+		getBlocks(directives, it);
+	}catch(ParserProblem e){
+		std::cout << e.what() << std::endl;
+	}
 }
 
-bool Config::getBlocks(std::string& confString, int& index)
+Config::iteratorDeque& Config::getBlocks(stringDeque& directives, iteratorDeque& it)
 {
-	while (index < confString.length()) {
-		char current = confString[index];
+	while (it < directives.end()){
+		if (openBracket(it)){
+			it = getBlocks(it);
 
-		if (current == '(') {
-			index++;
-			if (!getBlocks(confString, index)) {
-				return false;
-			}
-		} else if (current == ')') {
-			index++;
-
-			return true;
+		} else if (closedBracket(it)){
+			it++;
+			return it;
 		} else {
-			index++;
+			it++;
 		}
 	}
+	return it;
+}
 
 
-	return false;
+bool Config::openBracket(const iteratorDeque& it){
+	
+}
+
+bool Config::closedBracket(const iteratorDeque& it){
+
 }

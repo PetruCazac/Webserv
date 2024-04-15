@@ -18,6 +18,8 @@ class Config {
 private:
 	std::vector<server>	_Servers;
 	Config();
+	typedef std::deque<std::string> stringDeque;
+	typedef std::deque<std::string>::iterator iteratorDeque;
 
 public:
 	Config(const char* configFile);
@@ -26,12 +28,21 @@ public:
 	Config& operator=(const Config& c);
 
 	// Parser main functions
-	void getConfig(std::string& confString);
+	void getConfig(stringDeque& directives);
 	void getServerConfig(std::string& filebuff);
-	std::& getBlocks(std::string& confString);
-	
-	// Parser helper funcitons
+	iteratorDeque& getBlocks(stringDeque& directives, iteratorDeque& it);
 
+	// Helper Functions
+	bool openBracket(const iteratorDeque& it);
+	bool closedBracket(const iteratorDeque& it);
+	
+	// Exception functions
+	class ParserProblem: public std::exception{
+		public:
+			const char* what() const throw(){
+				return "Error at parsing";
+			};
+	};
 };
 
 #endif
