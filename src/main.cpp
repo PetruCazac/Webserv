@@ -8,3 +8,6 @@ int main() {
     LOG_WARNING("This is a warning message.");
     return 0;
 }
+
+
+void secondaryFunc(){}
