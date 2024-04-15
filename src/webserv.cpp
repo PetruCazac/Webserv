@@ -10,7 +10,11 @@ void	init(char *argv){
 	if (!argv)
 		std::cerr << "ERROR" << std::endl;
 		// Check the config file or default path to the config folder
-	Config serverConf(argv);
+	try{
+		Config serverConf(argv);
+	}catch(Config::InvalidFilename& e){
+		std::cout << e.what() << argv << std::endl;
+	}
 }
 
 

@@ -29,8 +29,13 @@ Config& Config::operator=(const Config&){
 
 Config::Config(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
+	if(!!checkFilename(configFile)){
+		LOG_ERROR("Invalid Configuration File Name");
+		throw(InvalidFilename);
+	}
 	if(!fs.is_open()){
 		LOG_ERROR("Failed to open config file.");
+		throw(InvalidFilename);
 	}
 	stringDeque directives;
 	std::stringstream fileBuff;

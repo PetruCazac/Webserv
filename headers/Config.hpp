@@ -40,13 +40,17 @@ public:
 	// Helper Functions
 	bool openBracket(const iteratorDeque& it);
 	bool closedBracket(const iteratorDeque& it);
-	
+	bool checkFilename(const char* configFile);
 	// Exception functions
 	class ParserProblem: public std::exception{
 		public:
 			const char* what() const throw(){
-				return "Error at parsing";
-			};
+				return "Error at parsing";};
+	};
+	class InvalidFilename: public std::exception{
+		public:
+			const char* what() const throw(){
+				return "Wrong Config File";};
 	};
 };
 
