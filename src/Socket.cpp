@@ -11,6 +11,10 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     }
 }
 
+Socket::Socket(int connection_fd) : _sockfd(connection_fd), socket_config(NULL) {
+    _socket_type = CLIENT;
+}
+
 Socket::~Socket() {
     removeSocket();
     if (_addr_info != NULL) {
@@ -93,7 +97,7 @@ bool Socket::bindAndListen() {
 }
 
 // probably add sockaddr_storage_t as a parameter
-int Socket::acceptIncoming() {
+int Socket::acceptIncoming() {-
     sockaddr_storage_t client_addr;
     socklen_t addr_size = sizeof(client_addr);
     int client_fd = accept(_sockfd, (struct sockaddr*)&client_addr, &addr_size);

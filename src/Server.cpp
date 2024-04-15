@@ -27,13 +27,13 @@ void Server::socketHandler() {
             if (_poll_fd_vector[i].revents & POLLIN) {
                 if (_socket_map[_poll_fd_vector[i].fd]->getSocketType() == SERVER) {
                     std::string client_ip;
-                    int client_fd = _socket_map[_poll_fd_vector[i].fd]->acceptIncoming();
-                    if (client_fd == -1) {
+                    int connection_fd = _socket_map[_poll_fd_vector[i].fd]->acceptIncoming();
+                    if (connection_fd == -1) {
                         LOG_ERROR("Failed to accept incoming connection.");
                         continue;
                     }
                     pollfd_t poll_fd;
-                    poll_fd.fd = client_fd;
+                    poll_fd.fd = connection_fd;
                     poll_fd.events = POLLIN;
                     poll_fd.revents = 0;
                     _poll_fd_vector.push_back(poll_fd);
