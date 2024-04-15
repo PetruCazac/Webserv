@@ -29,13 +29,13 @@ Config& Config::operator=(const Config&){
 
 Config::Config(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
-	if(!!checkFilename(configFile)){
+	if(!checkFilename(configFile)){
 		LOG_ERROR("Invalid Configuration File Name");
-		throw(InvalidFilename);
+		throw InvalidFilename();
 	}
 	if(!fs.is_open()){
 		LOG_ERROR("Failed to open config file.");
-		throw(InvalidFilename);
+		throw OpenException();
 	}
 	stringDeque directives;
 	std::stringstream fileBuff;
@@ -57,27 +57,37 @@ void Config::getConfig(stringDeque& directives){
 		std::cout << "##" << (*it) << "##" << std::endl;
 		it++;
 	}
-	// try{
-	// 	getBlocks(directives, it);
-	// }catch(ParserProblem e){
-	// 	std::cout << e.what() << std::endl;
-	// }
+	try{
+		getBlocks(directives, it);
+	}catch(ParsingExceptions e){
+		std::cout << e.what() << std::endl;
+	}
 }
 
-// Config::iteratorDeque& Config::getBlocks(stringDeque& directives, iteratorDeque& it)
-// {
-// 	while (it < directives.end()){
-// 		if (openBracket(it)){
-// 			it = getBlocks(directives, it);
-// 		} else if (closedBracket(it)){
-// 			it++;
-// 			return it;
-// 		} else {
-// 			it++;
-// 		}
-// 	}
-// 	return it;
-// }
+bool Config::checkFilename(const char* configFile){
+	std::string conf(configFile);
+	if(conf.size() < 5)
+		return false;
+	
+	if(conf.substr(conf.size() - 5, conf.size()) != ".conf")
+		return false;
+	return true;
+}
+
+Config::iteratorDeque& Config::getBlocks(stringDeque& directives, iteratorDeque& it)
+{
+	while (it < directives.end()){
+		if (openBracket(it)){
+			it = getBlocks(directives, it);
+		} else if (closedBracket(it)){
+			it++;
+			return it;
+		} else {
+			it++;
+		}
+	}
+	return it;
+}
 
 
 // bool Config::openBracket(const iteratorDeque& it){
