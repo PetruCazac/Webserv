@@ -2,8 +2,10 @@
 
 Config::Config(){}
 Config::~Config(){}
-Config::Config(const Config& c){}
-Config& Config::operator=(const Config& c){}
+Config::Config(const Config&){}
+Config& Config::operator=(const Config&){
+	return *this;
+}
 
 // The constructor of the class will get the file name and it will
 // open it and will extract the information from there.
@@ -46,34 +48,37 @@ Config::Config(const char* configFile){
 
 void Config::getConfig(stringDeque& directives){
 	iteratorDeque it = directives.begin();
-	try{
-		getBlocks(directives, it);
-	}catch(ParserProblem e){
-		std::cout << e.what() << std::endl;
-	}
-}
-
-Config::iteratorDeque& Config::getBlocks(stringDeque& directives, iteratorDeque& it)
-{
 	while (it < directives.end()){
-		if (openBracket(it)){
-			it = getBlocks(it);
-
-		} else if (closedBracket(it)){
-			it++;
-			return it;
-		} else {
-			it++;
-		}
+		std::cout << "##" << (*it) << "##" << std::endl;
+		it++;
 	}
-	return it;
+	// try{
+	// 	getBlocks(directives, it);
+	// }catch(ParserProblem e){
+	// 	std::cout << e.what() << std::endl;
+	// }
 }
 
+// Config::iteratorDeque& Config::getBlocks(stringDeque& directives, iteratorDeque& it)
+// {
+// 	while (it < directives.end()){
+// 		if (openBracket(it)){
+// 			it = getBlocks(directives, it);
+// 		} else if (closedBracket(it)){
+// 			it++;
+// 			return it;
+// 		} else {
+// 			it++;
+// 		}
+// 	}
+// 	return it;
+// }
 
-bool Config::openBracket(const iteratorDeque& it){
+
+// bool Config::openBracket(const iteratorDeque& it){
 	
-}
+// }
 
-bool Config::closedBracket(const iteratorDeque& it){
+// bool Config::closedBracket(const iteratorDeque& it){
 
-}
+// }

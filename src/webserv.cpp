@@ -6,10 +6,11 @@ typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
 
-void	init(char **argc){
-	if (!argc)
+void	init(char *argv){
+	if (!argv)
 		std::cerr << "ERROR" << std::endl;
 		// Check the config file or default path to the config folder
+	Config serverConf(argv);
 }
 
 
@@ -96,7 +97,7 @@ void doStuff(int socket_client){
 int main(int argc, char** argv){
 	if(argc != 2)
 		return 1;
-	init(argv);
+	init(argv[1]);
 	int socket_server = initializeServer();
 	while (true){
 		int socket_client = acceptClient(socket_server);

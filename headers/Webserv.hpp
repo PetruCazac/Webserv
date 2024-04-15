@@ -11,11 +11,13 @@
 #include <unistd.h>
 #include <vector>
 #include <map>
+#include <deque>
 
 // #include "Server.hpp"
 #include "Logger.hpp"
 #include "Config.hpp"
 #include "HttpRequest.hpp"
+#include "Directives.hpp"
 
 class Http{
 private:

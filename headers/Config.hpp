@@ -4,7 +4,6 @@
 #include "Webserv.hpp"
 #include <fstream>
 #include <sstream>
-#include <deque>
 
 typedef struct s_server{
 	std::string					_port;
@@ -13,6 +12,12 @@ typedef struct s_server{
 	std::string					_root;
 	std::string					_include;
 }	server;
+
+
+typedef struct directive_tree{
+	std::string&	directive;
+	std::vector<directive_tree*> blocks;
+}	d_tree;
 
 class Config {
 private:
