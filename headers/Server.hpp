@@ -5,7 +5,7 @@
 
 class Server {
     public:
-        Server(ServerConfiguration &input_config);
+        Server(ServerConfiguration *input_config);
         ~Server();
 
         bool addListeningSocket();
@@ -13,8 +13,8 @@ class Server {
 
     private:
         std::vector<pollfd_t> _poll_fd_vector;
-        ServerConfiguration &_server_config;
-        std::map<pollfd_t, Socket*> _socket_map;
+        ServerConfiguration *_server_config;
+        std::map<int, Socket*> _socket_map;
 };
 
 #endif

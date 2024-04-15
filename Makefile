@@ -3,7 +3,7 @@ NAME= webserv
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -g
 
-SRC= main.cpp Logger.cpp Socket.cpp
+SRC= main.cpp Logger.cpp Socket.cpp Server.cpp
 
 VPATH= src/:obj/:headers/
 
