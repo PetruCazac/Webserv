@@ -2,11 +2,11 @@
 
 Server::Server(ServerConfiguration *input_config) {
     server_config = input_config;
-    start();
+    addListeningSocket();
 }
 
-bool Server::start() {
-    Socket *socket = new Socket(server_config->socket_config);
+bool Server::addListeningSocket() {
+    Socket *socket = new Socket(server_config->socket_config, SERVER);
     pollfd_t poll_fd;
     poll_fd.fd = server_config->socket_config->sockfd;
     poll_fd.events = POLLIN;

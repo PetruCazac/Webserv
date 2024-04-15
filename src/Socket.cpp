@@ -1,16 +1,21 @@
 #include "Socket.hpp"
 
-Socket::Socket(SocketConfiguration *input_config){
+Socket::Socket(SocketConfiguration *input_config, SocketType socket_type) : _sockfd(-1), _socket_type(socket_type) {
     socket_config = input_config;
-    if (!setupAddrInfo()) {
-        LOG_ERROR("Failed to setup address info.");
+    if (socket_type == SERVER) {
+        if (!setupAddrInfo()) {
+            LOG_ERROR("Failed to setup address info.");
+        }
+        if (!bindAndListen()) {
+            LOG_ERROR("Failed to bind and listen on socket.");
+        }
     }
 }
 
 Socket::~Socket() {
     removeSocket();
-    if (socket_config->addr_info != NULL) {
-        freeaddrinfo(socket_config->addr_info);
+    if (_addr_info != NULL) {
+        freeaddrinfo(_addr_info);
         LOG_DEBUG("Address info freed.");
     }
     LOG_DEBUG("Socket destroyed.");
@@ -24,7 +29,7 @@ bool Socket::setupAddrInfo() {
     hints.ai_flags = AI_PASSIVE;
 
     int status = getaddrinfo(NULL, socket_config->listening_port.c_str(), &hints,
-     &socket_config->addr_info);
+     &_addr_info);
     if (status != 0) {
         std::ostringstream oss;
         oss << "getaddrinfo error: " << gai_strerror(status);
@@ -37,9 +42,9 @@ bool Socket::setupAddrInfo() {
 }
 
 void Socket::removeSocket() {
-    if (socket_config->sockfd != -1) {
-        close(socket_config->sockfd);
-        socket_config->sockfd = -1;
+    if (_sockfd != -1) {
+        close(_sockfd);
+        _sockfd = -1;
     }
     LOG_DEBUG("Socket closed.");
 }
@@ -47,34 +52,34 @@ void Socket::removeSocket() {
 bool Socket::bindAndListen() {
     addrinfo_t *p;
     bool success = false;
-    for (p = socket_config->addr_info; p != NULL; p = p->ai_next) {
+    for (p = _addr_info; p != NULL; p = p->ai_next) {
         if (p == NULL) {
             LOG_ERROR("Address info not set up.");
             continue;
         }
-        socket_config->sockfd = socket(p->ai_family,
+        _sockfd = socket(p->ai_family,
         p->ai_socktype,
         p->ai_protocol);
-        if (socket_config->sockfd == -1) {
+        if (_sockfd == -1) {
             LOG_ERROR("Failed to create socket.");
             continue;
         }
 
         int yes = 1;
-        if (setsockopt(socket_config->sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+        if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
             LOG_ERROR("Failed to set socket options.");
             removeSocket();
             continue;
         }
 
-        if (bind(socket_config->sockfd, p->ai_addr,
+        if (bind(_sockfd, p->ai_addr,
         p->ai_addrlen) == -1) {
             LOG_ERROR("Failed to bind socket.");
             removeSocket();
             continue;
         }
 
-        if (listen(socket_config->sockfd, 10) == -1) {
+        if (listen(_sockfd, 10) == -1) {
             LOG_ERROR("Failed to listen on socket.");
             removeSocket();
             continue;
@@ -92,7 +97,7 @@ bool Socket::bindAndListen() {
 int Socket::acceptIncoming(std::string& client_ip) {
     sockaddr_storage_t client_addr;
     socklen_t addr_size = sizeof(client_addr);
-    int client_fd = accept(socket_config->sockfd, (struct sockaddr*)&client_addr, &addr_size);
+    int client_fd = accept(_sockfd, (struct sockaddr*)&client_addr, &addr_size);
     if (client_fd == -1) {
         LOG_ERROR("Failed to accept connection.");
         return -1;
@@ -106,7 +111,7 @@ int Socket::acceptIncoming(std::string& client_ip) {
 }
 
 bool Socket::sendtoClient(const std::string* data, size_t len) {
-    if (send(socket_config->sockfd,data->c_str(), len, 0) == -1) {
+    if (send(_sockfd,data->c_str(), len, 0) == -1) {
         LOG_ERROR("Failed to send data.");
         return false;
     }
@@ -116,7 +121,7 @@ bool Socket::sendtoClient(const std::string* data, size_t len) {
 
 // bool Socket::receive(std::string& buffer, size_t buffer_size, size_t& bytes_read) {
 //     char buf[buffer_size];
-//     bytes_read = recv(socket_config->sockfd, buf, buffer_size, 0);
+//     bytes_read = recv(_sockfd, buf, buffer_size, 0);
 //     if (bytes_read == -1) {
 //         LOG_ERROR("Failed to receive data.");
 //         return false;

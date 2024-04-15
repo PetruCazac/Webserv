@@ -4,9 +4,14 @@
 #include "Configuration.hpp"
 #include <vector>
 
+
+enum SocketType {
+    SERVER,
+    CLIENT
+};
 class Socket {
     public:
-        Socket(SocketConfiguration *input_config);
+        Socket(SocketConfiguration *input_config, SocketType socket_type);
         ~Socket();
 
         void removeSocket();
@@ -20,6 +25,9 @@ class Socket {
 
     private:
         SocketConfiguration *socket_config;
+        int _sockfd;
+        addrinfo_t *_addr_info;
+        SocketType _socket_type;
 
 
 };

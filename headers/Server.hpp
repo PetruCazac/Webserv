@@ -8,7 +8,7 @@ class Server {
         Server(ServerConfiguration *input_config);
         ~Server();
 
-        bool start();
+        bool addListeningSocket();
         void stop();
 
     private:
