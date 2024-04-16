@@ -25,6 +25,7 @@ bool Server::addListeningSocket() {
         poll_fd.fd = socket->getSockFd();
         poll_fd.events = POLLIN;
         poll_fd.revents = 0;
+        fcntl(poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
         _poll_fd_vector.push_back(poll_fd);
         _socket_map[poll_fd.fd] = socket;
     }
@@ -56,6 +57,7 @@ void Server::socketHandler() {
                     poll_fd.fd = connection_fd;
                     poll_fd.events = POLLIN;
                     poll_fd.revents = 0;
+                    fcntl(poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
                     _poll_fd_vector.push_back(poll_fd);
                     _socket_map[poll_fd.fd] = new Socket(connection_fd);
                     LOG_INFO("Accepted new incoming connection.");

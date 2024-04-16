@@ -3,6 +3,7 @@
 Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     socket_config = input_config;
     _socket_type = SERVER;
+    _socket_status = LISTEN;
     LOG_DEBUG("Constructor for listening Socket called.");
     if (!setupAddrInfo()) {
         LOG_ERROR("Failed to setup address info.");
@@ -17,6 +18,7 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
 
 Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd) {
     _socket_type = CLIENT;
+    _socket_status = RECEIVE;
 }
 
 Socket::~Socket() {

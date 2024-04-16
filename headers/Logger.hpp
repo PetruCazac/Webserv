@@ -16,9 +16,9 @@
 
 enum LogLevel {
     SILENT,
-    INFO,
     WARNING,
     ERROR,
+    INFO,
     DEBUG
 };
 

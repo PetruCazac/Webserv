@@ -19,6 +19,11 @@ enum SocketType {
     SERVER,
     CLIENT
 };
+
+enum SocketStatus {
+    LISTEN,
+    RECEIVE
+};
 class Socket {
     public:
         Socket(SocketConfiguration *input_config);
@@ -40,6 +45,7 @@ class Socket {
         int _sockfd;
         addrinfo_t *_addr_info;
         SocketType _socket_type;
+        SocketStatus _socket_status;
 
 
 };
