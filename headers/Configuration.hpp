@@ -11,10 +11,8 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <list>
+#include <exception>
 #include "Logger.hpp"
-
-//Remove this Header before submission; Just for debugging purposes
-#include <arpa/inet.h>
 
 
 typedef struct addrinfo addrinfo_t;

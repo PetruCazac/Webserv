@@ -1,8 +1,13 @@
 #include "Server.hpp"
 
 Server::Server(ServerConfiguration *input_config) {
+    LOG_INFO("Constructor called. Server starting...");
     _server_config = input_config;
     addListeningSocket();
+}
+
+void Server::run() {
+    LOG_INFO("Server running.");
     while (1){
         socketHandler();
     }
@@ -13,13 +18,21 @@ Server::~Server() {
 }
 
 bool Server::addListeningSocket() {
-    Socket *socket = new Socket(_server_config->server_socket_config);
-    pollfd_t poll_fd;
-    poll_fd.fd = socket->getSockFd();
-    poll_fd.events = POLLIN;
-    poll_fd.revents = 0;
-    _poll_fd_vector.push_back(poll_fd);
-    _socket_map[poll_fd.fd] = socket;
+    LOG_INFO("Server attempting to add listening socket.");
+    try{
+        Socket *socket = new Socket(_server_config->server_socket_config);
+        pollfd_t poll_fd;
+        poll_fd.fd = socket->getSockFd();
+        poll_fd.events = POLLIN;
+        poll_fd.revents = 0;
+        _poll_fd_vector.push_back(poll_fd);
+        _socket_map[poll_fd.fd] = socket;
+    }
+    catch(const SocketException& e){
+        LOG_ERROR(std::string("Error creating listening socket: ") + e.what());
+        return false;
+    }
+    LOG_INFO("Server successfully added listening socket.");
     return true;
 }
 
@@ -45,22 +58,24 @@ void Server::socketHandler() {
                     poll_fd.revents = 0;
                     _poll_fd_vector.push_back(poll_fd);
                     _socket_map[poll_fd.fd] = new Socket(connection_fd);
+                    LOG_INFO("Accepted new incoming connection.");
                 } else {
-                    std::string buffer;
-                    int bytes_read;
-                    if (!_socket_map[_poll_fd_vector[i].fd]->receive(_poll_fd_vector[i].fd, &buffer, _server_config->server_socket_config->max_data_size_incoming, bytes_read)) {
-                        LOG_ERROR("Failed to receive data.");
-                        continue;
-                    }
-                    if (bytes_read == 0) {
-                        LOG_DEBUG("Connection closed.");
-                        close(_poll_fd_vector[i].fd);
-                        _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
-                        delete _socket_map[_poll_fd_vector[i].fd];
-                        _socket_map.erase(_poll_fd_vector[i].fd);
-                    } else {
-                        LOG_DEBUG("Received data: " + buffer);
-                    }
+                    LOG_ERROR("SKIP");
+                    // std::string buffer;
+                    // int bytes_read;
+                    // if (!_socket_map[_poll_fd_vector[i].fd]->receive(_poll_fd_vector[i].fd, &buffer, _server_config->server_socket_config->max_data_size_incoming, bytes_read)) {
+                    //     LOG_ERROR("Failed to receive data.");
+                    //     continue;
+                    // }
+                    // if (bytes_read == 0) {
+                    //     LOG_DEBUG("Connection closed.");
+                    //     close(_poll_fd_vector[i].fd);
+                    //     _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
+                    //     delete _socket_map[_poll_fd_vector[i].fd];
+                    //     _socket_map.erase(_poll_fd_vector[i].fd);
+                    // } else {
+                    //     LOG_DEBUG("Received data: " + buffer);
+                    // }
                 }
             }
         }

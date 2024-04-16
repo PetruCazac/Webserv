@@ -31,7 +31,7 @@ void Logger::log(LogLevel level, const std::string &message, int line,
                 break;
         }
         out << "[" << translateLogLevel(level) << "]\033[95m["
-        << timestamp.str() << "] \033[0m " << message << " at line " 
+        << timestamp.str() << "] \033[0m " << message << " | at line " 
         << line << " in file " << file << std::endl;
     }
 }

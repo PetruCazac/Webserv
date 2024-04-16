@@ -6,9 +6,11 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     LOG_DEBUG("Constructor for listening Socket called.");
     if (!setupAddrInfo()) {
         LOG_ERROR("Failed to setup address info.");
+        throw SocketException("Failed to setup address info.");
     }
     if (!bindAndListen()) {
         LOG_ERROR("Failed to bind and listen on socket.");
+        throw SocketException("Failed to bind and listen on socket.");
     }
 }
 

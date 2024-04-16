@@ -4,6 +4,16 @@
 #include "Configuration.hpp"
 #include <vector>
 
+class SocketException : public std::exception {
+private:
+    std::string message;
+public:
+    SocketException(const std::string& msg) : message(msg) {}
+    virtual ~SocketException() throw() {} 
+    virtual const char* what() const throw() {
+        return message.c_str();
+    }
+};
 
 enum SocketType {
     SERVER,

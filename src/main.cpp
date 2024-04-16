@@ -18,4 +18,5 @@ int main(){
     SocketConfiguration socket_config("localhost", "3490", 1024);
     server_config.server_socket_config = &socket_config;
     Server server(&server_config);
+    server.run();
 }
