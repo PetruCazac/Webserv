@@ -3,6 +3,13 @@
 Server::Server(ServerConfiguration *input_config) {
     _server_config = input_config;
     addListeningSocket();
+    while (1){
+        socketHandler();
+    }
+}
+
+Server::~Server() {
+
 }
 
 bool Server::addListeningSocket() {
@@ -37,7 +44,7 @@ void Server::socketHandler() {
                     poll_fd.events = POLLIN;
                     poll_fd.revents = 0;
                     _poll_fd_vector.push_back(poll_fd);
-                    _socket_map[poll_fd.fd] = new Socket(_server_config->server_socket_config);
+                    _socket_map[poll_fd.fd] = new Socket(connection_fd);
                 } else {
                     std::string buffer;
                     int bytes_read;
