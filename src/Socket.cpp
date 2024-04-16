@@ -3,6 +3,7 @@
 Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     socket_config = input_config;
     _socket_type = SERVER;
+    LOG_DEBUG("Constructor for listening Socket called.");
     if (!setupAddrInfo()) {
         LOG_ERROR("Failed to setup address info.");
     }
@@ -26,6 +27,7 @@ Socket::~Socket() {
 }
 
 bool Socket::setupAddrInfo() {
+    LOG_DEBUG("Setting up address info.");
     addrinfo_t hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -54,6 +56,7 @@ void Socket::removeSocket() {
 }
 
 bool Socket::bindAndListen() {
+    LOG_DEBUG("Attempting to bind and listen on socket.");
     addrinfo_t *p;
     bool success = false;
     for (p = _addr_info; p != NULL; p = p->ai_next) {

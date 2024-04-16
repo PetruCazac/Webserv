@@ -3,6 +3,10 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <ctime>
+#include <sstream>
+#include <sys/time.h>
+#include <iomanip>
 
 #define LOG_SILENT(message) Logger::log(SILENT, message, __LINE__, __FILE__)
 #define LOG_ERROR(message) Logger::log(ERROR, message, __LINE__, __FILE__)
