@@ -11,6 +11,8 @@ typedef struct s_server{
 	std::string					_server_name;
 	std::string					_root;
 	std::string					_include;
+	std::string					_timeout;
+	std::string					_cgiTieout
 }	server;
 
 
