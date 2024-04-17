@@ -10,14 +10,17 @@ void	init(char *argv){
 	if (!argv)
 		std::cerr << "ERROR" << std::endl;
 		// Check the config file or default path to the config folder
-	Config serverConf(argv);
+	try{
+		Config serverConf(argv);
+	}catch(Config::ParsingExceptions& e){
+		std::cout << e.what() << argv << std::endl;
+		exit(1);
+	}
 }
-
 
 int initializeServer(){
 	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	SA_IN s_address;
-
 
 	std::cout << server_socket << std::endl;
 	if(server_socket != -1){

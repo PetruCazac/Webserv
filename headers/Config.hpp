@@ -2,8 +2,7 @@
 #define CONFIG_HPP
 
 #include "Webserv.hpp"
-#include <fstream>
-#include <sstream>
+
 
 typedef struct s_server{
 	std::string					_port;
@@ -15,18 +14,12 @@ typedef struct s_server{
 	std::string					_cgiTieout
 }	server;
 
-
-typedef struct directive_tree{
-	std::string&	directive;
-	std::vector<directive_tree*> blocks;
-}	d_tree;
-
 class Config {
 private:
-	std::vector<server>	_Servers;
-	Config();
 	typedef std::deque<std::string> stringDeque;
 	typedef std::deque<std::string>::iterator iteratorDeque;
+	std::vector<server>	_Servers;
+	Config();
 
 public:
 	Config(const char* configFile);
@@ -35,20 +28,32 @@ public:
 	Config& operator=(const Config& c);
 
 	// Parser main functions
-	void getConfig(stringDeque& directives);
-	void getServerConfig(std::string& filebuff);
-	iteratorDeque& getBlocks(stringDeque& directives, iteratorDeque& it);
+	void getConfig(stringDeque directives);
+	void getServerConfig(std::string filebuff);
+
 
 	// Helper Functions
 	bool openBracket(const iteratorDeque& it);
 	bool closedBracket(const iteratorDeque& it);
-	
+	void checkFilename(const char* configFile);
+	void checkBrackets(const std::deque<std::string>& directives) const;
+
 	// Exception functions
-	class ParserProblem: public std::exception{
+	class ParsingExceptions : public std::exception{};
+	class OpenException: public ParsingExceptions{
 		public:
 			const char* what() const throw(){
-				return "Error at parsing";
-			};
+				return "Error opening config file: ";}
+	};
+	class InvalidFilename : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Wrong Config File: ";}
+	};
+	class WrongBracket : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Brackets are not well set: ";}
 	};
 };
 
