@@ -19,7 +19,6 @@
 #include "Logger.hpp"
 #include "Config.hpp"
 #include "HttpRequest.hpp"
-#include "Directives.hpp"
 
 class Http{
 private:

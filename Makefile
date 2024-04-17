@@ -6,7 +6,7 @@ CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -g
 SRC= webserv.cpp HttpRequest.cpp
 SRC+= main.cpp Logger.cpp
 # Parsing files
-SRC+= Config.cpp Block.cpp
+SRC+= Config.cpp
 
 
 VPATH= src/:obj/:headers/:http_request_parser/:src/config/
