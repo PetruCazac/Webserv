@@ -25,18 +25,16 @@ Config::Config(const char* configFile){
 		std::string	token;
 		std::vector<std::string> line;
 		while(ss >> token){
-			// std::cout << "[" << token << "]" << std::endl;
 			if(token.empty())
 				continue;
 			line.push_back(token);
 		}
-		if (line.empty() || (*line.begin()).find_first_of("#", 0) == 0 )
+		if (line.empty() || (*line.begin()).find_first_of("#", 0) == 0)
 			continue;
 		directives.push_back(line);
 	}
-
-	if(!directives.size()){
-		LOG_ERROR("Server config file is empty.");
+	if(directives.size() == 0){
+		throw EmptyConfFile();
 	}
 	getConfig(directives);
 }
@@ -50,62 +48,116 @@ bool Config::lineComment(const std::string word) const {
 void Config::getConfig(strDeque directives){
 	try{
 		checkBrackets(directives);
-		// for(citDeque it\
-		// = directives.begin(); it < directives.end(); it++){
-		// 	std::cout << "--------------------------" << std::endl;
-		// 	for(std::vector<std::string>::const_iterator it2 = (*it).begin(); it2 < (*it).end(); it2++){
-		// 		std::cout << "[" << (*it2) << "]" << std::endl;
-		// 	}
-		// 	std::cout << "--------------------------" << std::endl;
-		// }
 		itDeque it = directives.begin();
-		parseBlock(it, directives);
+		itDeque it_end = directives.end() - 1;
+		parseBlock(it, it_end, directives);
 	}catch(ParsingExceptions& e){
 		std::cout << e.what() << std::endl;
 	}
 }
 
-
-void	Config::parseBlock(itDeque it, strDeque directives){
-	while(it < directives.end()){
+Config::itDeque	Config::parseBlock(itDeque& it, itDeque& it_end, strDeque& directives){
+	itDeque	end_box;
+	while(it < it_end){
 		if(contextBlock((*it))){
 			CONTEXT_TYPE = HTTP;
-			itDeque it_end = endBlock(it, directives.end());
-			while(it <= it_end){
-				it = getServerConfig(it, it_end);
-				it++;
-			}
+			end_box = endBlock(it, directives.end());
+			it = parseBlock(++it, end_box, directives);
 		} else if(serverBlock(*it)){
-			CONTEXT_TYPE = UNDEF;
-			itDeque it_end = endBlock(it, directives.end());
-			it = getServerConfig(it, it_end);
-			it++;
+			end_box = endBlock(it, directives.end());
+			it = getServerConfig(it, end_box);
+			continue ;
+		} else if (it < it_end){
+			std::string str("Non valid directive found outside the block configuration: ");
+			for(std::vector<std::string>::iterator itv = (*it).begin(); itv < (*it).end(); itv++)
+				str.append((*itv));
+			LOG_WARNING(str.c_str());
+			throw WrongDirective();
 		}
-		
 	}
+	return it;
 }
 
+bool Config::contextBlock(std::vector<std::string>& line){
 
-bool Config::serverBlock(std::vector<std::string> line){
+	CONTEXT_TYPE = HTTP;
 	std::vector<std::string>::iterator it = line.begin();
-	if((*it) == "server" && (*(it+1)) == "{" && line.size() == 2)
+	if((*it) == "http" && (*(it+1)) == "{" && line.size() == 2){
+		std::cout << "Http Block\n";
 		return true;
+	}
 	return false;
 }
-bool Config::contextBlock(std::vector<std::string> line){
+
+bool Config::serverBlock(std::vector<std::string>& line){
+
+	CONTEXT_TYPE = UNDEF;
 	std::vector<std::string>::iterator it = line.begin();
-	if((*it) == "http" && (*(it+1)) == "{" && line.size() == 2)
+	if((*it) == "server" && (*(it+1)) == "{" && line.size() == 2){
+		std::cout << "Server Block\n";
 		return true;
+	}
 	return false;
 }
 
-Config::itDeque Config::getServerConfig(itDeque begin, itDeque end) const{
-	// while(begin < end)
-	begin ++ ;
-	end ++;
-	std::cout<< "Server" << std::endl;
-	return --end;
+Config::itDeque Config::getServerConfig(itDeque begin, itDeque end){
+	itDeque it = begin;
+	while(it < end){
+		// Check last character
+		std::vector<std::string> str = (*it);
+		// std::string last = str.back();
+		// if(last.back() == ';')
+		// 	throw MissingLasCharacter();
+		// Needs to not have the last character checked when first one is location
+
+		// Check directive name
+		std::cout << "HERE\n" ;
+		if(str.front().c_str() == LOCATION){
+			it = parseLocation(it, end);
+		} else if (str.front().c_str() == LISTEN){
+			parseDirective(LISTEN, str);
+		} else if (str.front().c_str() == INDEX){
+			parseDirective(INDEX, str);
+		} else if (str.front().c_str() == LOCATION){
+			parseDirective(LOCATION, str);
+		} else if (str.front().c_str() == HOSTNAME){
+			parseDirective(HOSTNAME, str);
+		} else if (str.front().c_str() == SERVERNAME){
+			parseDirective(SERVERNAME, str);
+		} else if (str.front().c_str() == PORT){
+			parseDirective(PORT, str);
+		} else if (str.front().c_str() == ROOT){
+			parseDirective(ROOT, str);
+		} else {
+			// throw WrongDirective();
+		}
+
+
+		// std::cout << "--------------------------" << std::endl;
+		// for(std::vector<std::string>::const_iterator it = (*begin).begin(); it < (*begin).end(); it++){
+		// 	std::cout << "[" << (*it) << "] ";
+		// }
+		// std::cout << "\n";
+		begin++;
+	}
+	return ++end;
 }
+
+
+Config::itDeque Config::parseLocation(itDeque it, itDeque end){
+	std::cout << (*it).front();
+	end++;
+	return it++;
+}
+
+void Config::parseDirective(const char* dir, std::vector<std::string> str){
+	std::cout << dir << "\n";
+	std::cout << str.front();
+}
+
+
+
+
 
 Config::itDeque Config::endBlock(itDeque it, itDeque end){
 	int i = 0;
@@ -165,27 +217,3 @@ void Config::checkFilename(const char* configFile){
 	}
 	return;
 }
-
-// bool Config::openBracket(const std::string str){
-// 	int i = 0;
-// 	if((i = str.find('{')) > -1){
-// 		int j = str.size();
-// 		while(std::isspace(str[j]))
-// 			j--;
-// 		if(i == str[j])
-// 			return true;
-// 	}
-// 	return false;
-// }
-
-// bool Config::closedBracket(const std::string str){
-// 	int i = 0;
-// 	if((i = str.find('}')) > -1){
-// 		int j = str.size();
-// 		while(std::isspace(str[j]))
-// 			j--;
-// 		if(i == str[j])
-// 			return true;
-// 	}
-// 	return false;
-// }

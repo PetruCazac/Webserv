@@ -3,11 +3,20 @@
 
 #include "Webserv.hpp"
 
-
 enum C_TYPES{
 	HTTP,
 	UNDEF
 };
+
+
+const char INDEX[] = "index";
+const char LISTEN[] = "listen";
+const char LOCATION[] = "location";
+const char HOSTNAME[] = "host_name";
+const char SERVERNAME[] = "server_name";
+const char PORT[] = "port";
+const char ROOT[] = "root";
+
 
 typedef struct s_server{
 	C_TYPES						_type;
@@ -27,6 +36,7 @@ private:
 	typedef std::deque<std::vector<std::string> >::const_iterator citDeque;
 	Config();
 
+
 public:
 
 	std::vector<server>	_servers;
@@ -38,18 +48,18 @@ public:
 
 	// Parser main functions
 	void getConfig(strDeque directives);
-	itDeque getServerConfig(itDeque begin, itDeque end) const;
-	void parseBlock(itDeque it, strDeque directives);
+	itDeque getServerConfig(itDeque begin, itDeque end);
+	itDeque parseBlock(itDeque& it, itDeque& it_end, strDeque& directives);
+	itDeque parseLocation(itDeque it, itDeque end);
+	void parseDirective(const char* dir, std::vector<std::string> str);
 
 	// Helper Functions
-	// bool openBracket(const std::string str);
-	// bool closedBracket(const std::string str);
 	void checkFilename(const char* configFile);
 	void checkBrackets(const strDeque& directives) const;
 	bool lineComment(const std::string line) const;
 	itDeque endBlock(itDeque it, itDeque end);
-	bool contextBlock(std::vector<std::string> line);
-	bool serverBlock(std::vector<std::string> line);
+	bool contextBlock(std::vector<std::string>& line);
+	bool serverBlock(std::vector<std::string>& line);
 
 	// Exception functions
 	class ParsingExceptions : public std::exception{};
@@ -57,6 +67,11 @@ public:
 		public:
 			const char* what() const throw(){
 				return "Error opening config file: ";}
+	};
+	class EmptyConfFile: public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Error: empty config file ";}
 	};
 	class InvalidFilename : public ParsingExceptions{
 		public:
@@ -67,6 +82,16 @@ public:
 		public:
 			const char* what() const throw(){
 				return "Brackets are not well set: ";}
+	};
+	class WrongDirective : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Directive non valid: ";}
+	};
+	class MissingLasCharacter : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Invalid ending, missing ;";}
 	};
 };
 
