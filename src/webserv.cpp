@@ -1,4 +1,6 @@
- #include "Webserv.hpp"
+
+#include "Webserv.hpp"
+#include <sstream>
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
@@ -57,6 +59,8 @@ void doStuff(int socket_client){
 	std::cout << "END REQUEST" << std::endl;
 	std::string	input(sb);
 	s_httpRequest httpRequest = parseHttpRequest(input);
+	// std::istringstream input(sb);
+	// HttpRequest httpRequest = parseHttpRequest(input);
 	std::cout << "Method: [" << httpRequest.method << "]" << std::endl;
     std::cout << "URI: [" << httpRequest.uri << "]" << std::endl;
     std::cout << "HTTP Version: [" << httpRequest.httpVersion << "]" << std::endl;
@@ -68,20 +72,20 @@ void doStuff(int socket_client){
 	fflush(stdout);
 	bzero(sb, buffer);
 	std::cout << "here" << std::endl;
-	// FILE *fd = fopen("test/index.html", "r");
-	FILE *fd = NULL;
+	// FILE *fd = NULL;
+	FILE *fd = fopen("test/index.html", "r");
 	// int i = 0;
 	// if (i == 0){
 	// 	fd = fopen("test/test1.html", "r");
 	// 	i++;
 	// }else
-		fd = fopen("test/images.jpeg", "r");
+		// fd = fopen("test/images.jpeg", "r");
 
 	if (fd == NULL)
 		std::cout << "file open error"  << std::endl;
 	bzero(sb, buffer);
 	bytes_read = fread(sb, sizeof(unsigned char), buffer, fd);
-	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nContent-Length: [length in bytes of the image]\r\n\r\n";
+	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\n\r\n";
 	write(socket_client, pading.c_str(), pading.size());
 	write(socket_client, sb, bytes_read);
 	std::cout << "\n" << sb << "\n" << std::endl;
