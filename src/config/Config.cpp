@@ -1,5 +1,30 @@
  #include "Config.hpp"
 
+enum {
+	INDEX,
+	LISTEN,
+	LOCATION,
+	HOSTNAME,
+	SERVERNAME,
+	CLIENTSIZE,
+	PORT,
+	ROOT,
+	TRY_FILES,
+	TOTAL
+};
+
+const char* Directives[TOTAL] = {
+	"index",
+	"listen",
+	"location",
+	"host_name",
+	"server_name",
+	"client_max_body_size",
+	"port",
+	"try_files",
+	"root"
+};
+
 Config::Config(){}
 Config::~Config(){}
 Config::Config(const Config&){}
@@ -17,8 +42,13 @@ Config::Config(const char* configFile){
 	std::string line;
 	while(std::getline(fs, line)){
 		std::size_t posComment = line.find('#');
+		while(std::isspace(line[0])){
+			line.erase(0, 1);
+		}
 		if(posComment != std::string::npos)
 			line = line.substr(0, posComment);
+		if(!line.empty() && line.find_last_of(";{}") != line.size() - 1)
+			throw MissingLastCharacter();
 		std::istringstream lineStream(line);
 		std::string token;
 		while(lineStream >> token){
@@ -47,63 +77,55 @@ void Config::parse(void){
 	int i = 0;
 	printDirective(block, i);
 	parseConfig(block);
+	std::cout << "\n"<< std::endl;
+	printConfig();
 }
 
 void Config::parseConfig(Block& block){
-	if(block.name == "http"|| block.name == "root"){
+	if(block.name == "root"){
 		for(size_t i = 0; i < block.children.size(); i++)
 			parseConfig(block.children[i]);
-	} else if(block.name == "server"){
+	} else if(block.name == "server" || block.name == "http"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		Server serv;
-		assignDirective(block.parameters, serv);
-		// assignMethods(block.methods, serv);
-		// for(size_t i = 0; i < block.children.size(); i++)
-		// 	assignChildren(block.children[i], serv);
-		
-	}
-}
-
-void Config::assignDirective(std::vector<std::string>& parameters, Server& s){
-	for(size_t i = 0; i < parameters.size(); i++){
-		if(parameters[i] == "index"){
-			i += fillDirective(s._listen, parameters, ++i);
-		} else if(parameters[i] == "server_name"){
-			i += fillDirective(s._server_name, parameters, ++i);
+		Server server;
+		server.name = block.name;
+		for(size_t i = 0; i < block.parameters.size(); i++){
+			if(isValidDirective(block.parameters[i])){
+				size_t count = i + 1;
+				while(count < block.parameters.size() && block.parameters[count] != ";")
+					server._directives[block.parameters[i]].push_back(block.parameters[count++]);
+				i = count;
+			}
 		}
+		for(size_t i = 0; i < block.children.size(); i++){
+			if(block.children[i].name == "location"){
+				server._location_methods = block.children[i].methods;
+				for(size_t j = 0; j < block.children[i].parameters.size(); j++){
+					if(isValidDirective(block.children[i].parameters[j])){
+						size_t count = j + 1;
+						while(count < block.children[i].parameters.size() && block.children[i].parameters[count] != ";")
+							server._location_directives[block.children[i].parameters[j]].push_back(block.children[i].parameters[count++]);
+						j = count;
+					}
+				}
+			} else if(block.children[i].name == "server")
+				parseConfig(block.children[i]);
+		}
+			_servers.push_back(server);
 	}
 }
 
-size_t Config::fillDirective(std::vector<std::string>& s, std::vector<std::string>& parameters, size_t start){
-	size_t count = start;
-	while(count < parameters.size() && parameters[count] != ";"){
-		s.push_back(parameters[count++]);
+bool Config::isValidDirective(std::string str){
+	if(str.size() == 0)
+		throw MissingDirective();
+	for(size_t i = 0; i < TOTAL; i++){
+		if(str == Directives[i])
+			return true;
 	}
-	return ++count - start;
+	throw WrongDirective();
+	return false;
 }
-
-// void Config::assignDirective(std::vector<std::string>& parameters, server& s){
-// 	for(size_t j = 0; j < parameters.size(); j++){
-// 		for(size_t i = 0; i < TOTAL; i++){
-// 			if(parameters[j] == Directives[i]){
-// 				j++;
-// 				while(parameters[j][parameters[j].size() - 1] != ';'){
-					
-// 				}
-// 				break;
-// 			}
-// 		}
-// 	}
-// }
-
-// void Config::assignMethods(std::vector<std::string>& methods, server& s){
-
-// }
-
-// void Config::assignChildren(Block& children, server& s){
-
-// }
 
 Block Config::parseDirective(){
 	Block block;
@@ -156,21 +178,66 @@ void Config::checkFilename(const char* configFile){
 	return;
 }
 
+
+void Config::printConfig(){
+	if(!_servers.empty()){
+		for (size_t i = _servers.size() - 1; ; --i) {
+			const Server& server = _servers[i];
+			std::cout << server.name << ":" << std::endl;
+			// if(!server._directives.empty()){
+				std::cout << "  Directives:" << std::endl;
+				for (std::map<std::string, std::vector<std::string> >::const_iterator it = server._directives.begin(); it != server._directives.end(); ++it) {
+					std::cout << "    " << it->first << ": ";
+					for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); ++vit) {
+						std::cout << *vit << " ";
+					}
+					std::cout << std::endl;
+				}
+			// }
+			// if(!server._location_directives.empty()){
+				std::cout << "  Location Directives:";
+				for (std::map<std::string, std::vector<std::string> >::const_iterator lit = server._location_directives.begin(); lit != server._location_directives.end(); ++lit) {
+					std::cout << "    " << "##"<<  lit->first << "##"<< ": ";
+					for (std::vector<std::string>::const_iterator lvit = lit->second.begin(); lvit != lit->second.end(); ++lvit) {
+						std::cout << "##"<<*lvit << "##"<< " ";
+					}
+					std::cout << std::endl;
+				}
+			// }
+			// if(!server._location_methods.empty()){
+			std::cout << "  Location Methods: ";
+			for (std::vector<std::string>::const_iterator mit = server._location_methods.begin(); mit != server._location_methods.end(); ++mit) {
+				std::cout << "##"<< *mit <<"##";
+			}
+			std::cout << "\n" << std::endl;
+			if(i == 0)
+				break;
+			// }
+		}
+	}
+}
+
 void Config::printDirective(Block& block, int depth = 0){
 	std::string indent(depth * 2, ' ');
-	std::cout << indent << block.name;
-	std::cout << indent <<"Methods: ";
-	for (size_t i = 0; i < block.methods.size(); ++i) {
-		std::cout << " " << block.methods[i];
+	std::cout << indent << block.name << std::endl;
+	if(!block.methods.empty()){
+		std::cout << indent <<"Methods: ";
+		for (size_t i = 0; i < block.methods.size(); ++i) {
+			std::cout << " " << block.methods[i];
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-	std::cout <<  indent << "Parametres: ";
-	for (size_t i = 0; i < block.parameters.size(); ++i) {
-		std::cout << " " << block.parameters[i];
+	if(!block.parameters.empty()){
+		std::cout <<  indent << "Directives: ";
+		for (size_t i = 0; i < block.parameters.size(); ++i) {
+			std::cout << " " << block.parameters[i];
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-	std::cout <<  indent << "Children: ";
-	for (size_t i = 0; i < block.children.size(); ++i) {
-		printDirective(block.children[i], ++depth);
+	if(!block.children.empty()){
+		std::cout <<  indent << "Children: " << std::endl;
+		for (size_t i = 0; i < block.children.size(); ++i) {
+			printDirective(block.children[i], depth + 2);
+		}
 	}
 }

@@ -3,38 +3,11 @@
 
 #include "Webserv.hpp"
 
-// enum {
-// 	INDEX,
-// 	LISTEN,
-// 	LOCATION,
-// 	HOSTNAME,
-// 	SERVERNAME,
-// 	CLIENTSIZE,
-// 	PORT,
-// 	ROOT,
-// 	TOTAL
-// };
-
-// const char* Directives[TOTAL] = {
-// 	"index",
-// 	"listen",
-// 	"location",
-// 	"host_name",
-// 	"server_name",
-// 	"client_max_body_size",
-// 	"port",
-// 	"root"
-// };
-
 typedef struct s_server{
-	std::vector<std::string>	_listen;
-	std::vector<std::string>	_location;
-	std::vector<std::string>	_server_name;
-	std::vector<std::string>	_root;
-	std::vector<std::string>	_client_max_body_size;
-	std::vector<std::string>	_include;
-	std::vector<std::string>	_timeout;
-	std::vector<std::string>	_cgiTieout;
+	std::string name;
+	std::map<std::string, std::vector<std::string> >	_directives;
+	std::map<std::string, std::vector<std::string> >	_location_directives;
+	std::vector<std::string>	_location_methods;
 }	Server;
 
 struct Block {
@@ -62,14 +35,14 @@ public:
 	void parse(void);
 	Block parseDirective();
 	void checkFilename(const char* configFile);
-	void printDirective(Block& block, int i);
-	bool isBlock(void);
 	void parseConfig(Block& block);
-	// void assignMethods(std::vector<std::string>& methods, Server& s);
-	void assignDirective(std::vector<std::string>& parameters, Server& s);
-	// void assignChildren(Block& children, Server& s);
-
-	size_t fillDirective(std::vector<std::string>& s, std::vector<std::string>& parameters, size_t i);
+	
+	// Helper functions
+	bool isBlock(void);
+	bool isValidDirective(std::string str);
+	// Printing functions
+	void printDirective(Block& block, int i);
+	void printConfig();
 
 	// Exception functions
 	class ParsingExceptions : public std::exception{};
@@ -97,6 +70,11 @@ public:
 		public:
 			const char* what() const throw(){
 				return "Directive non valid: ";}
+	};
+	class MissingDirective : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Directive non existent ";}
 	};
 	class WrongMethods : public ParsingExceptions{
 		public:
