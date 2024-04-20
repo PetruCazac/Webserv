@@ -1,7 +1,5 @@
  #include "Config.hpp"
 
-C_TYPES CONTEXT_TYPE;
-
 Config::Config(){}
 Config::~Config(){}
 Config::Config(const Config&){}
@@ -16,192 +14,132 @@ Config::Config(const char* configFile){
 		LOG_ERROR("Failed to open config file.");
 		throw OpenException();
 	}
-
-	std::string str;
-	strDeque directives;
-
-	while(std::getline(fs, str)){
-		std::stringstream ss(str);
-		std::string	token;
-		std::vector<std::string> line;
-		while(ss >> token){
-			if(token.empty())
-				continue;
-			line.push_back(token);
-		}
-		if (line.empty() || (*line.begin()).find_first_of("#", 0) == 0)
-			continue;
-		directives.push_back(line);
-	}
-	if(directives.size() == 0){
-		throw EmptyConfFile();
-	}
-	getConfig(directives);
-}
-
-bool Config::lineComment(const std::string word) const {
-	if(word.find_first_of("#", 0) == 0)
-		return true;
-	return false;
-}
-
-void Config::getConfig(strDeque directives){
-	try{
-		checkBrackets(directives);
-		itDeque it = directives.begin();
-		itDeque it_end = directives.end() - 1;
-		parseBlock(it, it_end, directives);
-	}catch(ParsingExceptions& e){
-		std::cout << e.what() << std::endl;
-	}
-}
-
-Config::itDeque	Config::parseBlock(itDeque& it, itDeque& it_end, strDeque& directives){
-	itDeque	end_box;
-	while(it < it_end){
-		if(contextBlock((*it))){
-			CONTEXT_TYPE = HTTP;
-			end_box = endBlock(it, directives.end());
-			it = parseBlock(++it, end_box, directives);
-		} else if(serverBlock(*it)){
-			end_box = endBlock(it, directives.end());
-			it = getServerConfig(it, end_box);
-			continue ;
-		} else if (it < it_end){
-			std::string str("Non valid directive found outside the block configuration: ");
-			for(std::vector<std::string>::iterator itv = (*it).begin(); itv < (*it).end(); itv++)
-				str.append((*itv));
-			LOG_WARNING(str.c_str());
-			throw WrongDirective();
+	std::string line;
+	while(std::getline(fs, line)){
+		std::size_t posComment = line.find('#');
+		if(posComment != std::string::npos)
+			line = line.substr(0, posComment);
+		std::istringstream lineStream(line);
+		std::string token;
+		while(lineStream >> token){
+			std::string specialChar("{};");
+			size_t end = 0, start = 0;
+			while((end = token.find_first_of(specialChar, start)) != std::string::npos){
+				if(end > start)
+					tokens.push_back(token.substr(start, end-start));
+				tokens.push_back(token.substr(end, 1));
+				start = end + 1;
+			}
+			if(start < token.size()){
+				tokens.push_back(token.substr(start));
+			}
 		}
 	}
-	return it;
+	tokenIndex = 0;
 }
 
-bool Config::contextBlock(std::vector<std::string>& line){
-
-	CONTEXT_TYPE = HTTP;
-	std::vector<std::string>::iterator it = line.begin();
-	if((*it) == "http" && (*(it+1)) == "{" && line.size() == 2){
-		std::cout << "Http Block\n";
-		return true;
+void Config::parse(void){
+	Block block;
+	block.name = "root";
+	while(tokenIndex < tokens.size()){
+		block.children.push_back(parseDirective());
 	}
-	return false;
-}
-
-bool Config::serverBlock(std::vector<std::string>& line){
-
-	CONTEXT_TYPE = UNDEF;
-	std::vector<std::string>::iterator it = line.begin();
-	if((*it) == "server" && (*(it+1)) == "{" && line.size() == 2){
-		std::cout << "Server Block\n";
-		return true;
-	}
-	return false;
-}
-
-Config::itDeque Config::getServerConfig(itDeque begin, itDeque end){
-	itDeque it = begin;
-	while(it < end){
-		// Check last character
-		std::vector<std::string> str = (*it);
-		// std::string last = str.back();
-		// if(last.back() == ';')
-		// 	throw MissingLasCharacter();
-		// Needs to not have the last character checked when first one is location
-
-		// Check directive name
-		std::cout << "HERE\n" ;
-		if(str.front().c_str() == LOCATION){
-			it = parseLocation(it, end);
-		} else if (str.front().c_str() == LISTEN){
-			parseDirective(LISTEN, str);
-		} else if (str.front().c_str() == INDEX){
-			parseDirective(INDEX, str);
-		} else if (str.front().c_str() == LOCATION){
-			parseDirective(LOCATION, str);
-		} else if (str.front().c_str() == HOSTNAME){
-			parseDirective(HOSTNAME, str);
-		} else if (str.front().c_str() == SERVERNAME){
-			parseDirective(SERVERNAME, str);
-		} else if (str.front().c_str() == PORT){
-			parseDirective(PORT, str);
-		} else if (str.front().c_str() == ROOT){
-			parseDirective(ROOT, str);
-		} else {
-			// throw WrongDirective();
-		}
-
-
-		// std::cout << "--------------------------" << std::endl;
-		// for(std::vector<std::string>::const_iterator it = (*begin).begin(); it < (*begin).end(); it++){
-		// 	std::cout << "[" << (*it) << "] ";
-		// }
-		// std::cout << "\n";
-		begin++;
-	}
-	return ++end;
-}
-
-
-Config::itDeque Config::parseLocation(itDeque it, itDeque end){
-	std::cout << (*it).front();
-	end++;
-	return it++;
-}
-
-void Config::parseDirective(const char* dir, std::vector<std::string> str){
-	std::cout << dir << "\n";
-	std::cout << str.front();
-}
-
-
-
-
-
-Config::itDeque Config::endBlock(itDeque it, itDeque end){
 	int i = 0;
-	while(it < end){
-		for(std::vector<std::string>::iterator sit = (*it).begin(); sit < (*it).end(); sit++){
-			if((*sit) == "{")
-				i++;
-			else if((*sit) == "}")
-				i--;
+	printDirective(block, i);
+	parseConfig(block);
+}
+
+void Config::parseConfig(Block& block){
+	if(block.name == "http"|| block.name == "root"){
+		for(size_t i = 0; i < block.children.size(); i++)
+			parseConfig(block.children[i]);
+	} else if(block.name == "server"){
+		if(block.methods.size() != 0)
+			throw WrongMethods();
+		Server serv;
+		assignDirective(block.parameters, serv);
+		// assignMethods(block.methods, serv);
+		// for(size_t i = 0; i < block.children.size(); i++)
+		// 	assignChildren(block.children[i], serv);
+		
+	}
+}
+
+void Config::assignDirective(std::vector<std::string>& parameters, Server& s){
+	for(size_t i = 0; i < parameters.size(); i++){
+		if(parameters[i] == "index"){
+			i += fillDirective(s._listen, parameters, ++i);
+		} else if(parameters[i] == "server_name"){
+			i += fillDirective(s._server_name, parameters, ++i);
 		}
-		if(i == 0)
-			return it;
+	}
+}
+
+size_t Config::fillDirective(std::vector<std::string>& s, std::vector<std::string>& parameters, size_t start){
+	size_t count = start;
+	while(count < parameters.size() && parameters[count] != ";"){
+		s.push_back(parameters[count++]);
+	}
+	return ++count - start;
+}
+
+// void Config::assignDirective(std::vector<std::string>& parameters, server& s){
+// 	for(size_t j = 0; j < parameters.size(); j++){
+// 		for(size_t i = 0; i < TOTAL; i++){
+// 			if(parameters[j] == Directives[i]){
+// 				j++;
+// 				while(parameters[j][parameters[j].size() - 1] != ';'){
+					
+// 				}
+// 				break;
+// 			}
+// 		}
+// 	}
+// }
+
+// void Config::assignMethods(std::vector<std::string>& methods, server& s){
+
+// }
+
+// void Config::assignChildren(Block& children, server& s){
+
+// }
+
+Block Config::parseDirective(){
+	Block block;
+	block.name = tokens[tokenIndex++];
+	while (tokenIndex < tokens.size() && tokens[tokenIndex] != "{") {
+		block.methods.push_back(tokens[tokenIndex++]);
+	}
+	if (tokenIndex < tokens.size() && tokens[tokenIndex] == "{") {
+		tokenIndex++;
+		while (tokenIndex < tokens.size() && tokens[tokenIndex] != "}") {
+			if(isBlock())
+				block.children.push_back(parseDirective());
+			else
+				block.parameters.push_back(tokens[tokenIndex++]);
+		}
+		if (tokenIndex < tokens.size())
+			tokenIndex++;
+	} else if (tokenIndex < tokens.size() && tokens[tokenIndex] == ";") {
+		tokenIndex++;
+	}
+	return block;
+}
+
+bool Config::isBlock(){
+	size_t it = tokenIndex;
+	while(it < tokens.size()){
+		if(tokens[it][tokens[it].size() - 1] == '{')
+			return true;
+		else if(tokens[it][tokens[it].size() - 1] == ';')
+			return false;
 		it++;
 	}
-	throw WrongBracket();
-	return it;
+	throw MissingLastCharacter();
+	return false;
 }
 
-void Config::checkBrackets(const strDeque& directives) const {
-	int bracket = 0;
-	int lineBracket = 0;
-	for(citDeque it\
-		=directives.begin(); it < directives.end(); it++)
-	{
-		for(std::vector<std::string>::const_iterator it2 = (*it).begin(); it2 < (*it).end(); it2++)
-		{
-			if(*it2 == "{"){
-				bracket++;
-				lineBracket++;
-			} else if(*it2 == "}"){
-				bracket--;
-				lineBracket++;
-			}
-			if(bracket < 0) {
-				throw WrongBracket();
-			}
-		}
-		if(lineBracket > 1)
-			throw WrongBracket();
-		lineBracket = 0;
-	}
-	if(bracket != 0)
-		throw WrongBracket();
-}
 
 void Config::checkFilename(const char* configFile){
 	std::string conf(configFile);
@@ -216,4 +154,23 @@ void Config::checkFilename(const char* configFile){
 		return;
 	}
 	return;
+}
+
+void Config::printDirective(Block& block, int depth = 0){
+	std::string indent(depth * 2, ' ');
+	std::cout << indent << block.name;
+	std::cout << indent <<"Methods: ";
+	for (size_t i = 0; i < block.methods.size(); ++i) {
+		std::cout << " " << block.methods[i];
+	}
+	std::cout << std::endl;
+	std::cout <<  indent << "Parametres: ";
+	for (size_t i = 0; i < block.parameters.size(); ++i) {
+		std::cout << " " << block.parameters[i];
+	}
+	std::cout << std::endl;
+	std::cout <<  indent << "Children: ";
+	for (size_t i = 0; i < block.children.size(); ++i) {
+		printDirective(block.children[i], ++depth);
+	}
 }

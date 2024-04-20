@@ -12,6 +12,7 @@ void	init(char *argv){
 		// Check the config file or default path to the config folder
 	try{
 		Config serverConf(argv);
+		serverConf.parse();
 	}catch(Config::ParsingExceptions& e){
 		std::cout << e.what() << argv << std::endl;
 		exit(1);

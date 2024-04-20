@@ -3,63 +3,73 @@
 
 #include "Webserv.hpp"
 
-enum C_TYPES{
-	HTTP,
-	UNDEF
-};
+// enum {
+// 	INDEX,
+// 	LISTEN,
+// 	LOCATION,
+// 	HOSTNAME,
+// 	SERVERNAME,
+// 	CLIENTSIZE,
+// 	PORT,
+// 	ROOT,
+// 	TOTAL
+// };
 
-
-const char INDEX[] = "index";
-const char LISTEN[] = "listen";
-const char LOCATION[] = "location";
-const char HOSTNAME[] = "host_name";
-const char SERVERNAME[] = "server_name";
-const char PORT[] = "port";
-const char ROOT[] = "root";
-
+// const char* Directives[TOTAL] = {
+// 	"index",
+// 	"listen",
+// 	"location",
+// 	"host_name",
+// 	"server_name",
+// 	"client_max_body_size",
+// 	"port",
+// 	"root"
+// };
 
 typedef struct s_server{
-	C_TYPES						_type;
-	std::string					_port;
+	std::vector<std::string>	_listen;
 	std::vector<std::string>	_location;
-	std::string					_server_name;
-	std::string					_root;
-	std::string					_include;
-	std::string					_timeout;
-	std::string					_cgiTieout;
-}	server;
+	std::vector<std::string>	_server_name;
+	std::vector<std::string>	_root;
+	std::vector<std::string>	_client_max_body_size;
+	std::vector<std::string>	_include;
+	std::vector<std::string>	_timeout;
+	std::vector<std::string>	_cgiTieout;
+}	Server;
+
+struct Block {
+	std::string name;
+	std::vector<std::string> methods;
+	std::vector<std::string> parameters;
+	std::vector<Block> children;
+};
 
 class Config {
-private:
-	typedef std::deque<std::vector<std::string> > strDeque;
-	typedef std::deque<std::vector<std::string> >::iterator itDeque;
-	typedef std::deque<std::vector<std::string> >::const_iterator citDeque;
-	Config();
 
+private:
+	Config();
+	std::vector<Server>	_servers;
+	std::vector<std::string> tokens;
+	size_t	tokenIndex;
 
 public:
-
-	std::vector<server>	_servers;
-
+	Block	block;
 	Config(const char* configFile);
 	~Config();
 	Config(const Config& c);
 	Config& operator=(const Config& c);
 
-	// Parser main functions
-	void getConfig(strDeque directives);
-	itDeque getServerConfig(itDeque begin, itDeque end);
-	itDeque parseBlock(itDeque& it, itDeque& it_end, strDeque& directives);
-	itDeque parseLocation(itDeque it, itDeque end);
-	void parseDirective(const char* dir, std::vector<std::string> str);
-
-	// Helper Functions
+	void parse(void);
+	Block parseDirective();
 	void checkFilename(const char* configFile);
-	void checkBrackets(const strDeque& directives) const;
-	bool lineComment(const std::string line) const;
-	itDeque endBlock(itDeque it, itDeque end);
-	bool contextBlock(std::vector<std::string>& line);
-	bool serverBlock(std::vector<std::string>& line);
+	void printDirective(Block& block, int i);
+	bool isBlock(void);
+	void parseConfig(Block& block);
+	// void assignMethods(std::vector<std::string>& methods, Server& s);
+	void assignDirective(std::vector<std::string>& parameters, Server& s);
+	// void assignChildren(Block& children, Server& s);
+
+	size_t fillDirective(std::vector<std::string>& s, std::vector<std::string>& parameters, size_t i);
 
 	// Exception functions
 	class ParsingExceptions : public std::exception{};
@@ -88,7 +98,12 @@ public:
 			const char* what() const throw(){
 				return "Directive non valid: ";}
 	};
-	class MissingLasCharacter : public ParsingExceptions{
+	class WrongMethods : public ParsingExceptions{
+		public:
+			const char* what() const throw(){
+				return "Non valid methods found: ";}
+	};
+	class MissingLastCharacter : public ParsingExceptions{
 		public:
 			const char* what() const throw(){
 				return "Invalid ending, missing ;";}
