@@ -39,6 +39,8 @@ void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
 		if (line[0] == '\r')
 			break;
 		size_t colon = line.find(':');
+		if (colon == std::string::npos)
+			throw HttpRequestParserException(HttpRequestParserException::HEADER_ERR);
 		line.erase(line.end() - 1);
 		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
 	}
@@ -49,6 +51,8 @@ void HttpRequest::parseBody(std::istringstream &inputRequest) {
 		if (line[1] == '\r')
 			continue;
 		_body.append(line);
+		if (!inputRequest.eof())
+			_body.append("\n");
 	}
 }
 
@@ -82,7 +86,7 @@ bool HttpRequest::isHttpVersion() const {
 bool HttpRequest::validContentLength() const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
 	if (it != _headers.end()) {
-		if (_body.length() + 1 != static_cast<size_t>(std::atol(it->second.c_str())))
+		if (_body.length() != static_cast<size_t>(std::atol(it->second.c_str())))
 			return false;
 	}
 	return true;

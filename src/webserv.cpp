@@ -55,12 +55,13 @@ void doStuff(int socket_client){
 	size_t	bytes_read;
 
 	bytes_read = read(socket_client, sb, buffer);
-	std::cout << "Request:\n" << sb << std::endl;
-	std::cout << "END REQUEST" << std::endl;
+	std::cout << "REQUEST:\n" << sb << std::endl;
+	std::cout << "END REQUEST" << std::endl << std::endl;
 	std::string	input(sb);
 	std::istringstream request(input);
 	try {
 		HttpRequest httpRequest(request);
+		std::cout << "REQUEST REQUEST" << std::endl;
 		std::cout << "[" << httpRequest.getMethod() << "]" << std::endl;
 		std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
 		std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
@@ -75,6 +76,7 @@ void doStuff(int socket_client){
 		else
 			std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
 		std::cout << "status code " << httpRequest.getStatusCode() << std::endl;
+		std::cout << "END REQUEST REQUEST" << std::endl;
 	} catch (const HttpRequestParserException &e) {
 		std::cerr << "Error: bad HTTP request" << e.what() << std::endl;
 	}
@@ -97,7 +99,7 @@ void doStuff(int socket_client){
 	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nContent-Length: [length in bytes of the image]\r\n\r\n";
 	write(socket_client, pading.c_str(), pading.size());
 	write(socket_client, sb, bytes_read);
-	std::cout << "\n" << sb << "\n" << std::endl;
+	// std::cout << "\n" << sb << "\n" << std::endl;
 	close(socket_client);
 	fclose(fd);
 	std::cout << "Closed connection" << std::endl;
