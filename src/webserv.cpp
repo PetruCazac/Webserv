@@ -1,4 +1,6 @@
- #include "Webserv.hpp"
+
+#include "Webserv.hpp"
+#include <sstream>
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
@@ -56,26 +58,37 @@ void doStuff(int socket_client){
 	std::cout << "Request:\n" << sb << std::endl;
 	std::cout << "END REQUEST" << std::endl;
 	std::string	input(sb);
-	s_httpRequest httpRequest = parseHttpRequest(input);
-	std::cout << "Method: [" << httpRequest.method << "]" << std::endl;
-    std::cout << "URI: [" << httpRequest.uri << "]" << std::endl;
-    std::cout << "HTTP Version: [" << httpRequest.httpVersion << "]" << std::endl;
-    for (std::map<std::string, std::string>::iterator it = httpRequest.headers.begin(); it != httpRequest.headers.end(); it++) {
-        std::cout << "Header: [" << it->first << ", " << it->second << "]" << std::endl;
-    }
-    std::cout << "Body: [" << httpRequest.body << "]" << std::endl;
-    std::cout << "Status code: " << httpRequest.statusCode << std::endl;
+	std::istringstream request(input);
+	try {
+		HttpRequest httpRequest(request);
+		std::cout << "[" << httpRequest.getMethod() << "]" << std::endl;
+		std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+		std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
+		std::map<std::string, std::string> headers = httpRequest.getHeaders();
+		if (headers.size() == 0)
+			std::cout << "[no headers]" << std::endl;
+		for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+			std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
+		}
+		if (httpRequest.getBody().size() == 0)
+			std::cout << "[no body]" << std::endl;
+		else
+			std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
+		std::cout << "status code " << httpRequest.getStatusCode() << std::endl;
+	} catch (const HttpRequestParserException &e) {
+		std::cerr << "Error: bad HTTP request" << e.what() << std::endl;
+	}
 	fflush(stdout);
 	bzero(sb, buffer);
-	std::cout << "here" << std::endl;
-	// FILE *fd = fopen("test/index.html", "r");
-	FILE *fd = NULL;
-	// int i = 0;
-	// if (i == 0){
-	// 	fd = fopen("test/test1.html", "r");
-	// 	i++;
-	// }else
-		fd = fopen("test/images.jpeg", "r");
+	// std::cout << "here" << std::endl;
+	FILE *fd = fopen("test/index.html", "r");
+	// FILE *fd = NULL;
+	// // int i = 0;
+	// // if (i == 0){
+	// // 	fd = fopen("test/test1.html", "r");
+	// // 	i++;
+	// // }else
+	// 	fd = fopen("test/images.jpeg", "r");
 
 	if (fd == NULL)
 		std::cout << "file open error"  << std::endl;

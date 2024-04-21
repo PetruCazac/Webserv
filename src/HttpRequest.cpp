@@ -1,142 +1,113 @@
 
 #include "HttpRequest.hpp"
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <cstdlib>
-#include <map>
+#include <iostream>			// std::cout
+#include <string>			// std::string
+#include <sstream>			// std::istringstream
+#include <map>				// std::map
 
-s_httpRequest parseHttpRequest(std::string &inputRequest) {
-	s_httpRequest httpRequest;
-	e_errors err = NO_ERR;
-
-	httpRequest.statusCode = 200;
-	size_t size = inputRequest.size();
-	size_t crlfStart = inputRequest.find("\r\n");
-	err = parseStartLine(httpRequest, inputRequest, crlfStart);
-	if (err != NO_ERR) {
-		return error(httpRequest.statusCode, err), httpRequest;
-	}
-	size_t crlfHeader = crlfStart + 2;
-	err = parseHeaders(httpRequest, inputRequest, crlfHeader, size);
-	if (err != NO_ERR) {
-		return error(httpRequest.statusCode, err), httpRequest;
-	}
-	size_t crlfBody = inputRequest.find("\r\n\r\n");
-	err = parseBody(httpRequest, inputRequest, crlfBody, size);
-	if (err != NO_ERR) {
-		return error(httpRequest.statusCode, err), httpRequest;
-	}
-	return httpRequest;
+HttpRequest::HttpRequest(std::istringstream &inputRequest) {
+	std::string startLine;
+	std::getline(inputRequest, startLine);
+	if (startLine.empty() || startLine[0] == '\r')
+		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
+	parseStartLine(startLine);
+	parseHeaders(inputRequest);
+	parseBody(inputRequest);
+	if (!validContentLength())
+		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+	_statusCode = 200;
 }
 
-e_errors parseStartLine(s_httpRequest &httpRequest, std::string &inputRequest, size_t crlfStart) {
-	if (crlfStart != std::string::npos) {
-		std::string startLine = inputRequest.substr(0, crlfStart);
-		size_t methodEnd = startLine.find(' ');
-		if (methodEnd != std::string::npos) {
-			httpRequest.method = startLine.substr(0, methodEnd);
-			size_t urlEnd = startLine.find(' ', methodEnd + 1);
-			if (urlEnd != std::string::npos) {
-				httpRequest.uri = startLine.substr(methodEnd + 1, urlEnd - methodEnd - 1);
-				if (httpRequest.uri.size() == 0 || httpRequest.uri[0] != '/') {
-					return URI_ERR;
-				}
-			} else {
-				return URI_ERR;
-			}
-			httpRequest.httpVersion = startLine.substr(urlEnd + 1, crlfStart);
-			if (!ifHttpVersion(httpRequest.httpVersion)) {
-				return HTTPVERSION_ERR;
-			}
-		} else {
-			return METHOD_ERR;
-		}
-	}
-	else {
-		return METHOD_ERR;
-	}
-	if (!ifMethod(httpRequest.method)) {
-		return METHOD_ERR;
-	}
-	return NO_ERR;
+void HttpRequest::parseStartLine(std::string &line) {
+	std::string method;
+	std::istringstream startLine(line);
+	startLine >> method;
+	startLine >> _uri;
+	startLine >> _httpVersion;
+	_method = methodToEnum(method);
+	if (_method == NONE)
+		throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
+	if (_uri.size() == 0 || _uri[0] != '/')
+		throw HttpRequestParserException(HttpRequestParserException::URI_ERR);
+	if (!isHttpVersion())
+		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
 }
 
-e_errors parseHeaders(s_httpRequest &httpRequest, std::string &inputRequest, size_t &crlfHeader, size_t size) {
-	while (crlfHeader != std::string::npos && crlfHeader < size) {
-		size_t lineEnd = inputRequest.find("\r\n", crlfHeader);
-		if (lineEnd != std::string::npos && lineEnd - crlfHeader > 0) {
-			std::string line = inputRequest.substr(crlfHeader, lineEnd - crlfHeader);
-			size_t colon = line.find(':');
-			if (colon != std::string::npos) {
-				httpRequest.headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
-			} else {
-				return HEADER_ERR;
-			}
-			crlfHeader = lineEnd + 2;
-		} else {
+void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
+	std::string line;
+	while (std::getline(inputRequest, line)) {
+		if (line[0] == '\r')
 			break;
-		}
+		size_t colon = line.find(':');
+		line.erase(line.end() - 1);
+		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
 	}
-	if (httpRequest.headers.size() == 0) {
-		return HEADER_ERR;
-	}
-	return NO_ERR;
 }
 
-e_errors parseBody(s_httpRequest &httpRequest, std::string &inputRequest, size_t crlfBody, size_t size) {
-	if (crlfBody != std::string::npos) {
-		httpRequest.body = inputRequest.substr(crlfBody + 4, size - crlfBody - 6);
-	} else {
-		;
+void HttpRequest::parseBody(std::istringstream &inputRequest) {
+	for (std::string line; getline(inputRequest, line);) {
+		if (line[1] == '\r')
+			continue;
+		_body.append(line);
 	}
-	if (!ifValidBody(httpRequest)) {
-		return CONTENT_LENGTH_ERR;
-	}
-	return NO_ERR;
 }
 
-bool ifMethod(std::string &method) {
-	std::string validMethods[7] = {"GET", "HEAD", "POST", "PUT", "TRACE", "OPTIONS", "DELETE"};
-	for (int i = 0; i != 7; i++) {
-		if (method == validMethods[i]) {
-			return true;
-		}
+e_HttpMethods HttpRequest::methodToEnum(std::string &method) const {
+	Methods validMethods[] = {
+		{"GET", GET},
+		{"HEAD", HEAD},
+		{"POST", POST},
+		{"PUT", PUT},
+		{"TRACE", TRACE},
+		{"OPTIONS", OPTIONS},
+		{"DELETE", DELETE}
+	};
+	const int size = sizeof(validMethods) / sizeof(validMethods[0]);
+	for (int i = 0; i != size; i++) {
+		if (method == validMethods[i].name)
+			return validMethods[i].method;
 	}
-	return false;
+	return NONE;
 }
 
-bool ifHttpVersion(std::string &httpVersion) {
+bool HttpRequest::isHttpVersion() const {
 	std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
 	for (int i = 0; i != 5; i++) {
-		if (httpVersion == validHttpVersions[i]) {
+		if (_httpVersion == validHttpVersions[i])
 			return true;
-		}
 	}
 	return false;
 }
 
-bool ifValidBody(s_httpRequest &httpRequest) {
-	std::map<std::string, std::string>::iterator it = httpRequest.headers.find("Content-Length");
-	if (it != httpRequest.headers.end()) {
-		if (httpRequest.body.length() + 2 != static_cast<size_t>(std::atol(it->second.c_str()))) {
+bool HttpRequest::validContentLength() const {
+	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
+	if (it != _headers.end()) {
+		if (_body.length() + 1 != static_cast<size_t>(std::atol(it->second.c_str())))
 			return false;
-		}
 	}
 	return true;
 }
 
-void error(int &statusCode, e_errors err) {
-	statusCode = 400;
-	std::cerr << "Error: bad HTTP request";
-	switch (err)
-	{
-		case METHOD_ERR: std::cerr << ": method" << std::endl; break;
-		case URI_ERR: std::cerr << ": URI" << std::endl; break;
-		case HTTPVERSION_ERR: std::cerr << ": HTTP version" << std::endl; break;
-		case HEADER_ERR: std::cerr << ": header" << std::endl; break;
-		// case BODY_ERR: std::cerr << ": body" << std::endl; break;
-		case CONTENT_LENGTH_ERR: std::cerr << ": content-length mismatch" << std::endl; break;
-		default: std::cerr << std::endl; break;
-	}
+e_HttpMethods HttpRequest::getMethod() const {
+	return _method;
+}
+
+std::string HttpRequest::getUri() const {
+	return _uri;
+}
+
+std::string HttpRequest::getHttpVersion() const {
+	return _httpVersion;
+}
+
+std::map<std::string, std::string> HttpRequest::getHeaders() const {
+	return _headers;
+}
+
+std::string HttpRequest::getBody() const {
+	return _body;
+}
+
+int HttpRequest::getStatusCode() const {
+	return _statusCode;
 }
