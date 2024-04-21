@@ -23,7 +23,6 @@ struct Methods {
 
 struct HttpRequestParserException {
 	enum ErrorsHttpRequest {
-		NO_ERR,
 		START_LINE_ERR,
 		METHOD_ERR,
 		URI_ERR,
@@ -57,15 +56,14 @@ private:
 	std::string _httpVersion;
 	std::map<std::string, std::string> _headers;
 	std::string _body;
-	int _statusCode;
 
 	void parseStartLine(std::string &line);
 	void parseHeaders(std::istringstream &inputRequest);
 	void parseBody(std::istringstream &inputRequest);
 
 	e_HttpMethods methodToEnum(std::string &method) const;
-	bool isHttpVersion() const;
-	bool validContentLength() const;
+	bool isValidHttpVersion() const;
+	bool isValidContentLength() const;
 
 public:
 	HttpRequest(std::istringstream &inputRequest);
@@ -75,7 +73,6 @@ public:
 	std::string getHttpVersion() const;
 	std::map<std::string, std::string> getHeaders() const;
 	std::string getBody() const;
-	int getStatusCode() const;
 };
 
 #endif // HTTPREQUEST_HPP

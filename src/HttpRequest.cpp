@@ -13,9 +13,8 @@ HttpRequest::HttpRequest(std::istringstream &inputRequest) {
 	parseStartLine(startLine);
 	parseHeaders(inputRequest);
 	parseBody(inputRequest);
-	if (!validContentLength())
+	if (!isValidContentLength())
 		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
-	_statusCode = 200;
 }
 
 void HttpRequest::parseStartLine(std::string &line) {
@@ -29,7 +28,7 @@ void HttpRequest::parseStartLine(std::string &line) {
 		throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
 	if (_uri.size() == 0 || _uri[0] != '/')
 		throw HttpRequestParserException(HttpRequestParserException::URI_ERR);
-	if (!isHttpVersion())
+	if (!isValidHttpVersion())
 		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
 }
 
@@ -74,7 +73,7 @@ e_HttpMethods HttpRequest::methodToEnum(std::string &method) const {
 	return NONE;
 }
 
-bool HttpRequest::isHttpVersion() const {
+bool HttpRequest::isValidHttpVersion() const {
 	std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
 	for (int i = 0; i != 5; i++) {
 		if (_httpVersion == validHttpVersions[i])
@@ -83,7 +82,7 @@ bool HttpRequest::isHttpVersion() const {
 	return false;
 }
 
-bool HttpRequest::validContentLength() const {
+bool HttpRequest::isValidContentLength() const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
 	if (it != _headers.end()) {
 		if (_body.length() != static_cast<size_t>(std::atol(it->second.c_str())))
@@ -110,8 +109,4 @@ std::map<std::string, std::string> HttpRequest::getHeaders() const {
 
 std::string HttpRequest::getBody() const {
 	return _body;
-}
-
-int HttpRequest::getStatusCode() const {
-	return _statusCode;
 }

@@ -37,7 +37,6 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 		std::cout << "[no body]" << std::endl;
 	else
 		std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
-	std::cout << "status code " << httpRequest.getStatusCode() << std::endl;
 }
 
 void	init(char **argc){
