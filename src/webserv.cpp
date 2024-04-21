@@ -1,12 +1,18 @@
 
 #include "Webserv.hpp"
+#include <string>
 #include <sstream>
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
 
-void printMethod(e_HttpMethods method) { // delete
+struct Methods { // delete
+	std::string name;
+	HttpMethods method;
+};
+
+void printMethod(HttpMethods method) { // delete
 	Methods methods[] = {
 		{"GET", GET},
 		{"HEAD", HEAD},
@@ -96,7 +102,7 @@ void doStuff(int socket_client){
 		printHttpRequest(httpRequest);
 		std::cout << "END REQUEST REQUEST" << std::endl;
 	} catch (const HttpRequestParserException &e) {
-		std::cerr << "Error: bad HTTP request" << e.what() << std::endl;
+		std::cerr << "Error: bad HTTP request: " << e.what() << std::endl;
 	}
 	fflush(stdout);
 	bzero(sb, buffer);

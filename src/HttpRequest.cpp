@@ -5,57 +5,12 @@
 #include <sstream>			// std::istringstream
 #include <map>				// std::map
 
-HttpRequest::HttpRequest(std::istringstream &inputRequest) {
-	std::string startLine;
-	std::getline(inputRequest, startLine);
-	if (startLine.empty() || startLine[0] == '\r')
-		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
-	parseStartLine(startLine);
-	parseHeaders(inputRequest);
-	parseBody(inputRequest);
-	if (!isValidContentLength())
-		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
-}
+struct Methods {
+	std::string name;
+	HttpMethods method;
+};
 
-void HttpRequest::parseStartLine(std::string &line) {
-	std::string method;
-	std::istringstream startLine(line);
-	startLine >> method;
-	startLine >> _uri;
-	startLine >> _httpVersion;
-	_method = methodToEnum(method);
-	if (_method == NONE)
-		throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
-	if (_uri.size() == 0 || _uri[0] != '/')
-		throw HttpRequestParserException(HttpRequestParserException::URI_ERR);
-	if (!isValidHttpVersion())
-		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
-}
-
-void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
-	std::string line;
-	while (std::getline(inputRequest, line)) {
-		if (line[0] == '\r')
-			break;
-		size_t colon = line.find(':');
-		if (colon == std::string::npos)
-			throw HttpRequestParserException(HttpRequestParserException::HEADER_ERR);
-		line.erase(line.end() - 1);
-		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
-	}
-}
-
-void HttpRequest::parseBody(std::istringstream &inputRequest) {
-	for (std::string line; getline(inputRequest, line);) {
-		if (line[1] == '\r')
-			continue;
-		_body.append(line);
-		if (!inputRequest.eof())
-			_body.append("\n");
-	}
-}
-
-e_HttpMethods HttpRequest::methodToEnum(std::string &method) const {
+static HttpMethods methodToEnum(const std::string &method) {
 	Methods validMethods[] = {
 		{"GET", GET},
 		{"HEAD", HEAD},
@@ -70,7 +25,47 @@ e_HttpMethods HttpRequest::methodToEnum(std::string &method) const {
 		if (method == validMethods[i].name)
 			return validMethods[i].method;
 	}
-	return NONE;
+	throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
+}
+
+HttpRequest::HttpRequest(std::istringstream &inputRequest) {
+	std::string startLine;
+	std::getline(inputRequest, startLine);
+	if (startLine.empty() || startLine[0] == '\r')
+		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
+	parseStartLine(startLine);
+	parseHeaders(inputRequest);
+	std::ostringstream body;
+	body << inputRequest.rdbuf();
+	_body = body.str();
+	if (!isValidContentLength())
+		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+}
+
+void HttpRequest::parseStartLine(const std::string &line) {
+	std::string method;
+	std::istringstream startLine(line);
+	startLine >> method;
+	startLine >> _uri;
+	startLine >> _httpVersion;
+	_method = methodToEnum(method);
+	if (_uri.size() == 0 || _uri[0] != '/')
+		throw HttpRequestParserException(HttpRequestParserException::URI_ERR);
+	if (!isValidHttpVersion())
+		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
+}
+
+void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
+	std::string line;
+	while (std::getline(inputRequest, line)) {
+		if (line.size() != 0 && line[0] == '\r')
+			break;
+		size_t colon = line.find(':');
+		if (colon == std::string::npos)
+			throw HttpRequestParserException(HttpRequestParserException::HEADER_ERR);
+		line.erase(line.end() - 1);
+		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
+	}
 }
 
 bool HttpRequest::isValidHttpVersion() const {
@@ -91,22 +86,22 @@ bool HttpRequest::isValidContentLength() const {
 	return true;
 }
 
-e_HttpMethods HttpRequest::getMethod() const {
+HttpMethods HttpRequest::getMethod() const {
 	return _method;
 }
 
-std::string HttpRequest::getUri() const {
+const std::string &HttpRequest::getUri() const {
 	return _uri;
 }
 
-std::string HttpRequest::getHttpVersion() const {
+const std::string &HttpRequest::getHttpVersion() const {
 	return _httpVersion;
 }
 
-std::map<std::string, std::string> HttpRequest::getHeaders() const {
+const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 	return _headers;
 }
 
-std::string HttpRequest::getBody() const {
+const std::string &HttpRequest::getBody() const {
 	return _body;
 }

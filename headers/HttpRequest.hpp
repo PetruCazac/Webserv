@@ -2,11 +2,10 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include <iostream>
+#include <string>
 #include <map>
 
-typedef enum HttpMethods {
-	NONE,
+enum HttpMethods {
 	GET,
 	HEAD,
 	POST,
@@ -14,11 +13,6 @@ typedef enum HttpMethods {
 	TRACE,
 	OPTIONS,
 	DELETE
-}	e_HttpMethods;
-
-struct Methods {
-	std::string name;
-	e_HttpMethods method;
 };
 
 struct HttpRequestParserException {
@@ -38,41 +32,39 @@ struct HttpRequestParserException {
 
 	const char *what() const throw() {
 		switch (err) {
-			case START_LINE_ERR: return ": start line is empty"; break;
-			case METHOD_ERR: return ": bad method"; break;
-			case URI_ERR: return ": bad URI"; break;
-			case HTTP_VERSION_ERR: return ": bad HTTP version"; break;
-			case HEADER_ERR: return ": bad header"; break;
-			case CONTENT_LENGTH_ERR: return ": content-length mismatch"; break;
-			default: return ": unknown error"; break;
+			case START_LINE_ERR: return "start line is empty"; break;
+			case METHOD_ERR: return "bad method"; break;
+			case URI_ERR: return "bad URI"; break;
+			case HTTP_VERSION_ERR: return "bad HTTP version"; break;
+			case HEADER_ERR: return "bad header"; break;
+			case CONTENT_LENGTH_ERR: return "content-length mismatch"; break;
+			default: return "unknown error"; break;
 		}
 	}
 };
 
 class HttpRequest {
 private:
-	e_HttpMethods _method;
+	HttpMethods _method;
 	std::string _uri;
 	std::string _httpVersion;
 	std::map<std::string, std::string> _headers;
 	std::string _body;
 
-	void parseStartLine(std::string &line);
+	void parseStartLine(const std::string &line);
 	void parseHeaders(std::istringstream &inputRequest);
-	void parseBody(std::istringstream &inputRequest);
 
-	e_HttpMethods methodToEnum(std::string &method) const;
 	bool isValidHttpVersion() const;
 	bool isValidContentLength() const;
 
 public:
 	HttpRequest(std::istringstream &inputRequest);
 
-	e_HttpMethods getMethod() const;
-	std::string getUri() const;
-	std::string getHttpVersion() const;
-	std::map<std::string, std::string> getHeaders() const;
-	std::string getBody() const;
+	HttpMethods getMethod() const;
+	const std::string &getUri() const;
+	const std::string &getHttpVersion() const;
+	const std::map<std::string, std::string> &getHeaders() const;
+	const std::string &getBody() const;
 };
 
 #endif // HTTPREQUEST_HPP
