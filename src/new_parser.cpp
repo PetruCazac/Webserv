@@ -4,22 +4,22 @@
 #include <iostream>			// std::cout
 #include <string>			// std::string
 #include <sstream>			// std::istringstream
-// #include <algorithm>
-// #include <cstdlib>
-// #include <map>
+#include <map>				// std::map
 
 HttpRequest::HttpRequest(std::istringstream &inputRequest) {
-	std::string line;
-	std::getline(inputRequest, line);
-	if (line.empty() || line[0] == '\r')
+	std::string startLine;
+	std::getline(inputRequest, startLine);
+	if (startLine.empty() || startLine[0] == '\r')
 		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
-	parseStartLine(line);
-	// parseHeaders(inputRequest);
-	// parseBody(inputRequest);
+	parseStartLine(startLine);
+	parseHeaders(inputRequest);
+	parseBody(inputRequest);
+	if (!validContentLength())
+		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+	_statusCode = 200;
 }
 
 void HttpRequest::parseStartLine(std::string &line) {
-	_method = NONE;
 	std::string method;
 	std::istringstream startLine(line);
 	startLine >> method;
@@ -34,13 +34,24 @@ void HttpRequest::parseStartLine(std::string &line) {
 		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
 }
 
-// void parseHeaders(std::istringstream &inputRequest) {
-// 	(void)inputRequest;
-// }
+void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
+	std::string line;
+	while (std::getline(inputRequest, line)) {
+		if (line[0] == '\r')
+			break;
+		size_t colon = line.find(':');
+		line.erase(line.end() - 1);
+		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
+	}
+}
 
-// void parseBody(std::istringstream &inputRequest) {
-// 	(void)inputRequest;
-// }
+void HttpRequest::parseBody(std::istringstream &inputRequest) {
+	for (std::string line; getline(inputRequest, line);) {
+		if (line[1] == '\r')
+			continue;
+		_body.append(line);
+	}
+}
 
 e_HttpMethods HttpRequest::methodToEnum(std::string &method) const {
 	Methods validMethods[] = {
@@ -67,6 +78,15 @@ bool HttpRequest::isHttpVersion() const {
 			return true;
 	}
 	return false;
+}
+
+bool HttpRequest::validContentLength() const {
+	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
+	if (it != _headers.end()) {
+		if (_body.length() + 1 != static_cast<size_t>(std::atol(it->second.c_str())))
+			return false;
+	}
+	return true;
 }
 
 e_HttpMethods HttpRequest::getMethod() const {

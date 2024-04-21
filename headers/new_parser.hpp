@@ -29,7 +29,7 @@ struct HttpRequestParserException {
 		METHOD_ERR,
 		URI_ERR,
 		HTTP_VERSION_ERR,
-		HEADER_ERR,
+		// HEADER_ERR,
 		// BODY_ERR,
 		CONTENT_LENGTH_ERR
 	};
@@ -45,7 +45,7 @@ struct HttpRequestParserException {
 			case METHOD_ERR: return ": bad method"; break;
 			case URI_ERR: return ": bad URI"; break;
 			case HTTP_VERSION_ERR: return ": bad HTTP version"; break;
-			case HEADER_ERR: return ": bad header(s)"; break;
+			// case HEADER_ERR: return ": bad header(s)"; break;
 			// case BODY_ERR: return ": body"; break;
 			case CONTENT_LENGTH_ERR: return ": content-length mismatch"; break;
 			default: return "unknown error"; break;
@@ -63,11 +63,12 @@ private:
 	int _statusCode;
 
 	void parseStartLine(std::string &line);
-	// void parseHeaders(std::istringstream &inputRequest);
-	// void parseBody(std::istringstream &inputRequest);
+	void parseHeaders(std::istringstream &inputRequest);
+	void parseBody(std::istringstream &inputRequest);
 
 	e_HttpMethods methodToEnum(std::string &method) const;
 	bool isHttpVersion() const;
+	bool validContentLength() const;
 
 public:
 	HttpRequest(std::istringstream &inputRequest);
