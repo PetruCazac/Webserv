@@ -45,7 +45,7 @@ struct HttpRequestParserException {
 			case HTTP_VERSION_ERR: return ": bad HTTP version"; break;
 			case HEADER_ERR: return ": bad header"; break;
 			case CONTENT_LENGTH_ERR: return ": content-length mismatch"; break;
-			default: return "unknown error"; break;
+			default: return ": unknown error"; break;
 		}
 	}
 };
