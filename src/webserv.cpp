@@ -6,17 +6,48 @@ typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
 
+void printMethod(e_HttpMethods method) { // delete
+	Methods methods[] = {
+		{"GET", GET},
+		{"HEAD", HEAD},
+		{"POST", POST},
+		{"PUT", PUT},
+		{"TRACE", TRACE},
+		{"OPTIONS", OPTIONS},
+		{"DELETE", DELETE}
+	};
+	const int size = sizeof(methods) / sizeof(methods[0]);
+	for (int i = 0; i != size; i++) {
+		if (method == methods[i].method)
+			std::cout << "[" << methods[i].name << "]" << std::endl;
+	}
+}
+
+void printHttpRequest(HttpRequest &httpRequest) { // delete
+	printMethod(httpRequest.getMethod());
+	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
+	std::map<std::string, std::string> headers = httpRequest.getHeaders();
+	if (headers.size() == 0)
+		std::cout << "[no headers]" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
+	}
+	if (httpRequest.getBody().size() == 0)
+		std::cout << "[no body]" << std::endl;
+	else
+		std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
+}
+
 void	init(char **argc){
 	if (!argc)
 		std::cerr << "ERROR" << std::endl;
 		// Check the config file or default path to the config folder
 }
 
-
 int initializeServer(){
 	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	SA_IN s_address;
-
 
 	std::cout << server_socket << std::endl;
 	if(server_socket != -1){
@@ -55,31 +86,31 @@ void doStuff(int socket_client){
 	size_t	bytes_read;
 
 	bytes_read = read(socket_client, sb, buffer);
-	std::cout << "Request:\n" << sb << std::endl;
-	std::cout << "END REQUEST" << std::endl;
+	std::cout << "REQUEST:\n" << sb << std::endl;
+	std::cout << "END REQUEST" << std::endl << std::endl;
 	std::string	input(sb);
-	s_httpRequest httpRequest = parseHttpRequest(input);
+	std::istringstream request(input);
+	try {
+		HttpRequest httpRequest(request);
 	// std::istringstream input(sb);
 	// HttpRequest httpRequest = parseHttpRequest(input);
-	std::cout << "Method: [" << httpRequest.method << "]" << std::endl;
-    std::cout << "URI: [" << httpRequest.uri << "]" << std::endl;
-    std::cout << "HTTP Version: [" << httpRequest.httpVersion << "]" << std::endl;
-    for (std::map<std::string, std::string>::iterator it = httpRequest.headers.begin(); it != httpRequest.headers.end(); it++) {
-        std::cout << "Header: [" << it->first << ", " << it->second << "]" << std::endl;
-    }
-    std::cout << "Body: [" << httpRequest.body << "]" << std::endl;
-    std::cout << "Status code: " << httpRequest.statusCode << std::endl;
+		std::cout << "REQUEST REQUEST" << std::endl;
+		printHttpRequest(httpRequest);
+		std::cout << "END REQUEST REQUEST" << std::endl;
+	} catch (const HttpRequestParserException &e) {
+		std::cerr << "Error: bad HTTP request" << e.what() << std::endl;
+	}
 	fflush(stdout);
 	bzero(sb, buffer);
-	std::cout << "here" << std::endl;
-	// FILE *fd = NULL;
+	// std::cout << "here" << std::endl;
 	FILE *fd = fopen("test/index.html", "r");
-	// int i = 0;
-	// if (i == 0){
-	// 	fd = fopen("test/test1.html", "r");
-	// 	i++;
-	// }else
-		// fd = fopen("test/images.jpeg", "r");
+	// FILE *fd = NULL;
+	// // int i = 0;
+	// // if (i == 0){
+	// // 	fd = fopen("test/test1.html", "r");
+	// // 	i++;
+	// // }else
+	// 	fd = fopen("test/images.jpeg", "r");
 
 	if (fd == NULL)
 		std::cout << "file open error"  << std::endl;
@@ -88,10 +119,10 @@ void doStuff(int socket_client){
 	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\n\r\n";
 	write(socket_client, pading.c_str(), pading.size());
 	write(socket_client, sb, bytes_read);
-	std::cout << "\n" << sb << "\n" << std::endl;
+	// std::cout << "\n" << sb << "\n" << std::endl;
 	close(socket_client);
 	fclose(fd);
-	std::cout << "Closed connection" << std::endl;
+	std::cout << "Closed connection" << std::endl << std::endl;
 	return;
 }
 
@@ -107,4 +138,3 @@ int main(int argc, char** argv){
 	close(socket_server);
 	return 0;
 }
-
