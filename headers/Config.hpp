@@ -46,12 +46,12 @@ public:
 
 	// Exception functions
 	class ParsingExceptions : public std::exception{};
-	class OpenException: public ParsingExceptions{
+	class OpenException : public ParsingExceptions{
 		public:
 			const char* what() const throw(){
 				return "Error opening config file: ";}
 	};
-	class EmptyConfFile: public ParsingExceptions{
+	class EmptyConfFile : public ParsingExceptions{
 		public:
 			const char* what() const throw(){
 				return "Error: empty config file ";}

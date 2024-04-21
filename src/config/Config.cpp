@@ -74,8 +74,8 @@ void Config::parse(void){
 	while(tokenIndex < tokens.size()){
 		block.children.push_back(parseDirective());
 	}
-	int i = 0;
-	printDirective(block, i);
+	// int i = 0;
+	// printDirective(block, i);
 	parseConfig(block);
 	std::cout << "\n"<< std::endl;
 	printConfig();
