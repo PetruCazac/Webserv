@@ -1,4 +1,4 @@
-#include "Logger.hpp"
+// #include "Logger.hpp"
 
 int main() {
     Logger::setLogLevel(DEBUG);
@@ -8,6 +8,3 @@ int main() {
     LOG_WARNING("This is a warning message.");
     return 0;
 }
-
-
-void secondaryFunc(){}
