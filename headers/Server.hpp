@@ -2,6 +2,7 @@
 #define SERVER_HPP
 
 #include "Socket.hpp"
+#include "Http.hpp"
 
 class Server {
     public:
@@ -16,6 +17,7 @@ class Server {
         std::vector<pollfd_t> _poll_fd_vector;
         ServerConfiguration *_server_config;
         std::map<int, Socket*> _socket_map;
+        std::map<int, Http*> _http_sessions;
 };
 
 #endif

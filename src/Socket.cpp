@@ -16,7 +16,7 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
 }
 
 
-Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd) {
+Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL) {
     _socket_type = CLIENT;
     _socket_status = RECEIVE;
 }
@@ -137,7 +137,7 @@ bool Socket::sendtoClient(const std::string* data, size_t len) {
 //     return true;
 // }
 
-bool Socket::receive(int client_fd, std::string* buffer, size_t buffer_size, int& bytes_read) {
+bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read) {
     bytes_read = recv(client_fd, buffer, buffer_size, 0);
     if (bytes_read == -1) {
         LOG_ERROR("Failed to receive data.");
