@@ -4,6 +4,7 @@
 #include <string>			// std::string
 #include <sstream>			// std::istringstream
 #include <map>				// std::map
+#include <vector>			// std::vector
 
 struct Methods {
 	std::string name;
@@ -28,16 +29,14 @@ static HttpMethods methodToEnum(const std::string &method) {
 	throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
 }
 
-HttpRequest::HttpRequest(std::istringstream &inputRequest) {
+HttpRequest::HttpRequest(std::istream &inputRequest) {
 	std::string startLine;
 	std::getline(inputRequest, startLine);
 	if (startLine.empty() || startLine[0] == '\r')
 		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
 	parseStartLine(startLine);
 	parseHeaders(inputRequest);
-	std::ostringstream body;
-	body << inputRequest.rdbuf();
-	_body = body.str();
+	readBody(inputRequest);
 	if (!isValidContentLength())
 		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
 }
@@ -55,7 +54,7 @@ void HttpRequest::parseStartLine(const std::string &line) {
 		throw HttpRequestParserException(HttpRequestParserException::HTTP_VERSION_ERR);
 }
 
-void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
+void HttpRequest::parseHeaders(std::istream &inputRequest) {
 	std::string line;
 	while (std::getline(inputRequest, line)) {
 		if (line.size() != 0 && line[0] == '\r')
@@ -66,6 +65,12 @@ void HttpRequest::parseHeaders(std::istringstream &inputRequest) {
 		line.erase(line.end() - 1);
 		_headers.insert(std::make_pair(line.substr(0, colon), line.substr(colon + 2)));
 	}
+}
+
+void HttpRequest::readBody(std::istream &inputRequest) {
+	inputRequest >> std::noskipws;
+	std::vector<uint8_t> body((std::istream_iterator<uint8_t>(inputRequest)), std::istream_iterator<uint8_t>());
+	_body = body;
 }
 
 bool HttpRequest::isValidHttpVersion() const {
@@ -80,7 +85,7 @@ bool HttpRequest::isValidHttpVersion() const {
 bool HttpRequest::isValidContentLength() const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
 	if (it != _headers.end()) {
-		if (_body.length() != static_cast<size_t>(std::atol(it->second.c_str())))
+		if (_body.size() != static_cast<size_t>(std::atol(it->second.c_str())))
 			return false;
 	}
 	return true;
@@ -102,6 +107,6 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 	return _headers;
 }
 
-const std::string &HttpRequest::getBody() const {
+const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
 }

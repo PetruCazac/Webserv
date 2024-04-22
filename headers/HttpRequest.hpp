@@ -4,6 +4,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 enum HttpMethods {
 	GET,
@@ -49,22 +50,23 @@ private:
 	std::string _uri;
 	std::string _httpVersion;
 	std::map<std::string, std::string> _headers;
-	std::string _body;
+	std::vector<uint8_t> _body;
 
 	void parseStartLine(const std::string &line);
-	void parseHeaders(std::istringstream &inputRequest);
+	void parseHeaders(std::istream &inputRequest);
+	void readBody(std::istream &inputRequest);
 
 	bool isValidHttpVersion() const;
 	bool isValidContentLength() const;
 
 public:
-	HttpRequest(std::istringstream &inputRequest);
+	HttpRequest(std::istream &inputRequest);
 
 	HttpMethods getMethod() const;
 	const std::string &getUri() const;
 	const std::string &getHttpVersion() const;
 	const std::map<std::string, std::string> &getHeaders() const;
-	const std::string &getBody() const;
+	const std::vector<uint8_t> &getBody() const;
 };
 
 #endif // HTTPREQUEST_HPP

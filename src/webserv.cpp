@@ -39,10 +39,17 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
-	if (httpRequest.getBody().size() == 0)
+	std::vector<uint8_t> body = httpRequest.getBody();
+	if (body.size() == 0)
 		std::cout << "[no body]" << std::endl;
-	else
-		std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
+	else {
+		std::cout << "[";
+		for (std::vector<uint8_t>::iterator it = body.begin(); it != body.end(); it++) {
+			std::cout << *it;
+		}
+		std::cout << "]";
+		std::cout << std::endl;
+	}
 }
 
 void	init(char **argc){
