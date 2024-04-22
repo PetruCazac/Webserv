@@ -1,14 +1,31 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include "Webserv.hpp"
+#include <iostream>
+#include <stdio.h>
+#include <strings.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <vector>
+#include <map>
+#include <deque>
+#include <fstream>
+#include <sstream>
+
+
+// #include "Webserv.hpp"
+#include "Directives.hpp"
+#include "Logger.hpp"
 
 typedef struct s_server{
 	std::string name;
 	std::map<std::string, std::vector<std::string> >	_directives;
 	std::map<std::string, std::vector<std::string> >	_location_directives;
 	std::vector<std::string>	_location_methods;
-}	Server;
+}	ServerDirectives;
 
 struct Block {
 	std::string name;
@@ -17,21 +34,26 @@ struct Block {
 	std::vector<Block> children;
 };
 
+// Static Function
+std::string translateDirectives(enum Parser directive);
+Parser getParseLevel(const std::string *str);
+
+
 class Config {
 
 private:
-	Config();
-	std::vector<Server>	_servers;
+	std::vector<ServerDirectives>	_serversConfig;
 	std::vector<std::string> tokens;
 	size_t	tokenIndex;
 
 public:
+	Config();
 	Block	block;
-	Config(const char* configFile);
 	~Config();
 	Config(const Config& c);
 	Config& operator=(const Config& c);
 
+	void tokenize(const char* configFile);
 	void parse(void);
 	Block parseDirective();
 	void checkFilename(const char* configFile);

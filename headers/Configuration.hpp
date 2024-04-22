@@ -19,17 +19,9 @@
 typedef struct addrinfo addrinfo_t;
 typedef struct sockaddr_storage sockaddr_storage_t;
 typedef struct pollfd pollfd_t;
-typedef struct ConfigurationFile {
-    // Add Constructor that calls function to read from file
-    std::string server_name;
-    std::string listening_port;
-    size_t max_data_size_incoming;
-    LogLevel log_level;
-    std::string log_filename;
-} ConfigurationFile;
 
 typedef struct SocketConfiguration {
-    SocketConfiguration(const ConfigurationFile& config_file);
+    // SocketConfiguration(const ConfigurationFile& config_file);
     SocketConfiguration(std::string server_name, std::string listening_port, size_t max_data_size_incoming) : server_name(server_name), listening_port(listening_port), max_data_size_incoming(max_data_size_incoming){}
     std::string server_name;
     std::string listening_port;
@@ -37,6 +29,11 @@ typedef struct SocketConfiguration {
 } SocketConfiguration;
 
 typedef struct ServerConfiguration {
+    std::string server_name;
+    std::string listening_port;
+    size_t max_data_size_incoming;
+    LogLevel log_level;
+    std::string log_filename;
     SocketConfiguration* server_socket_config;
 } ServerConfiguration;
 #endif

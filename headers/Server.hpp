@@ -3,10 +3,12 @@
 
 #include "Socket.hpp"
 #include "Http.hpp"
+#include "Config.hpp"
+#include "Directives.hpp"
 
 class Server {
     public:
-        Server(ServerConfiguration *input_config);
+        Server(ServerDirectives *input_config);
         ~Server();
 
         bool addListeningSocket();
@@ -18,6 +20,7 @@ class Server {
         ServerConfiguration *_server_config;
         std::map<int, Socket*> _socket_map;
         std::map<int, Http*> _http_sessions;
+        void convert_directives_to_config(ServerDirectives *input_config);
 };
 
 #endif

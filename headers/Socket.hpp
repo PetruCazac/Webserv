@@ -21,7 +21,7 @@ enum SocketType {
 };
 
 enum SocketStatus {
-    LISTEN,
+    LISTEN_STATE,
     RECEIVE,
     WAIT_FOR_RESPONSE
 };
@@ -47,6 +47,8 @@ class Socket {
         addrinfo_t *_addr_info;
         SocketType _socket_type;
         SocketStatus _socket_status;
+        // Add a pointer to HttpRequest
+        // Add a pointer to HttpResponse
 
 
 };

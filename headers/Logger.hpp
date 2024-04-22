@@ -28,6 +28,7 @@ class Logger {
          const std::string &file);
         static void setLogLevel(LogLevel level);
         static void setLogFilename(const std::string &file_name);
+        static LogLevel getLogLevel(const std::string &str);
     private:
         static std::string translateLogLevel(LogLevel level);
         static LogLevel& getLogLevel();
