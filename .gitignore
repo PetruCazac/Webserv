@@ -32,6 +32,6 @@ obj/
 *.out
 *.app
 webserv
-
 .vscode/
 .DS_Store/
+.vscode/settings.json
