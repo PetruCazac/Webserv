@@ -36,6 +36,7 @@ struct Block {
 
 // Static Function
 std::string translateDirectives(enum Parser directive);
+Parser getParseLevel(const std::string *str);
 
 
 class Config {

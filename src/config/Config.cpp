@@ -7,6 +7,54 @@ Config& Config::operator=(const Config&){
 	return *this;
 }
 
+std::string translateDirectives(enum Parser directive){
+	switch(directive) {
+		case INDEX:
+			return 	"index";
+		case LISTEN:
+			return "listen";
+		case LOCATION:
+			return "location";
+		case HOSTNAME:
+			return "host_name";
+		case SERVERNAME:
+			return "server_name";
+		case CLIENTSIZE:
+			return "client_max_body_size";
+		case PORT:
+			return "port";
+		case ROOT:
+			return "root";
+		case TRY_FILES:
+			return "try_files";
+		case LOG_FILE:
+			return "log_file";
+		case MAX_DATA_SIZE_INC:
+			return "ma_data_size_incoming";
+		case LOG_LEVEL:
+			return "log_level";
+		case TOTAL:
+			return NULL;
+	}
+	return NULL;
+}
+
+Parser getParseLevel(const std::string& str){
+    if (str == "index") return INDEX;
+    else if (str == "listen") return LISTEN;
+    else if (str == "location") return LOCATION;
+    else if (str == "host_name") return HOSTNAME;
+    else if (str == "server_name") return SERVERNAME;
+    else if (str == "client_max_body_size") return CLIENTSIZE;
+    else if (str == "port") return PORT;
+    else if (str == "root") return ROOT;
+    else if (str == "try_files") return TRY_FILES;
+    else if (str == "log_file") return LOG_FILE;
+    else if (str == "ma_data_size_incoming") return MAX_DATA_SIZE_INC;
+    else if (str == "log_level") return LOG_LEVEL;
+    else return TOTAL;
+}
+
 void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
 	checkFilename(configFile);
@@ -94,12 +142,9 @@ void Config::parseConfig(Block& block){
 bool Config::isValidDirective(std::string str){
 	if(str.size() == 0)
 		throw MissingDirective();
-	for(size_t i = 0; i < TOTAL; i++){
-		if(str == Directives[i])
-			return true;
-	}
-	throw WrongDirective();
-	return false;
+	if (getParseLevel(str) == TOTAL)
+		throw WrongDirective();
+	return true;
 }
 
 Block Config::parseDirective(){
@@ -215,36 +260,4 @@ void Config::printDirective(Block& block, int depth = 0){
 			printDirective(block.children[i], depth + 2);
 		}
 	}
-}
-
-std::string translateDirectives(enum Parser directive){
-	switch(directive) {
-		case INDEX:
-			return 	"index";
-		case LISTEN:
-			return "listen";
-		case LOCATION:
-			return "location";
-		case HOSTNAME:
-			return "host_name";
-		case SERVERNAME:
-			return "server_name";
-		case CLIENTSIZE:
-			return "client_max_body_size";
-		case PORT:
-			return "port";
-		case ROOT:
-			return "root";
-		case TRY_FILES:
-			return "try_files";
-		case LOG_FILE:
-			return "log_file";
-		case MAX_DATA_SIZE_INC:
-			return "ma_data_size_incoming";
-		case LOG_LEVEL:
-			return "log_level";
-		case TOTAL:
-			return NULL;
-	}
-	return NULL;
 }
