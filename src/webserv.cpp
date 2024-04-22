@@ -1,9 +1,60 @@
 #include "Webserv.hpp"
 #include "HttpRequest.hpp"
+#include <string>
+#include <sstream>
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
+
+// To be put in a class ////////////////////////////////////////
+
+struct Methods { // delete
+	std::string name;
+	HttpMethods method;
+};
+
+void printMethod(HttpMethods method) { // delete
+	Methods methods[] = {
+		{"GET", GET},
+		{"HEAD", HEAD},
+		{"POST", POST},
+		{"PUT", PUT},
+		{"TRACE", TRACE},
+		{"OPTIONS", OPTIONS},
+		{"DELETE", DELETE}
+	};
+	const int size = sizeof(methods) / sizeof(methods[0]);
+	for (int i = 0; i != size; i++) {
+		if (method == methods[i].method)
+			std::cout << "[" << methods[i].name << "]" << std::endl;
+	}
+}
+
+void printHttpRequest(HttpRequest &httpRequest) { // delete
+	printMethod(httpRequest.getMethod());
+	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
+	std::map<std::string, std::string> headers = httpRequest.getHeaders();
+	if (headers.size() == 0)
+		std::cout << "[no headers]" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
+	}
+	std::vector<uint8_t> body = httpRequest.getBody();
+	if (body.size() == 0)
+		std::cout << "[no body]" << std::endl;
+	else {
+		std::cout << "[";
+		for (std::vector<uint8_t>::iterator it = body.begin(); it != body.end(); it++) {
+			std::cout << *it;
+		}
+		std::cout << "]";
+		std::cout << std::endl;
+	}
+}
+
+////////////////////////////////////////////////////////////////
 
 int initializeServer(){
 	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,29 +97,29 @@ void doStuff(int socket_client){
 	size_t	bytes_read;
 
 	bytes_read = read(socket_client, sb, buffer);
-	std::cout << "Request:\n" << sb << std::endl;
-	std::cout << "END REQUEST" << std::endl;
+	std::cout << "REQUEST:\n" << sb << std::endl;
+	std::cout << "END REQUEST" << std::endl << std::endl;
 	std::string	input(sb);
-	s_httpRequest httpRequest = parseHttpRequest(input);
-	std::cout << "Method: [" << httpRequest.method << "]" << std::endl;
-    std::cout << "URI: [" << httpRequest.uri << "]" << std::endl;
-    std::cout << "HTTP Version: [" << httpRequest.httpVersion << "]" << std::endl;
-    for (std::map<std::string, std::string>::iterator it = httpRequest.headers.begin(); it != httpRequest.headers.end(); it++) {
-        std::cout << "Header: [" << it->first << ", " << it->second << "]" << std::endl;
-    }
-    std::cout << "Body: [" << httpRequest.body << "]" << std::endl;
-    std::cout << "Status code: " << httpRequest.statusCode << std::endl;
+	std::istringstream request(input);
+	try {
+		HttpRequest httpRequest(request);
+		std::cout << "REQUEST REQUEST" << std::endl;
+		printHttpRequest(httpRequest);
+		std::cout << "END REQUEST REQUEST" << std::endl;
+	} catch (const HttpRequestParserException &e) {
+		std::cerr << "Error: bad HTTP request: " << e.what() << std::endl;
+	}
 	fflush(stdout);
 	bzero(sb, buffer);
-	std::cout << "here" << std::endl;
-	// FILE *fd = fopen("test/index.html", "r");
-	FILE *fd = NULL;
-	// int i = 0;
-	// if (i == 0){
-	// 	fd = fopen("test/test1.html", "r");
-	// 	i++;
-	// }else
-		fd = fopen("test/images.jpeg", "r");
+	// std::cout << "here" << std::endl;
+	FILE *fd = fopen("test/index.html", "r");
+	// FILE *fd = NULL;
+	// // int i = 0;
+	// // if (i == 0){
+	// // 	fd = fopen("test/test1.html", "r");
+	// // 	i++;
+	// // }else
+	// 	fd = fopen("test/images.jpeg", "r");
 
 	if (fd == NULL)
 		std::cout << "file open error"  << std::endl;
@@ -77,16 +128,12 @@ void doStuff(int socket_client){
 	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nContent-Length: [length in bytes of the image]\r\n\r\n";
 	write(socket_client, pading.c_str(), pading.size());
 	write(socket_client, sb, bytes_read);
-	std::cout << "\n" << sb << "\n" << std::endl;
+	// std::cout << "\n" << sb << "\n" << std::endl;
 	close(socket_client);
 	fclose(fd);
-	std::cout << "Closed connection" << std::endl;
+	std::cout << "Closed connection" << std::endl << std::endl;
 	return;
 }
-
-
-
-
 
 int main(int argc, char** argv){
 	if(argc != 2)
@@ -112,4 +159,3 @@ int main(int argc, char** argv){
 	// close(socket_server);
 	return 0;
 }
-
