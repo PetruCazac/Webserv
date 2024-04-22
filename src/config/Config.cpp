@@ -243,7 +243,6 @@ std::string translateDirectives(enum Parser directive){
 			return "ma_data_size_incoming";
 		case LOG_LEVEL:
 			return "log_level";
-		case TOTAL:
-			return NULL;
+		return NULL;
 	}
 }
