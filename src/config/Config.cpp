@@ -216,3 +216,34 @@ void Config::printDirective(Block& block, int depth = 0){
 		}
 	}
 }
+
+std::string translateDirectives(enum Parser directive){
+	switch(directive) {
+		case INDEX:
+			return 	"index";
+		case LISTEN:
+			return "listen";
+		case LOCATION:
+			return "location";
+		case HOSTNAME:
+			return "host_name";
+		case SERVERNAME:
+			return "server_name";
+		case CLIENTSIZE:
+			return "client_max_body_size";
+		case PORT:
+			return "port";
+		case ROOT:
+			return "root";
+		case TRY_FILES:
+			return "try_files";
+		case LOG_FILE:
+			return "log_file";
+		case MAX_DATA_SIZE_INC:
+			return "ma_data_size_incoming";
+		case LOG_LEVEL:
+			return "log_level";
+		case TOTAL:
+			return NULL;
+	}
+}

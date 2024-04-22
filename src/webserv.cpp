@@ -98,6 +98,9 @@ int main(int argc, char** argv){
 		std::cout << e.what() << argv << std::endl;
 		exit(1);
 	}
+	// for (std::vector<ServerDirectives>::iterator it = serverConf._serversConfig.begin(); it != serverConf._serversConfig.end(); ++it){
+		
+	// }
 	// int socket_server = initializeServer();
 	// while (true){
 	// 	int socket_client = acceptClient(socket_server);

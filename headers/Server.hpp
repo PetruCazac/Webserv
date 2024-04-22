@@ -4,6 +4,7 @@
 #include "Socket.hpp"
 #include "Http.hpp"
 #include "Config.hpp"
+#include "Directives.hpp"
 
 class Server {
     public:

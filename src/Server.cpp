@@ -8,14 +8,14 @@ Server::Server(ServerDirectives *input_config) {
 
 
 void Server::convert_directives_to_config(ServerDirectives *input_config) {
-    _server_config->server_name = input_config->_directives[Directives[SERVERNAME]][0];
-    _server_config->listening_port = input_config->_directives[Directives[LISTEN]][0];
-    std::stringstream str_tmp(input_config->_directives[Directives[MAX_DATA_SIZE_INC]][0]);
+    _server_config->server_name = input_config->_directives[translateDirectives(SERVERNAME)][0];
+    _server_config->listening_port = input_config->_directives[translateDirectives(LISTEN)][0];
+    std::stringstream str_tmp(input_config->_directives[translateDirectives(MAX_DATA_SIZE_INC)][0]);
     size_t tmp;
     str_tmp >> tmp;
     _server_config->max_data_size_incoming = tmp;
-    _server_config->log_filename = input_config->_directives[Directives[LOG_FILE]][0];
-    _server_config->log_level = Logger::getLogLevel(input_config->_directives[Directives[LOG_LEVEL]][0]);
+    _server_config->log_filename = input_config->_directives[translateDirectives(LOG_FILE)][0];
+    _server_config->log_level = Logger::getLogLevel(input_config->_directives[translateDirectives(LOG_LEVEL)][0]);
 }
 
 void Server::run() {
