@@ -1,6 +1,8 @@
 
 // include this file in Make and webserv
 
+#include "../headers/getMethod.hpp"
+#include <iostream>
 #include <stdio.h>
 
 // FILE *open_file_by_uri(const std::string &uri) {
@@ -14,11 +16,21 @@
 // 	}
 // }
 
-// FILE *getMethod(s_httpRequest &httpRequest) {
-// 	FILE *file = NULL;
-// 	if (httpRequest.method != "GET") {
-// 		std::cout << "not get method" << std::endl;
-// 	}
-// 	file = fopen()
-// 	return file;
-// }
+FILE *openFileByUri(const std::string &uri) {
+	std::string path;
+	std::string query;
+	size_t questionMark = uri.find('?');
+	if (questionMark == std::string::npos)
+		path = uri;
+	else {
+		path = uri.substr(0, questionMark);
+		query = uri.substr(questionMark + 1);
+	}
+	std::cout << "Path: " << path << "; query: " << query << std::endl;
+	if (path == "/")
+		return fopen("test/index.html", "r");
+	// else {
+
+	// }
+	return NULL;
+}

@@ -1,5 +1,7 @@
 
-#include "Webserv.hpp"
+#include "../headers/Webserv.hpp"
+#include "../headers/HttpRequest.hpp"
+#include "../headers/getMethod.hpp"
 #include <string>
 #include <sstream>
 
@@ -99,42 +101,23 @@ void doStuff(int socket_client){
 	size_t	bytes_read;
 
 	bytes_read = read(socket_client, sb, buffer);
-	std::cout << "REQUEST:\n" << sb << std::endl;
-	std::cout << "END REQUEST" << std::endl << std::endl;
 	std::string	input(sb);
 	std::istringstream request(input);
 	try {
 		HttpRequest httpRequest(request);
-	// std::istringstream input(sb);
-	// HttpRequest httpRequest = parseHttpRequest(input);
-		std::cout << "REQUEST REQUEST" << std::endl;
+		std::cout << "REQUEST" << std::endl;
 		printHttpRequest(httpRequest);
-		std::cout << "END REQUEST REQUEST" << std::endl;
+		std::cout << "END REQUEST" << std::endl;
+		FILE *file = openFileByUri(httpRequest.getUri());
+		bzero(sb, buffer);
+		bytes_read = fread(sb, sizeof(unsigned char), buffer, file);
 	} catch (const HttpRequestParserException &e) {
 		std::cerr << "Error: bad HTTP request: " << e.what() << std::endl;
+	} catch (const MethodsException &e) {
+		std::cerr << "Error: " << e.what() << std::endl;
 	}
-	fflush(stdout);
-	bzero(sb, buffer);
-	// std::cout << "here" << std::endl;
-	FILE *fd = fopen("test/index.html", "r");
-	// FILE *fd = NULL;
-	// // int i = 0;
-	// // if (i == 0){
-	// // 	fd = fopen("test/test1.html", "r");
-	// // 	i++;
-	// // }else
-	// 	fd = fopen("test/images.jpeg", "r");
-
-	if (fd == NULL)
-		std::cout << "file open error"  << std::endl;
-	bzero(sb, buffer);
-	bytes_read = fread(sb, sizeof(unsigned char), buffer, fd);
-	std::string pading = "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\n\r\n";
-	write(socket_client, pading.c_str(), pading.size());
 	write(socket_client, sb, bytes_read);
-	// std::cout << "\n" << sb << "\n" << std::endl;
 	close(socket_client);
-	fclose(fd);
 	std::cout << "Closed connection" << std::endl << std::endl;
 	return;
 }
