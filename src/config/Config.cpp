@@ -1,30 +1,5 @@
  #include "Config.hpp"
 
-enum {
-	INDEX,
-	LISTEN,
-	LOCATION,
-	HOSTNAME,
-	SERVERNAME,
-	CLIENTSIZE,
-	PORT,
-	ROOT,
-	TRY_FILES,
-	TOTAL
-};
-
-const char* Directives[TOTAL] = {
-	"index",
-	"listen",
-	"location",
-	"host_name",
-	"server_name",
-	"client_max_body_size",
-	"port",
-	"try_files",
-	"root"
-};
-
 Config::Config(){}
 Config::~Config(){}
 Config::Config(const Config&){}
@@ -32,7 +7,7 @@ Config& Config::operator=(const Config&){
 	return *this;
 }
 
-Config::Config(const char* configFile){
+void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
 	checkFilename(configFile);
 	if(!fs.is_open()){
@@ -88,7 +63,7 @@ void Config::parseConfig(Block& block){
 	} else if(block.name == "server" || block.name == "http"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		Server server;
+		ServerDirectives server;
 		server.name = block.name;
 		for(size_t i = 0; i < block.parameters.size(); i++){
 			if(isValidDirective(block.parameters[i])){
@@ -112,7 +87,7 @@ void Config::parseConfig(Block& block){
 			} else if(block.children[i].name == "server")
 				parseConfig(block.children[i]);
 		}
-			_servers.push_back(server);
+			_serversConfig.push_back(server);
 	}
 }
 
@@ -180,9 +155,9 @@ void Config::checkFilename(const char* configFile){
 
 
 void Config::printConfig(){
-	if(!_servers.empty()){
-		for (size_t i = _servers.size() - 1; ; --i) {
-			const Server& server = _servers[i];
+	if(!_serversConfig.empty()){
+		for (size_t i = _serversConfig.size() - 1; ; --i) {
+			const ServerDirectives& server = _serversConfig[i];
 			std::cout << server.name << ":" << std::endl;
 			// if(!server._directives.empty()){
 				std::cout << "  Directives:" << std::endl;

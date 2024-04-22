@@ -36,7 +36,19 @@ void Logger::log(LogLevel level, const std::string &message, int line,
     }
 }
 
-std::string Logger::translateLogLevel(LogLevel level) {
+LogLevel Logger::getLogLevel(const std::string &str){
+    if (str == "SILENT")
+        return SILENT;
+    else if (str == "WARNING")
+        return WARNING;
+    else if (str == "ERROR")
+        return ERROR;
+    else if (str == "INFO")
+        return INFO;
+    return DEBUG;
+}
+
+std::string Logger::translateLogLevel(enum LogLevel level) {
     switch (level) {
         case INFO:
             return "INFO";
@@ -49,6 +61,7 @@ std::string Logger::translateLogLevel(LogLevel level) {
         default:
             return "UNKNOWN";
     }
+    return "UNKNOWN";
 }
 
 LogLevel& Logger::getLogLevel() {

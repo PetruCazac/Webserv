@@ -1,23 +1,9 @@
 #include "Webserv.hpp"
 #include "HttpRequest.hpp"
-#include "Logger.hpp"
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
-
-void	init(char *argv){
-	if (!argv)
-		std::cerr << "ERROR" << std::endl;
-		// Check the config file or default path to the config folder
-	try{
-		Config serverConf(argv);
-		serverConf.parse();
-	}catch(Config::ParsingExceptions& e){
-		std::cout << e.what() << argv << std::endl;
-		exit(1);
-	}
-}
 
 int initializeServer(){
 	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -101,13 +87,23 @@ void doStuff(int socket_client){
 int main(int argc, char** argv){
 	if(argc != 2)
 		return 1;
-	init(argv[1]);
-	int socket_server = initializeServer();
-	while (true){
-		int socket_client = acceptClient(socket_server);
-		doStuff(socket_client);
+	if (!argv)
+		std::cerr << "ERROR" << std::endl;
+	
+	Config serverConf;
+	try{
+		serverConf.tokenize(argv[1]);
+		serverConf.parse();
+	}catch(Config::ParsingExceptions& e){
+		std::cout << e.what() << argv << std::endl;
+		exit(1);
 	}
-	close(socket_server);
+	// int socket_server = initializeServer();
+	// while (true){
+	// 	int socket_client = acceptClient(socket_server);
+	// 	doStuff(socket_client);
+	// }
+	// close(socket_server);
 	return 0;
 }
 

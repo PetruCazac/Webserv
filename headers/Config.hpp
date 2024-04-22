@@ -1,14 +1,60 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+// #include <iostream>
+// #include <stdio.h>
+// #include <strings.h>
+// #include <sys/socket.h>
+// #include <sys/types.h>
+// #include <netinet/in.h>
+// #include <stdlib.h>
+// #include <unistd.h>
+// #include <vector>
+// #include <map>
+// #include <deque>
+// #include <fstream>
+// #include <sstream>
+
+
 #include "Webserv.hpp"
+
+// enum {
+// 	INDEX,
+// 	LISTEN,
+// 	LOCATION,
+// 	HOSTNAME,
+// 	SERVERNAME,
+// 	CLIENTSIZE,
+// 	PORT,
+// 	ROOT,
+// 	TRY_FILES,
+// 	LOG_FILE,
+// 	MAX_DATA_SIZE_INC,
+// 	LOG_LEVEL,
+// 	TOTAL
+// };
+
+// const char* Directives[TOTAL] = {
+// 	"index",
+// 	"listen",
+// 	"location",
+// 	"host_name",
+// 	"server_name",
+// 	"client_max_body_size",
+// 	"port",
+// 	"try_files",
+// 	"log_file",
+// 	"max_data_size_incoming",
+// 	"log_level",
+// 	"root"
+// };
 
 typedef struct s_server{
 	std::string name;
 	std::map<std::string, std::vector<std::string> >	_directives;
 	std::map<std::string, std::vector<std::string> >	_location_directives;
 	std::vector<std::string>	_location_methods;
-}	Server;
+}	ServerDirectives;
 
 struct Block {
 	std::string name;
@@ -20,18 +66,18 @@ struct Block {
 class Config {
 
 private:
-	Config();
-	std::vector<Server>	_servers;
+	std::vector<ServerDirectives>	_serversConfig;
 	std::vector<std::string> tokens;
 	size_t	tokenIndex;
 
 public:
+	Config();
 	Block	block;
-	Config(const char* configFile);
 	~Config();
 	Config(const Config& c);
 	Config& operator=(const Config& c);
 
+	void tokenize(const char* configFile);
 	void parse(void);
 	Block parseDirective();
 	void checkFilename(const char* configFile);

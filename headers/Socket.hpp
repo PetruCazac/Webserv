@@ -21,7 +21,7 @@ enum SocketType {
 };
 
 enum SocketStatus {
-    LISTEN,
+    LISTEN_STATE,
     RECEIVE,
     WAIT_FOR_RESPONSE
 };
