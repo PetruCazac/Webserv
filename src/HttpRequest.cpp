@@ -74,7 +74,7 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 }
 
 bool HttpRequest::isValidHttpVersion() const {
-	std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
+	static std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
 	for (int i = 0; i != 5; i++) {
 		if (_httpVersion == validHttpVersions[i])
 			return true;
