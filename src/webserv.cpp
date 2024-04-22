@@ -1,12 +1,18 @@
 
 #include "Webserv.hpp"
+#include <string>
 #include <sstream>
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 #define BACKLOG 128
 
-void printMethod(e_HttpMethods method) { // delete
+struct Methods { // delete
+	std::string name;
+	HttpMethods method;
+};
+
+void printMethod(HttpMethods method) { // delete
 	Methods methods[] = {
 		{"GET", GET},
 		{"HEAD", HEAD},
@@ -33,10 +39,17 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
-	if (httpRequest.getBody().size() == 0)
+	std::vector<uint8_t> body = httpRequest.getBody();
+	if (body.size() == 0)
 		std::cout << "[no body]" << std::endl;
-	else
-		std::cout << "[" << httpRequest.getBody() << "]" << std::endl;
+	else {
+		std::cout << "[";
+		for (std::vector<uint8_t>::iterator it = body.begin(); it != body.end(); it++) {
+			std::cout << *it;
+		}
+		std::cout << "]";
+		std::cout << std::endl;
+	}
 }
 
 void	init(char **argc){
@@ -98,7 +111,7 @@ void doStuff(int socket_client){
 		printHttpRequest(httpRequest);
 		std::cout << "END REQUEST REQUEST" << std::endl;
 	} catch (const HttpRequestParserException &e) {
-		std::cerr << "Error: bad HTTP request" << e.what() << std::endl;
+		std::cerr << "Error: bad HTTP request: " << e.what() << std::endl;
 	}
 	fflush(stdout);
 	bzero(sb, buffer);
