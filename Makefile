@@ -1,11 +1,16 @@
 NAME= webserv
 
 CXX= c++
-CXXFLAGS= -Wall -Wextra -std=c++98 -Iheaders -g
-# -Werror
-SRC= main.cpp Logger.cpp Socket.cpp Server.cpp Http.cpp
+CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -g
 
-VPATH= src/:obj/:headers/
+SRC= webserv.cpp HttpRequest.cpp
+SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp Http.cpp
+# Parsing files
+SRC+= Config.cpp
+
+
+
+VPATH= src/:obj/:headers/:http_request_parser/:src/config/
 
 OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
 OBJ_PATH = obj
@@ -23,7 +28,7 @@ clean:
 	rm -rf $(OBJ_PATH)
 
 fclean: clean
-	rm -f webserv
+	/bin/rm -f webserv
 
 re: fclean all
 
