@@ -245,6 +245,6 @@ std::string translateDirectives(enum Parser directive){
 			return "log_level";
 		case TOTAL:
 			return NULL;
-		return NULL;
 	}
+	return NULL;
 }
