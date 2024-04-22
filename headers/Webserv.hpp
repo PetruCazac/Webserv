@@ -19,6 +19,18 @@
 #include "Logger.hpp"
 #include "Config.hpp"
 #include "HttpRequest.hpp"
+#include "Server.hpp"
+
+class Webserv{
+	public:
+		Webserv();
+
+		void parse(std::string& str);
+		void init_servers(std::vector<ServerDirectives>	_serversConfig);
+	private:
+		Config _webserv_config;
+		std::vector<Server> _servers;
+}
 
 // class Http{
 // private:

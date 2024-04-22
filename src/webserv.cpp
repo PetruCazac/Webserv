@@ -84,16 +84,19 @@ void doStuff(int socket_client){
 	return;
 }
 
+
+
+
+
 int main(int argc, char** argv){
 	if(argc != 2)
 		return 1;
 	if (!argv)
 		std::cerr << "ERROR" << std::endl;
-	
-	Config serverConf;
+	Webserv webserv;
 	try{
-		serverConf.tokenize(argv[1]);
-		serverConf.parse();
+		webserv._webserv_config.tokenize(argv[1]);
+		webserv._webserv_config.parse();
 	}catch(Config::ParsingExceptions& e){
 		std::cout << e.what() << argv << std::endl;
 		exit(1);
