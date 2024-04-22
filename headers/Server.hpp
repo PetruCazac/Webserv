@@ -1,14 +1,23 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "Webserv.hpp"
+#include "Socket.hpp"
+#include "Http.hpp"
 
-class Server{
-private:
-	std::map<std::string , std::string>	directive;
+class Server {
+    public:
+        Server(ServerConfiguration *input_config);
+        ~Server();
 
-public:
-	
+        bool addListeningSocket();
+        void socketHandler();
+        void run();
+
+    private:
+        std::vector<pollfd_t> _poll_fd_vector;
+        ServerConfiguration *_server_config;
+        std::map<int, Socket*> _socket_map;
+        std::map<int, Http*> _http_sessions;
 };
 
 #endif
