@@ -26,13 +26,13 @@ void Server::convert_directives_to_config(ServerDirectives *input_config) {
 
 }
 
-void Server::run() {
-    LOG_INFO_NAME("Server running.", _server_config.server_name);
-    LOG_DEBUG_NAME("Server listening on port " + _server_config.listening_port, _server_config.server_name);
-    while (1){
-        socketHandler();
-    }
-}
+// void Server::run() {
+//     LOG_INFO_NAME("Server running.", _server_config.server_name);
+//     LOG_DEBUG_NAME("Server listening on port " + _server_config.listening_port, _server_config.server_name);
+//     while (1){
+//         socketHandler();
+//     }
+// }
 
 Server::~Server() {}
 
@@ -57,54 +57,145 @@ bool Server::addListeningSocket() {
     return true;
 }
 
-void Server::socketHandler() {
-    int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), 100);
-    // need to configure timeout
-    if (n_socket_events == -1) {
-        LOG_ERROR_NAME("Poll failed.", _server_config.server_name);
-        return;
-    }
-    for (size_t i = 0; i < _poll_fd_vector.size(); i++) {
-        if (_poll_fd_vector[i].revents & POLLIN) {
-            if (_socket_map[_poll_fd_vector[i].fd]->getSocketType() == SERVER) {
+// void Server::socketHandler() {
+//     int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), 100);
+//     // need to configure timeout
+//     if (n_socket_events == -1) {
+//         LOG_ERROR_NAME("Poll failed.", _server_config.server_name);
+//         return;
+//     }
+//     for (size_t i = 0; i < _poll_fd_vector.size(); i++) {
+//         if (_poll_fd_vector[i].revents & POLLIN) {
+//             if (_socket_map[_poll_fd_vector[i].fd]->getSocketType() == SERVER) {
+//                 std::string client_ip;
+//                 int connection_fd = _socket_map[_poll_fd_vector[i].fd]->acceptIncoming();
+//                 if (connection_fd == -1) {
+//                     LOG_ERROR_NAME("Failed to accept incoming connection.", _server_config.server_name);
+//                     continue;
+//                 }
+//                 // Add new connection to pollfd vector and map
+//                 pollfd_t poll_fd;
+//                 poll_fd.fd = connection_fd;
+//                 poll_fd.events = POLLIN;
+//                 poll_fd.revents = 0;
+//                 fcntl(poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
+//                 _poll_fd_vector.push_back(poll_fd);
+//                 _socket_map[poll_fd.fd] = new Socket(connection_fd);
+//                 _http_sessions[poll_fd.fd] = new Http();
+//                 LOG_INFO_NAME("Accepted new incoming connection.", _server_config.server_name);
+//             } else {
+//                 char buffer[100000]={0};
+//                 int bytes_read;
+//                 if (!_socket_map[_poll_fd_vector[i].fd]->receive(_poll_fd_vector[i].fd, &buffer, _server_config.server_socket_config->max_data_size_incoming, bytes_read)) {
+//                     LOG_ERROR_NAME("Failed to receive data.", _server_config.server_name);
+//                 }
+//                 if (bytes_read == 0) {
+//                     LOG_DEBUG_NAME("Connection closed.", _server_config.server_name);
+//                     close(_poll_fd_vector[i].fd);
+//                     delete _socket_map[_poll_fd_vector[i].fd];
+//                     _socket_map.erase(_poll_fd_vector[i].fd);
+//                     _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
+//                 } else {
+//                     std::ostringstream oss;
+//                     oss << "Received data: \033[33m" << buffer << "\033[0m\n";
+//                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
+//                 }
+//             }
+//         }
+//     }
+// }
+
+const std::vector<pollfd_t>& Server::getPollFdVector() const {
+    return _poll_fd_vector;
+}
+
+void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
+     for (size_t i = 0; i < active_fds.size(); ++i) {
+            for (size_t j = 0; j < _poll_fd_vector.size(); ++j) {
+                if (_poll_fd_vector[j].fd == active_fds[i].fd) {
+                    switch (_socket_map[_poll_fd_vector[j].fd]->getSocketType()){
+                        case SERVER:
+                            handleServerSocketEvents(active_fds[i]);
+                            break;
+                        case CLIENT:
+                            handleClientSocketEvents(active_fds[i]);
+                            break;
+                    }
+            }
+        }
+     }
+}
+
+void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
+    switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
+        case LISTEN_STATE:
+            if (poll_fd.revents & POLLIN) {
                 std::string client_ip;
-                int connection_fd = _socket_map[_poll_fd_vector[i].fd]->acceptIncoming();
+                int connection_fd = _socket_map[poll_fd.fd]->acceptIncoming();
                 if (connection_fd == -1) {
                     LOG_ERROR_NAME("Failed to accept incoming connection.", _server_config.server_name);
-                    continue;
+                    return;
                 }
-                // Add new connection to pollfd vector and map
-                pollfd_t poll_fd;
-                poll_fd.fd = connection_fd;
-                poll_fd.events = POLLIN;
-                poll_fd.revents = 0;
-                fcntl(poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
-                _poll_fd_vector.push_back(poll_fd);
-                _socket_map[poll_fd.fd] = new Socket(connection_fd);
-                _http_sessions[poll_fd.fd] = new Http();
+                pollfd_t new_poll_fd;
+                new_poll_fd.fd = connection_fd;
+                new_poll_fd.events = POLLIN;
+                new_poll_fd.revents = 0;
+                fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
+                _poll_fd_vector.push_back(new_poll_fd);
+                _socket_map[new_poll_fd.fd] = new Socket(connection_fd);
+                _http_sessions[new_poll_fd.fd] = new Http();
                 LOG_INFO_NAME("Accepted new incoming connection.", _server_config.server_name);
-            } else {
-                char buffer[100000]={0};
-                int bytes_read;
-                if (!_socket_map[_poll_fd_vector[i].fd]->receive(_poll_fd_vector[i].fd, &buffer, _server_config.server_socket_config->max_data_size_incoming, bytes_read)) {
+            }
+            break;
+        case RECEIVE:
+            break;
+        case WAIT_FOR_RESPONSE:
+            break;
+    }
+}
+
+void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
+    switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
+        case RECEIVE:
+            if (poll_fd.revents & POLLIN) {
+                char buffer[100000] = {0};
+                int bytes_read = 0;
+                if (!_socket_map[poll_fd.fd]->receive(poll_fd.fd, &buffer, _server_config.max_data_size_incoming, bytes_read)) {
                     LOG_ERROR_NAME("Failed to receive data.", _server_config.server_name);
+                    return;
                 }
                 if (bytes_read == 0) {
                     LOG_DEBUG_NAME("Connection closed.", _server_config.server_name);
-                    close(_poll_fd_vector[i].fd);
-                    delete _socket_map[_poll_fd_vector[i].fd];
-                    _socket_map.erase(_poll_fd_vector[i].fd);
-                    _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
+                    close(poll_fd.fd);
+                    delete _socket_map[poll_fd.fd];
+                    _socket_map.erase(poll_fd.fd);
+                    _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
                 } else {
                     std::ostringstream oss;
                     oss << "Received data: \033[33m" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
+                    _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
+                    handleClientSocketEvents(poll_fd);
                 }
             }
-        }
-    }
-}
+            break;
+        case WAIT_FOR_RESPONSE:
+        {
+            std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
+            std::stringstream response;
+            response << "HTTP/1.1 200 OK\r\n"
+                     << "Content-Type: text/html\r\n"
+                     << "Content-Length: " << body.length() << "\r\n"
+                     << "\r\n"  // Important: Blank line between headers and body
+                     << body;
 
-const std::vector<pollfd_t>& Server::getPollFdVector() const {
-    return _poll_fd_vector;
+            const std::string& responseStr = response.str(); // Obtain the formatted response as a string
+            _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
+            _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
+            LOG_INFO_NAME("Sent response to client.", _server_config.server_name);
+        }
+            break;
+        case LISTEN_STATE:
+            break;
+    }
 }
