@@ -30,7 +30,7 @@ std::string translateDirectives(enum Parser directive){
 		case LOG_FILE:
 			return "log_file";
 		case MAX_DATA_SIZE_INC:
-			return "ma_data_size_incoming";
+			return "max_data_size_incoming";
 		case LOG_LEVEL:
 			return "log_level";
 		case TOTAL:
@@ -50,7 +50,22 @@ Parser getParseLevel(const std::string& str){
     else if (str == "root") return ROOT;
     else if (str == "try_files") return TRY_FILES;
     else if (str == "log_file") return LOG_FILE;
-    else if (str == "ma_data_size_incoming") return MAX_DATA_SIZE_INC;
+    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
+    else if (str == "log_level") return LOG_LEVEL;
+    else return TOTAL;
+}
+Parser defaultValues(const std::string& str){
+    if (str == "index") return INDEX;
+    else if (str == "80") return LISTEN;
+    else if (str == "location") return LOCATION;
+    else if (str == "host_name") return HOSTNAME;
+    else if (str == "server_name") return SERVERNAME;
+    else if (str == "client_max_body_size") return CLIENTSIZE;
+    else if (str == "port") return PORT;
+    else if (str == "root") return ROOT;
+    else if (str == "try_files") return TRY_FILES;
+    else if (str == "log_file") return LOG_FILE;
+    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
     else if (str == "log_level") return LOG_LEVEL;
     else return TOTAL;
 }
@@ -91,6 +106,13 @@ void Config::tokenize(const char* configFile){
 	tokenIndex = 0;
 }
 
+// void Config::setDefaults(){
+	// loop servers
+	// check directives
+	// if directive non existant, search default value
+
+// }
+
 void Config::parse(void){
 	Block block;
 	block.name = "root";
@@ -100,6 +122,7 @@ void Config::parse(void){
 	// int i = 0;
 	// printDirective(block, i);
 	parseConfig(block);
+	// setDefaults();
 	std::cout << "\n"<< std::endl;
 	printConfig();
 }
@@ -198,17 +221,22 @@ void Config::checkFilename(const char* configFile){
 	return;
 }
 
+std::vector<ServerDirectives> Config::getServerConfig(void){
+	std::vector<ServerDirectives> config = _serversConfig;
+	return config;
+}
+
 
 void Config::printConfig(){
 	if(!_serversConfig.empty()){
-		for (size_t i = _serversConfig.size() - 1; ; --i) {
+		for (size_t i = _serversConfig.size() - 1; ; --i){
 			const ServerDirectives& server = _serversConfig[i];
 			std::cout << server.name << ":" << std::endl;
 			// if(!server._directives.empty()){
 				std::cout << "  Directives:" << std::endl;
-				for (std::map<std::string, std::vector<std::string> >::const_iterator it = server._directives.begin(); it != server._directives.end(); ++it) {
+				for (std::map<std::string, std::vector<std::string> >::const_iterator it = server._directives.begin(); it != server._directives.end(); ++it){
 					std::cout << "    " << it->first << ": ";
-					for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); ++vit) {
+					for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); ++vit){
 						std::cout << *vit << " ";
 					}
 					std::cout << std::endl;
@@ -216,9 +244,9 @@ void Config::printConfig(){
 			// }
 			// if(!server._location_directives.empty()){
 				std::cout << "  Location Directives:";
-				for (std::map<std::string, std::vector<std::string> >::const_iterator lit = server._location_directives.begin(); lit != server._location_directives.end(); ++lit) {
+				for (std::map<std::string, std::vector<std::string> >::const_iterator lit = server._location_directives.begin(); lit != server._location_directives.end(); ++lit){
 					std::cout << "    " << "##"<<  lit->first << "##"<< ": ";
-					for (std::vector<std::string>::const_iterator lvit = lit->second.begin(); lvit != lit->second.end(); ++lvit) {
+					for (std::vector<std::string>::const_iterator lvit = lit->second.begin(); lvit != lit->second.end(); ++lvit){
 						std::cout << "##"<<*lvit << "##"<< " ";
 					}
 					std::cout << std::endl;
@@ -226,7 +254,7 @@ void Config::printConfig(){
 			// }
 			// if(!server._location_methods.empty()){
 			std::cout << "  Location Methods: ";
-			for (std::vector<std::string>::const_iterator mit = server._location_methods.begin(); mit != server._location_methods.end(); ++mit) {
+			for (std::vector<std::string>::const_iterator mit = server._location_methods.begin(); mit != server._location_methods.end(); ++mit){
 				std::cout << "##"<< *mit <<"##";
 			}
 			std::cout << "\n" << std::endl;
@@ -242,21 +270,21 @@ void Config::printDirective(Block& block, int depth = 0){
 	std::cout << indent << block.name << std::endl;
 	if(!block.methods.empty()){
 		std::cout << indent <<"Methods: ";
-		for (size_t i = 0; i < block.methods.size(); ++i) {
+		for (size_t i = 0; i < block.methods.size(); ++i){
 			std::cout << " " << block.methods[i];
 		}
 		std::cout << std::endl;
 	}
 	if(!block.parameters.empty()){
 		std::cout <<  indent << "Directives: ";
-		for (size_t i = 0; i < block.parameters.size(); ++i) {
+		for (size_t i = 0; i < block.parameters.size(); ++i){
 			std::cout << " " << block.parameters[i];
 		}
 		std::cout << std::endl;
 	}
 	if(!block.children.empty()){
 		std::cout <<  indent << "Children: " << std::endl;
-		for (size_t i = 0; i < block.children.size(); ++i) {
+		for (size_t i = 0; i < block.children.size(); ++i){
 			printDirective(block.children[i], depth + 2);
 		}
 	}

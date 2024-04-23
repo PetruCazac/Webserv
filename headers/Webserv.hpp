@@ -23,22 +23,16 @@
 
 class Webserv{
 	public:
-		Webserv();
+		Webserv(char* str);
+		~Webserv();
 
-		void parse(std::string& str);
-		void init_servers(std::vector<ServerDirectives>	_serversConfig);
+		void init_servers(void);
+		void run_servers(void);
+
 	private:
 		Config _webserv_config;
 		std::vector<Server> _servers;
-}
-
-// class Http{
-// private:
-
-
-// public:
-
-
-// };
+		std::map<std::string, std::vector<std::string> > _http_directives;
+};
 
 #endif
