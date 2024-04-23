@@ -61,7 +61,8 @@ class Config {
 		// Helper functions
 		bool isBlock(void);
 		bool isValidDirective(std::string str);
-		
+		void setDefaults(void);
+
 		// Getter Funciton
 		std::vector<ServerDirectives> getServerConfig(void);
 		

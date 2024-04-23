@@ -54,20 +54,21 @@ Parser getParseLevel(const std::string& str){
     else if (str == "log_level") return LOG_LEVEL;
     else return TOTAL;
 }
-Parser defaultValues(const std::string& str){
-    if (str == "index") return INDEX;
-    else if (str == "80") return LISTEN;
-    else if (str == "location") return LOCATION;
-    else if (str == "host_name") return HOSTNAME;
-    else if (str == "server_name") return SERVERNAME;
-    else if (str == "client_max_body_size") return CLIENTSIZE;
-    else if (str == "port") return PORT;
-    else if (str == "root") return ROOT;
-    else if (str == "try_files") return TRY_FILES;
-    else if (str == "log_file") return LOG_FILE;
-    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
-    else if (str == "log_level") return LOG_LEVEL;
-    else return TOTAL;
+std::string& defaultValues(Parser val){
+	std::string str;
+    if (val == INDEX) return str = "index";
+    else if (val == LISTEN) return str = "3333";
+    else if (val == LOCATION) return str = "location";
+    else if (val == HOSTNAME) return str = "host_name";
+    else if (val == SERVERNAME) return str = "server_name";
+    else if (val == CLIENTSIZE) return str = "client_max_body_size";
+    else if (val == PORT) return str = "port";
+    else if (val == ROOT) return str = "root";
+    else if (val == TRY_FILES) return str = "try_files";
+    else if (val == LOG_FILE) return str = "log_file";
+    else if (val == MAX_DATA_SIZE_INC) return str = "max_data_size_incoming";
+    else if (val == LOG_LEVEL) return str = "log_level";
+    else return str = "NOT A DIRECTIVE";
 }
 
 void Config::tokenize(const char* configFile){
@@ -106,12 +107,21 @@ void Config::tokenize(const char* configFile){
 	tokenIndex = 0;
 }
 
-// void Config::setDefaults(){
+void Config::setDefaults(void){
 	// loop servers
+	for(size_t i = _serversConfig.size(); ; i--){
 	// check directives
 	// if directive non existant, search default value
+		if(_serversConfig[i].name == "http"){
+			(_serversConfig[i]._directives.size() !=
+		} else if(_serversConfig[i].name == "server"){
 
-// }
+		}
+		if(i == 0)
+			break;
+	}
+
+}
 
 void Config::parse(void){
 	Block block;

@@ -18,20 +18,20 @@ enum Parser {
 	TOTAL
 };
 
-// const char* Directives[TOTAL] = {
-// 	"index",
-// 	"listen",
-// 	"location",
-// 	"host_name",
-// 	"server_name",
-// 	"client_max_body_size",
-// 	"port",
-// 	"root"
-// 	"try_files",
-// 	"log_file",
-// 	"max_data_size_incoming",
-// 	"log_level",
-// };
+const char* Directives[TOTAL] = {
+	"index",
+	"listen",
+	"location",
+	"host_name",
+	"server_name",
+	"client_max_body_size",
+	"port",
+	"root"
+	"try_files",
+	"log_file",
+	"max_data_size_incoming",
+	"log_level",
+};
 
 
 #endif
