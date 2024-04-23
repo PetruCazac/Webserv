@@ -53,7 +53,7 @@ bool Server::addListeningSocket() {
         LOG_ERROR_NAME(std::string("Error creating listening socket: ") + e.what(), _server_config.server_name);
         return false;
     }
-    LOG_INFO_NAME("Server successfully added listening socket.", _server_config.server_name);
+    LOG_INFO_NAME("Server successfully added listening socket: " + _server_config.listening_port, _server_config.server_name);
     return true;
 }
 
