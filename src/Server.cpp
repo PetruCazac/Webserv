@@ -58,7 +58,7 @@ bool Server::addListeningSocket() {
 }
 
 void Server::socketHandler() {
-    int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), -1);
+    int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), 10);// Need to introduce variable to be able to set timeout
     // need to configure timeout
     if (n_socket_events == -1) {
         LOG_ERROR_NAME("Poll failed.", _server_config.server_name);
