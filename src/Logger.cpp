@@ -1,7 +1,7 @@
 #include "Logger.hpp"
 
 void Logger::log(LogLevel level, const std::string &message, int line,
- const std::string &file) {
+ const std::string &file, const std::string &server_name) {
     if (level <= getLogLevel() && level != SILENT) {
         // std::ostringstream timestamp;
         // struct timeval tv;
@@ -29,6 +29,9 @@ void Logger::log(LogLevel level, const std::string &message, int line,
             default:
                 out << "\033[0m";
                 break;
+        }
+        if (!server_name.empty()) {
+            out << "[" << server_name << "] ";
         }
         // out << "[" << translateLogLevel(level) << "]\033[95m["
         // << timestamp.str() << "] \033[0m " << message << " | at line " 
