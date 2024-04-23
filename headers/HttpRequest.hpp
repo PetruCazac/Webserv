@@ -5,6 +5,9 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <stdint.h>
+#include <iterator>
+#include <stdlib.h>
 
 enum HttpMethods {
 	GET,
