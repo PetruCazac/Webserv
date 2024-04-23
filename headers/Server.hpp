@@ -20,6 +20,8 @@ class Server {
         std::map<int, Socket*> _socket_map;
         std::map<int, Http*> _http_sessions;
         void convert_directives_to_config(ServerDirectives *input_config);
+        bool handleServerSocket(size_t i);
+        bool handleClientSocket(size_t i);
 };
 
 #endif

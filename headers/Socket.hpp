@@ -40,6 +40,7 @@ class Socket {
         void* get_in_addr(struct sockaddr *sa);
         bool setupAddrInfo();
         SocketType getSocketType() const;
+        SocketStatus getSocketStatus() const;
 
     private:
         SocketConfiguration *socket_config;

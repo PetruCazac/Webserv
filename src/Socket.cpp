@@ -147,6 +147,7 @@ bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes
         return false;
     }
     LOG_DEBUG("Successfully received data.");
+    _socket_status = WAIT_FOR_RESPONSE;
     return bytes_read > 0;
 }
 
@@ -163,4 +164,8 @@ int Socket::getSockFd() const {
 
 SocketType Socket::getSocketType() const {
     return _socket_type;
+}
+
+SocketStatus Socket::getSocketStatus() const {
+    return _socket_status;
 }

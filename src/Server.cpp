@@ -57,21 +57,13 @@ bool Server::addListeningSocket() {
     return true;
 }
 
-void Server::socketHandler() {
-    int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), 100);
-    // need to configure timeout
-    if (n_socket_events == -1) {
-        LOG_ERROR_NAME("Poll failed.", _server_config.server_name);
-        return;
-    }
-    for (size_t i = 0; i < _poll_fd_vector.size(); i++) {
-        if (_poll_fd_vector[i].revents & POLLIN) {
-            if (_socket_map[_poll_fd_vector[i].fd]->getSocketType() == SERVER) {
+bool Server::handleServerSocket(size_t i) {
+    if (_poll_fd_vector[i].revents & POLLIN) {
                 std::string client_ip;
                 int connection_fd = _socket_map[_poll_fd_vector[i].fd]->acceptIncoming();
                 if (connection_fd == -1) {
                     LOG_ERROR_NAME("Failed to accept incoming connection.", _server_config.server_name);
-                    continue;
+                    return false;
                 }
                 // Add new connection to pollfd vector and map
                 pollfd_t poll_fd;
@@ -83,9 +75,19 @@ void Server::socketHandler() {
                 _socket_map[poll_fd.fd] = new Socket(connection_fd);
                 _http_sessions[poll_fd.fd] = new Http();
                 LOG_INFO_NAME("Accepted new incoming connection.", _server_config.server_name);
-            } else {
+    }
+    return true;
+}
+
+bool Server::handleClientSocket(size_t i) {
+    switch (_socket_map[_poll_fd_vector[i].fd]->getSocketStatus()) {
+        case WAIT_FOR_RESPONSE:
+            LOG_DEBUG_NAME("Client socket waiting for response.", _server_config.server_name);
+            return true;
+        case RECEIVE:
+            if (_poll_fd_vector[i].revents & POLLIN) {
                 char buffer[100000]={0};
-                int bytes_read;
+                int bytes_read = 0;
                 if (!_socket_map[_poll_fd_vector[i].fd]->receive(_poll_fd_vector[i].fd, &buffer, _server_config.server_socket_config->max_data_size_incoming, bytes_read)) {
                     LOG_ERROR_NAME("Failed to receive data.", _server_config.server_name);
                 }
@@ -101,6 +103,32 @@ void Server::socketHandler() {
                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
                 }
             }
+            LOG_DEBUG_NAME("Client socket in receive state.", _server_config.server_name);
+            return true;
+        default:
+            LOG_ERROR_NAME("Unknown socket status.", _server_config.server_name);
+            return false;
+    }
+}
+
+void Server::socketHandler() {
+    int n_socket_events = poll(&_poll_fd_vector[0], _poll_fd_vector.size(), 100);
+    // need to configure timeout
+    if (n_socket_events == -1) {
+        LOG_ERROR_NAME("Poll failed.", _server_config.server_name);
+        return;
+    }
+    for (size_t i = 0; i < _poll_fd_vector.size(); i++) {
+        switch (_socket_map[_poll_fd_vector[i].fd]->getSocketType()) {
+            case SERVER:
+                handleServerSocket(i);
+                break;
+            case CLIENT:
+                handleClientSocket(i);
+                break;
+            default:
+                LOG_ERROR_NAME("Unknown socket type.", _server_config.server_name);
+                break;
         }
     }
 }
