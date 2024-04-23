@@ -20,9 +20,11 @@ typedef struct addrinfo addrinfo_t;
 typedef struct sockaddr_storage sockaddr_storage_t;
 typedef struct pollfd pollfd_t;
 
+struct ServerConfiguration;
+
 typedef struct SocketConfiguration {
-    // SocketConfiguration(const ConfigurationFile& config_file);
     SocketConfiguration(std::string server_name, std::string listening_port, size_t max_data_size_incoming) : server_name(server_name), listening_port(listening_port), max_data_size_incoming(max_data_size_incoming){}
+    SocketConfiguration(const ServerConfiguration& server_config);// : server_name(server_config.server_name), listening_port(server_config.listening_port), max_data_size_incoming(server_config.max_data_size_incoming){}
     std::string server_name;
     std::string listening_port;
     size_t max_data_size_incoming;

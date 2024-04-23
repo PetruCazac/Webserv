@@ -30,7 +30,7 @@ std::string translateDirectives(enum Parser directive){
 		case LOG_FILE:
 			return "log_file";
 		case MAX_DATA_SIZE_INC:
-			return "ma_data_size_incoming";
+			return "max_data_size_incoming";
 		case LOG_LEVEL:
 			return "log_level";
 		case TOTAL:
@@ -50,7 +50,22 @@ Parser getParseLevel(const std::string& str){
     else if (str == "root") return ROOT;
     else if (str == "try_files") return TRY_FILES;
     else if (str == "log_file") return LOG_FILE;
-    else if (str == "ma_data_size_incoming") return MAX_DATA_SIZE_INC;
+    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
+    else if (str == "log_level") return LOG_LEVEL;
+    else return TOTAL;
+}
+Parser defaultValues(const std::string& str){
+    if (str == "index") return INDEX;
+    else if (str == "80") return LISTEN;
+    else if (str == "location") return LOCATION;
+    else if (str == "host_name") return HOSTNAME;
+    else if (str == "server_name") return SERVERNAME;
+    else if (str == "client_max_body_size") return CLIENTSIZE;
+    else if (str == "port") return PORT;
+    else if (str == "root") return ROOT;
+    else if (str == "try_files") return TRY_FILES;
+    else if (str == "log_file") return LOG_FILE;
+    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
     else if (str == "log_level") return LOG_LEVEL;
     else return TOTAL;
 }
@@ -91,6 +106,13 @@ void Config::tokenize(const char* configFile){
 	tokenIndex = 0;
 }
 
+// void Config::setDefaults(){
+	// loop servers
+	// check directives
+	// if directive non existant, search default value
+
+// }
+
 void Config::parse(void){
 	Block block;
 	block.name = "root";
@@ -100,6 +122,7 @@ void Config::parse(void){
 	// int i = 0;
 	// printDirective(block, i);
 	parseConfig(block);
+	// setDefaults();
 	std::cout << "\n"<< std::endl;
 	printConfig();
 }
