@@ -104,3 +104,7 @@ void Server::socketHandler() {
         }
     }
 }
+
+const std::vector<pollfd_t>& Server::getPollFdVector() const {
+    return _poll_fd_vector;
+}

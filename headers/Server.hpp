@@ -13,6 +13,7 @@ class Server {
         bool addListeningSocket();
         void socketHandler();
         void run();
+        const std::vector<pollfd_t>& getPollFdVector() const;
 
     private:
         std::vector<pollfd_t> _poll_fd_vector;
