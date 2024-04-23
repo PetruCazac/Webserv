@@ -60,7 +60,7 @@ private:
 	bool isValidContentLength() const;
 
 public:
-	HttpRequest(std::istream &inputRequest);
+	explicit HttpRequest(std::istream &inputRequest);
 
 	HttpMethods getMethod() const;
 	const std::string &getUri() const;
