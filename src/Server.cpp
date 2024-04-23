@@ -154,6 +154,15 @@ void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
     }
 }
 
+void Server::updatePollFdForWrite(int fd) {
+    for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
+        if (_poll_fd_vector[i].fd == fd) {
+            _poll_fd_vector[i].events = POLLOUT;
+            break;
+        }
+    }
+}
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
         case RECEIVE:
@@ -175,7 +184,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     oss << "Received data: \033[33m" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
                     _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
-                    handleClientSocketEvents(poll_fd);
+                    updatePollFdForWrite(poll_fd.fd);
                 }
             }
             break;
