@@ -15,7 +15,6 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     }
 }
 
-
 Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL) {
     _socket_type = CLIENT;
     _socket_status = RECEIVE;

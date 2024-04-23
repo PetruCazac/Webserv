@@ -40,74 +40,77 @@ Parser getParseLevel(const std::string *str);
 
 
 class Config {
+	private:
+		std::vector<ServerDirectives>	_serversConfig;
+		std::vector<std::string> tokens;
+		size_t	tokenIndex;
 
-private:
-	std::vector<ServerDirectives>	_serversConfig;
-	std::vector<std::string> tokens;
-	size_t	tokenIndex;
+	public:
+		Config();
+		Block	block;
+		~Config();
+		Config(const Config& c);
+		Config& operator=(const Config& c);
 
-public:
-	Config();
-	Block	block;
-	~Config();
-	Config(const Config& c);
-	Config& operator=(const Config& c);
+		void tokenize(const char* configFile);
+		void parse(void);
+		Block parseDirective();
+		void checkFilename(const char* configFile);
+		void parseConfig(Block& block);
+		
+		// Helper functions
+		bool isBlock(void);
+		bool isValidDirective(std::string str);
+		
+		// Getter Funciton
+		std::vector<ServerDirectives> getServerConfig(void);
+		
+		// Printing functions
+		void printDirective(Block& block, int i);
+		void printConfig();
 
-	void tokenize(const char* configFile);
-	void parse(void);
-	Block parseDirective();
-	void checkFilename(const char* configFile);
-	void parseConfig(Block& block);
-	
-	// Helper functions
-	bool isBlock(void);
-	bool isValidDirective(std::string str);
-	// Printing functions
-	void printDirective(Block& block, int i);
-	void printConfig();
-
-	// Exception functions
-	class ParsingExceptions : public std::exception{};
-	class OpenException : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Error opening config file: ";}
-	};
-	class EmptyConfFile : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Error: empty config file ";}
-	};
-	class InvalidFilename : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Wrong Config File: ";}
-	};
-	class WrongBracket : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Brackets are not well set: ";}
-	};
-	class WrongDirective : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Directive non valid: ";}
-	};
-	class MissingDirective : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Directive non existent ";}
-	};
-	class WrongMethods : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Non valid methods found: ";}
-	};
-	class MissingLastCharacter : public ParsingExceptions{
-		public:
-			const char* what() const throw(){
-				return "Invalid ending, missing ;";}
-	};
+		// Exception functions
+		class ParsingExceptions : public std::exception{};
+		class OpenException : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Error opening config file: ";}
+		};
+		class EmptyConfFile : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Error: empty config file ";}
+		};
+		class InvalidFilename : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Wrong Config File: ";}
+		};
+		class WrongBracket : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Brackets are not well set: ";}
+		};
+		class WrongDirective : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Directive non valid: ";}
+		};
+		class MissingDirective : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Directive non existent ";}
+		};
+		class WrongMethods : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Non valid methods found: ";}
+		};
+		class MissingLastCharacter : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Invalid ending, missing ;";}
+		};
 };
 
 #endif
