@@ -1,5 +1,40 @@
  #include "Config.hpp"
 
+//--------------------- Http Config---------------------//
+std::map <std::string, std::string> HttpDefault = {
+	{"client_max_body_size", "1000000"}, // CLIENTBODYSIZE
+	{"log_file", "log.log"}, // LOG_FILE
+	{"keepalive_timeout", "10"}, // KEEP_ALIVE_TIMEOUT
+	{"send_timeout", "10"} // Send timeout (cgi - timeout)
+};
+
+// ------------------- Server config -------------------//
+std::map <std::string, std::string> HttpDefault = {
+	{"index", "index.html"},
+	{"listen", "listen"},
+	{"location", "location"},
+	{"server_name", "server_name"},
+	{"error_page", ""},
+	{"client_max_body_size", "1m" },
+	{"root", "root"},
+	{"try_files", "try_files"},
+	{"log_file", "log_file"},
+	{"max_data_size_incoming", "max_data_size_incoming"},
+	{"directory_listing", "directory_listing"},
+	{"log_level", "log_level"}
+};
+
+// ---------------- Location config ----------------------//
+std::map <std::string, std::string> HttpDefault = {
+	{"index", "index"},
+	{"module", "/"},
+	{"root", "root"},
+	{"try_files", "try_files"},
+	{"log_file", "log_file"},
+	{"METHODS", "METHODS"},
+	{"log_level", "log_level"},
+};
+
 Config::Config(){}
 Config::~Config(){}
 Config::Config(const Config&){}
@@ -54,22 +89,6 @@ Parser getParseLevel(const std::string& str){
     else if (str == "log_level") return LOG_LEVEL;
     else return TOTAL;
 }
-std::string& defaultValues(Parser val){
-	std::string str;
-    if (val == INDEX) return str = "index";
-    else if (val == LISTEN) return str = "3333";
-    else if (val == LOCATION) return str = "location";
-    else if (val == HOSTNAME) return str = "host_name";
-    else if (val == SERVERNAME) return str = "server_name";
-    else if (val == CLIENTSIZE) return str = "client_max_body_size";
-    else if (val == PORT) return str = "port";
-    else if (val == ROOT) return str = "root";
-    else if (val == TRY_FILES) return str = "try_files";
-    else if (val == LOG_FILE) return str = "log_file";
-    else if (val == MAX_DATA_SIZE_INC) return str = "max_data_size_incoming";
-    else if (val == LOG_LEVEL) return str = "log_level";
-    else return str = "NOT A DIRECTIVE";
-}
 
 void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
@@ -113,14 +132,16 @@ void Config::setDefaults(void){
 	// check directives
 	// if directive non existant, search default value
 		if(_serversConfig[i].name == "http"){
-			(_serversConfig[i]._directives.size() !=
+			for(std::map<std::string, std::string>::iterator it = HttpDefault.begin(); it != HttpDefault.end(); it++){
+				if(_serversConfig[i]._directives.count(it->first) == 0)
+					_serversConfig[i]._directives[it->first] = it->second;
+			}
 		} else if(_serversConfig[i].name == "server"){
 
 		}
 		if(i == 0)
 			break;
 	}
-
 }
 
 void Config::parse(void){
