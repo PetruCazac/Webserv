@@ -1,6 +1,7 @@
 
 #include "../headers/Webserv.hpp"
 #include "../headers/HttpRequest.hpp"
+#include "../headers/HttpResponce.hpp"
 #include "../headers/getMethod.hpp"
 #include <string>
 #include <sstream>
@@ -96,7 +97,7 @@ int acceptClient(int socket_server){
 }
 
 void doStuff(int socket_client){
-	int		buffer = 1000;
+	static const int buffer = 1000;
 	char	sb[buffer];
 	size_t	bytes_read;
 
@@ -105,9 +106,9 @@ void doStuff(int socket_client){
 	std::istringstream request(input);
 	try {
 		HttpRequest httpRequest(request);
-		std::cout << "REQUEST" << std::endl;
+		std::cout << "--- REQUEST START ---" << std::endl;
 		printHttpRequest(httpRequest);
-		std::cout << "END REQUEST" << std::endl;
+		std::cout << "--- REQUEST END ---" << std::endl;
 		FILE *file = openFileByUri(httpRequest.getUri());
 		bzero(sb, buffer);
 		bytes_read = fread(sb, sizeof(unsigned char), buffer, file);
@@ -115,10 +116,12 @@ void doStuff(int socket_client){
 		std::cerr << "Error: bad HTTP request: " << e.what() << std::endl;
 	} catch (const MethodsException &e) {
 		std::cerr << "Error: " << e.what() << std::endl;
+	} catch (const HttpResponceExceptions &e) {
+		std::cerr << "Error: " << e.what() << std::endl;
 	}
 	write(socket_client, sb, bytes_read);
 	close(socket_client);
-	std::cout << "Closed connection" << std::endl << std::endl;
+	std::cout << "--- CONNECTION CLOSED ---" << std::endl << std::endl;
 	return;
 }
 

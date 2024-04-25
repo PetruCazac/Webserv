@@ -1,11 +1,11 @@
-NAME= webserv
+NAME = webserv
 
-CXX= c++
-CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders
+CXX = c++
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Wpedantic -Iheaders
 
-SRC= webserv.cpp HttpRequest.cpp getMethod.cpp
+SRC = Webserv.cpp HttpRequest.cpp getMethod.cpp
 
-VPATH= src/:obj/:headers/
+VPATH = src/:obj/:headers/
 
 OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
 OBJ_PATH = obj

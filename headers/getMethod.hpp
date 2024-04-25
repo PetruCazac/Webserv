@@ -1,5 +1,23 @@
 
+#pragma once
+
 #include "HttpRequest.hpp"
+#include <string>
+#include <map>
+
+class MimeTypeDetector {
+private:
+	std::map<std::string, std::string> _mimeTypes;
+	const std::string _noneType = "application/octet-stream";
+
+	MimeTypeDetector();
+	MimeTypeDetector(const MimeTypeDetector &other);
+	MimeTypeDetector &operator=(const MimeTypeDetector &other);
+
+public:
+	static MimeTypeDetector &getInstance();
+	const std::string &getMimeType(const std::string &fileName) const;
+};
 
 struct MethodsException {
 	enum MethodErrors {
