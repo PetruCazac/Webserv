@@ -15,17 +15,38 @@
 #include <fstream>
 #include <sstream>
 
-
 // #include "Webserv.hpp"
 #include "Directives.hpp"
 #include "Logger.hpp"
 
+typedef struct s_location{
+	std::vector<std::string>	module;
+	std::map<int, std::string>	error_pages;
+	std::vector<std::string>	autoindex;
+	std::vector<std::string>	error_page;
+	std::vector<std::string>	fastcgi_param;
+	std::vector<std::string>	index;
+	std::vector<std::string>	limit_except;
+	std::vector<std::string>	root;
+}	LocationDirectives;
+
 typedef struct s_server{
-	std::string name;
-	std::map<std::string, std::vector<std::string> >	_directives;
-	std::map<std::string, std::vector<std::string> >	_location_directives;
-	std::vector<std::string>	_location_methods;
+	std::string					name;
+	std::string					server_name;
+	bool						autoindex;
+	double						client_max_body_size;
+	std::string					index;
+	int							listen;
+	std::string					log_file;
+	std::vector<std::string>	root;
+	std::map<int, std::vector<std::string> >	error_page;
+	std::vector<LocationDirectives> locations;
 }	ServerDirectives;
+
+typedef struct s_http{
+	double	keepalive_timeout;
+	double	send_timeout;
+}	HttpDirectives;
 
 struct Block {
 	std::string name;
@@ -41,6 +62,7 @@ Parser getParseLevel(const std::string *str);
 
 class Config {
 	private:
+		HttpDirectives	_httpConfig;
 		std::vector<ServerDirectives>	_serversConfig;
 		std::vector<std::string> tokens;
 		size_t	tokenIndex;
@@ -61,7 +83,6 @@ class Config {
 		// Helper functions
 		bool isBlock(void);
 		bool isValidDirective(std::string str);
-		void setDefaults(void);
 
 		// Getter Funciton
 		std::vector<ServerDirectives> getServerConfig(void);
@@ -69,7 +90,7 @@ class Config {
 		// Printing functions
 		void printDirective(Block& block, int i);
 		void printConfig();
-
+	
 		// Exception functions
 		class ParsingExceptions : public std::exception{};
 		class OpenException : public ParsingExceptions{
@@ -110,7 +131,17 @@ class Config {
 		class MissingLastCharacter : public ParsingExceptions{
 			public:
 				const char* what() const throw(){
-					return "Invalid ending, missing ;";}
+					return "Invalid ending, missing: ";}
+		};
+		class WrongLocationDeclaration : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Location declared at the wrong place: ";}
+		};
+		class WrongDirectiveAttributes : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Wrong directive attributes ";}
 		};
 };
 

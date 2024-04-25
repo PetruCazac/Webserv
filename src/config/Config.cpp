@@ -1,39 +1,32 @@
- #include "Config.hpp"
+#include "Config.hpp"
+#include "DefaultValues.hpp"
 
-//--------------------- Http Config---------------------//
-std::map <std::string, std::string> HttpDefault = {
-	{"client_max_body_size", "1000000"}, // CLIENTBODYSIZE
-	{"log_file", "log.log"}, // LOG_FILE
-	{"keepalive_timeout", "10"}, // KEEP_ALIVE_TIMEOUT
-	{"send_timeout", "10"} // Send timeout (cgi - timeout)
-};
+// //--------------------- Http Config---------------------//
+// Directives for http block :
+// keepalive_timeout		-- time to keep a connection alive with a client
+// send_timeout 			-- timeout for CGI processes
 
-// ------------------- Server config -------------------//
-std::map <std::string, std::string> HttpDefault = {
-	{"index", "index.html"},
-	{"listen", "listen"},
-	{"location", "location"},
-	{"server_name", "server_name"},
-	{"error_page", ""},
-	{"client_max_body_size", "1m" },
-	{"root", "root"},
-	{"try_files", "try_files"},
-	{"log_file", "log_file"},
-	{"max_data_size_incoming", "max_data_size_incoming"},
-	{"directory_listing", "directory_listing"},
-	{"log_level", "log_level"}
-};
+// // ------------------- Server config -------------------//
+// Directives for server block :
+// autoindex 				-- List all the directories present in the accessed directory.
+// client_max_body_size		-- Maximum size of the body sent by the client.
+// error_page				-- List all the default files that would be returned in case of an error, if not only the error code will be shown.
+// index					-- If a file is not found it will go to the file defined by index and will serve it.
+// listen					-- The number of the port which tghe server will operate on.
+// log_file					-- The name of the file where the logs will be stored.
+// root						-- The root directory where the files will be searched.
+// server_name				-- The name of the server.
 
-// ---------------- Location config ----------------------//
-std::map <std::string, std::string> HttpDefault = {
-	{"index", "index"},
-	{"module", "/"},
-	{"root", "root"},
-	{"try_files", "try_files"},
-	{"log_file", "log_file"},
-	{"METHODS", "METHODS"},
-	{"log_level", "log_level"},
-};
+// // ---------------- Location config ----------------------//
+// Directives for server block :
+// autoindex				-- Command to show the directory listing.
+// error_page				-- Defines the default error pages  for each error that occurs. If there is no file, a simple error will be returned.
+// fastcgi_param			-- Limit the FAST_CGI methods that are allowed to be used in this location.
+// index					-- If the page does not exist, the page defined by index will be returned. If there is no page, the error will be returned.
+// limit_except				-- Limit the HTTP methods that are allowed to be used in this location.
+// module					-- The directory from the root where the files will be searched.
+// root						-- redefines the root path for the location it is being used.
+
 
 Config::Config(){}
 Config::~Config(){}
@@ -54,7 +47,7 @@ std::string translateDirectives(enum Parser directive){
 			return "host_name";
 		case SERVERNAME:
 			return "server_name";
-		case CLIENTSIZE:
+		case CLIENTSIZE:	
 			return "client_max_body_size";
 		case PORT:
 			return "port";
@@ -75,19 +68,19 @@ std::string translateDirectives(enum Parser directive){
 }
 
 Parser getParseLevel(const std::string& str){
-    if (str == "index") return INDEX;
-    else if (str == "listen") return LISTEN;
-    else if (str == "location") return LOCATION;
-    else if (str == "host_name") return HOSTNAME;
-    else if (str == "server_name") return SERVERNAME;
-    else if (str == "client_max_body_size") return CLIENTSIZE;
-    else if (str == "port") return PORT;
-    else if (str == "root") return ROOT;
-    else if (str == "try_files") return TRY_FILES;
-    else if (str == "log_file") return LOG_FILE;
-    else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
-    else if (str == "log_level") return LOG_LEVEL;
-    else return TOTAL;
+	if (str == "index") return INDEX;
+	else if (str == "listen") return LISTEN;
+	else if (str == "location") return LOCATION;
+	else if (str == "host_name") return HOSTNAME;
+	else if (str == "server_name") return SERVERNAME;
+	else if (str == "client_max_body_size") return CLIENTSIZE;
+	else if (str == "port") return PORT;
+	else if (str == "root") return ROOT;
+	else if (str == "try_files") return TRY_FILES;
+	else if (str == "log_file") return LOG_FILE;
+	else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
+	else if (str == "log_level") return LOG_LEVEL;
+	else return TOTAL;
 }
 
 void Config::tokenize(const char* configFile){
@@ -126,34 +119,14 @@ void Config::tokenize(const char* configFile){
 	tokenIndex = 0;
 }
 
-void Config::setDefaults(void){
-	// loop servers
-	for(size_t i = _serversConfig.size(); ; i--){
-	// check directives
-	// if directive non existant, search default value
-		if(_serversConfig[i].name == "http"){
-			for(std::map<std::string, std::string>::iterator it = HttpDefault.begin(); it != HttpDefault.end(); it++){
-				if(_serversConfig[i]._directives.count(it->first) == 0)
-					_serversConfig[i]._directives[it->first] = it->second;
-			}
-		} else if(_serversConfig[i].name == "server"){
-
-		}
-		if(i == 0)
-			break;
-	}
-}
-
 void Config::parse(void){
 	Block block;
 	block.name = "root";
 	while(tokenIndex < tokens.size()){
 		block.children.push_back(parseDirective());
 	}
-	// int i = 0;
-	// printDirective(block, i);
+	printDirective(block, 0);
 	parseConfig(block);
-	// setDefaults();
 	std::cout << "\n"<< std::endl;
 	printConfig();
 }
@@ -162,7 +135,30 @@ void Config::parseConfig(Block& block){
 	if(block.name == "root"){
 		for(size_t i = 0; i < block.children.size(); i++)
 			parseConfig(block.children[i]);
-	} else if(block.name == "server" || block.name == "http"){
+	// -----------------------------------------Parsing http part -------------------------------
+	}else if(block.name == "http"){
+		if(block.methods.size() != 0)
+			throw WrongMethods();
+		ServerDirectives server;
+		server.name = block.name;
+		for(size_t i = 0; i < block.parameters.size(); i++){
+			if(isValidDirective(block.parameters[i])){
+				size_t count = i + 1;
+				while(count < block.parameters.size() && block.parameters[count] != ";")
+					server._directives[block.parameters[i]].push_back(block.parameters[count++]);
+				i = count;
+			}
+		}
+		parseHttp(server._directives);
+		_serversConfig.push_back(server);
+		for(size_t i = 0; i < block.children.size(); i++){
+			if(block.children[i].name == "location"){
+				throw WrongLocationDeclaration();
+			} else if(block.children[i].name == "server")
+				parseConfig(block.children[i]);
+		}
+	// ------------------------------------------ Parsing server part ----------------------------
+	} else if(block.name == "server"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
 		ServerDirectives server;
@@ -189,7 +185,7 @@ void Config::parseConfig(Block& block){
 			} else if(block.children[i].name == "server")
 				parseConfig(block.children[i]);
 		}
-			_serversConfig.push_back(server);
+		_serversConfig.push_back(server);
 	}
 }
 
@@ -236,7 +232,6 @@ bool Config::isBlock(){
 	return false;
 }
 
-
 void Config::checkFilename(const char* configFile){
 	std::string conf(configFile);
 	if(conf.size() < 5){
@@ -257,6 +252,56 @@ std::vector<ServerDirectives> Config::getServerConfig(void){
 	return config;
 }
 
+// ---------------------------------------------------- Helper Functions ---------------------------------------- //
+
+bool isNumber(std::string str){
+	std::stringstream ss(str);
+	double n;
+	if(!(ss >> n))
+		return false;
+	return true;
+}
+
+void logInfo(std::string message, std::string directive, std::vector<std::string> attributes){
+	std::stringstream ss;
+	ss << message << ": ";
+	ss << directive << " ";
+	for(size_t i = 0; i < attributes.size(); i++)
+		ss << attributes[i];
+	LOG_INFO(ss.str());
+}
+
+std::vector<std::string>& getVector(std::string str){
+	std::vector <std::string> v;
+	v.push_back(str);
+	return v;
+}
+
+void parseHttp(std::map<std::string, std::vector<std::string> >& directives){
+	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
+		if(it->first == "client_max_body_size"){
+			if(it->second.size() == 0){
+				LOG_INFO("Missing directive will be assigned default value.");
+				directives["client_max_body_size"] = getVector(CLIENT_MAX_BODY_SIZE);
+			}else if(it->second.size() > 1 || !isNumber(it->second[0]))
+				throw Config::WrongDirectiveAttributes();
+		}else if(it->first == "keepalive_timeout"){
+			if(it->second.size() == 0){
+				LOG_INFO("Missing directive will be assigned default value.");
+				std::vector <std::string> v;
+				v.push_back(FILE_LOG);
+				directives["client_max_body_size"] = v;
+			}else if(it->second.size() != 1 || !isNumber(it->second[0]))
+				throw Config::WrongDirectiveAttributes();
+		}else if(it->first == "send_timeout"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]))
+				throw Config::WrongDirectiveAttributes();
+		} else
+			logInfo("Unknown directive", it->first, it->second);
+	}
+}
+
+// ---------------------------------------------- Printing Functions -----------------------------------------//
 
 void Config::printConfig(){
 	if(!_serversConfig.empty()){
