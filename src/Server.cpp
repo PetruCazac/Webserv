@@ -143,7 +143,6 @@ void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
                 fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
                 _poll_fd_vector.push_back(new_poll_fd);
                 _socket_map[new_poll_fd.fd] = new Socket(connection_fd);
-                _http_sessions[new_poll_fd.fd] = new Http();
                 LOG_INFO_NAME("Accepted new incoming connection.", _server_config.server_name);
             }
             break;
