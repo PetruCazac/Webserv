@@ -162,6 +162,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             const std::string& responseStr = response.str(); // Obtain the formatted response as a string
             _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
+            // TODO: Depending on keep alive or not, close the connection
             updatePollFdForRead(poll_fd.fd);
             LOG_INFO_NAME("Sent response to client.", _server_config.server_name);
         }
