@@ -18,20 +18,20 @@ enum Parser {
 	TOTAL
 };
 
-const char* Directives[TOTAL] = {
-	"autoindex",
-	"client_max_body_size",
-	"error_page",
-	"fastcgi_param",
-	"index",
-	"keep_alive_timeout",
-	"limit_except",
-	"listen",
-	"log_file",
-	"root",
-	"send_timeout",
-	"server_name"
-};
+// const char* Directives[TOTAL] = {
+// 	"autoindex",
+// 	"client_max_body_size",
+// 	"error_page",
+// 	"fastcgi_param",
+// 	"index",
+// 	"keep_alive_timeout",
+// 	"limit_except",
+// 	"listen",
+// 	"log_file",
+// 	"root",
+// 	"send_timeout",
+// 	"server_name"
+// };
 
 
 #endif

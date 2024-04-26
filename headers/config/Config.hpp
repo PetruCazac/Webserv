@@ -14,39 +14,40 @@
 #include <deque>
 #include <fstream>
 #include <sstream>
+#include <exception>
 
 // #include "Webserv.hpp"
 #include "Directives.hpp"
 #include "Logger.hpp"
 
-typedef struct s_location{
-	std::vector<std::string>	module;
-	std::map<int, std::string>	error_pages;
-	std::vector<std::string>	autoindex;
-	std::vector<std::string>	error_page;
-	std::vector<std::string>	fastcgi_param;
-	std::vector<std::string>	index;
-	std::vector<std::string>	limit_except;
-	std::vector<std::string>	root;
-}	LocationDirectives;
+typedef struct s_http{
+	std::string name;
+	double	keepalive_timeout;
+	double	send_timeout;
+}	HttpDirectives;
 
 typedef struct s_server{
 	std::string					name;
 	std::string					server_name;
-	bool						autoindex;
+	std::string					autoindex;
 	double						client_max_body_size;
 	std::string					index;
 	int							listen;
 	std::string					log_file;
-	std::vector<std::string>	root;
+	std::string					root;
 	std::map<int, std::vector<std::string> >	error_page;
-	std::vector<LocationDirectives> locations;
+	std::vector<LocationDirectives>	locations;
 }	ServerDirectives;
 
-typedef struct s_http{
-	double	keepalive_timeout;
-	double	send_timeout;
-}	HttpDirectives;
+typedef struct s_location{
+	std::string					module;
+	std::string					autoindex;
+	std::vector<std::string>	fastcgi_param;
+	std::string					index;
+	std::vector<std::string>	limit_except;
+	std::string					root;
+	std::map<int, std::string>	error_pages;
+}	LocationDirectives;
 
 struct Block {
 	std::string name;
@@ -66,10 +67,10 @@ class Config {
 		std::vector<ServerDirectives>	_serversConfig;
 		std::vector<std::string> tokens;
 		size_t	tokenIndex;
+		Block block;
 
 	public:
 		Config();
-		Block	block;
 		~Config();
 		Config(const Config& c);
 		Config& operator=(const Config& c);
@@ -79,10 +80,15 @@ class Config {
 		Block parseDirective();
 		void checkFilename(const char* configFile);
 		void parseConfig(Block& block);
-		
+		void parseHttp(HttpDirectives& server, Block& block);
+		void parseServer(ServerDirectives& server, Block& block);
+		void parseLocation(LocationDirectives& location, Block& block);
+
 		// Helper functions
 		bool isBlock(void);
-		bool isValidDirective(std::string str);
+		HttpDirectives& getHttpStruct(void);
+		ServerDirectives& getServerStruct(void);
+		LocationDirectives& getLocationStruct(void);
 
 		// Getter Funciton
 		std::vector<ServerDirectives> getServerConfig(void);
@@ -91,6 +97,7 @@ class Config {
 		void printDirective(Block& block, int i);
 		void printConfig();
 	
+		// class ParsinExceptions : public std::runtime_exception()
 		// Exception functions
 		class ParsingExceptions : public std::exception{};
 		class OpenException : public ParsingExceptions{
@@ -137,6 +144,11 @@ class Config {
 			public:
 				const char* what() const throw(){
 					return "Location declared at the wrong place: ";}
+		};
+		class WrongServerDeclaration : public ParsingExceptions{
+			public:
+				const char* what() const throw(){
+					return "Server declared at the wrong place: ";}
 		};
 		class WrongDirectiveAttributes : public ParsingExceptions{
 			public:

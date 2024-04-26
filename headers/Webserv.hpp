@@ -26,8 +26,8 @@ class Webserv{
 		Webserv(char* str);
 		~Webserv();
 
-		void init_servers(void);
-		void run_servers(void);
+		// void init_servers(void);
+		// void run_servers(void);
 
 	private:
 		Config _webserv_config;

@@ -1,30 +1,30 @@
 #include "Server.hpp"
 
-Server::Server(ServerDirectives *input_config) {
-    LOG_INFO("Constructor called. Server starting...");
-    convert_directives_to_config(input_config);
-    addListeningSocket();
-}
+// Server::Server(ServerDirectives *input_config) {
+//     LOG_INFO("Constructor called. Server starting...");
+//     // convert_directives_to_config(input_config);
+//     addListeningSocket();
+// }
 
 
-void Server::convert_directives_to_config(ServerDirectives *input_config) {
-    _server_config->server_name = input_config->_directives[translateDirectives(SERVERNAME)][0];
-    _server_config->listening_port = input_config->_directives[translateDirectives(LISTEN)][0];
-    // if(input_config->_directives.count(translateDirectives(MAX_DATA_SIZE_INC)) != 0){
-    //     std::string debug_str = (input_config->_directives[translateDirectives(MAX_DATA_SIZE_INC)][0]);
-    //     std::stringstream str_tmp(debug_str);
-    // }
-    // size_t tmp;
-    // str_tmp >> tmp;
-    _server_config->max_data_size_incoming = 100000;//tmp;
-    Logger::setLogLevel(DEBUG);
-    Logger::setLogFilename("");
-    LOG_INFO("Server configuration set.");
-    // _server_config->log_filename = input_config->_directives[translateDirectives(LOG_FILE)][0];
-    // _server_config->log_level = Logger::getLogLevel(input_config->_directives[translateDirectives(LOG_LEVEL)][0]);
-    _server_config->server_socket_config = new SocketConfiguration(_server_config->server_name, _server_config->listening_port, _server_config->max_data_size_incoming);
+// void Server::convert_directives_to_config(ServerDirectives *input_config) {
+//     _server_config->server_name = input_config->_directives[translateDirectives(SERVERNAME)][0];
+//     _server_config->listening_port = input_config->_directives[translateDirectives(LISTEN)][0];
+//     // if(input_config->_directives.count(translateDirectives(MAX_DATA_SIZE_INC)) != 0){
+//     //     std::string debug_str = (input_config->_directives[translateDirectives(MAX_DATA_SIZE_INC)][0]);
+//     //     std::stringstream str_tmp(debug_str);
+//     // }
+//     // size_t tmp;
+//     // str_tmp >> tmp;
+//     _server_config->max_data_size_incoming = 100000;//tmp;
+//     Logger::setLogLevel(DEBUG);
+//     Logger::setLogFilename("");
+//     LOG_INFO("Server configuration set.");
+//     // _server_config->log_filename = input_config->_directives[translateDirectives(LOG_FILE)][0];
+//     // _server_config->log_level = Logger::getLogLevel(input_config->_directives[translateDirectives(LOG_LEVEL)][0]);
+//     _server_config->server_socket_config = new SocketConfiguration(_server_config->server_name, _server_config->listening_port, _server_config->max_data_size_incoming);
 
-}
+// }
 
 void Server::run() {
     LOG_INFO("Server running.");

@@ -35,49 +35,49 @@ Config& Config::operator=(const Config&){
 	return *this;
 }
 
-std::string translateDirectives(enum Parser directive){
-	switch(directive) {
-		case INDEX:
-			return 	"index";
-		case LISTEN:
-			return "listen";
-		case LOCATION:
-			return "location";
-		case SERVERNAME:
-			return "server_name";
-		case CLIENTSIZE:	
-			return "client_max_body_size";
-		case ROOT:
-			return "root";
-		case TRY_FILES:
-			return "try_files";
-		case LOG_FILE:
-			return "log_file";
-		case MAX_DATA_SIZE_INC:
-			return "max_data_size_incoming";
-		case LOG_LEVEL:
-			return "log_level";
-		case TOTAL:
-			return NULL;
-	}
-	return NULL;
-}
+// std::string translateDirectives(enum Parser directive){
+// 	switch(directive) {
+// 		case INDEX:
+// 			return 	"index";
+// 		case LISTEN:
+// 			return "listen";
+// 		case LOCATION:
+// 			return "location";
+// 		case SERVERNAME:
+// 			return "server_name";
+// 		case CLIENTSIZE:	
+// 			return "client_max_body_size";
+// 		case ROOT:
+// 			return "root";
+// 		case TRY_FILES:
+// 			return "try_files";
+// 		case LOG_FILE:
+// 			return "log_file";
+// 		case MAX_DATA_SIZE_INC:
+// 			return "max_data_size_incoming";
+// 		case LOG_LEVEL:
+// 			return "log_level";
+// 		case TOTAL:
+// 			return NULL;
+// 	}
+// 	return NULL;
+// }
 
-Parser getParseLevel(const std::string& str){
-	if (str == "index") return INDEX;
-	else if (str == "listen") return LISTEN;
-	else if (str == "location") return LOCATION;
-	else if (str == "host_name") return HOSTNAME;
-	else if (str == "server_name") return SERVERNAME;
-	else if (str == "client_max_body_size") return CLIENTSIZE;
-	else if (str == "port") return PORT;
-	else if (str == "root") return ROOT;
-	else if (str == "try_files") return TRY_FILES;
-	else if (str == "log_file") return LOG_FILE;
-	else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
-	else if (str == "log_level") return LOG_LEVEL;
-	else return TOTAL;
-}
+// Parser getParseLevel(const std::string& str){
+// 	if (str == "index") return INDEX;
+// 	else if (str == "listen") return LISTEN;
+// 	else if (str == "location") return LOCATION;
+// 	else if (str == "host_name") return HOSTNAME;
+// 	else if (str == "server_name") return SERVERNAME;
+// 	else if (str == "client_max_body_size") return CLIENTSIZE;
+// 	else if (str == "port") return PORT;
+// 	else if (str == "root") return ROOT;
+// 	else if (str == "try_files") return TRY_FILES;
+// 	else if (str == "log_file") return LOG_FILE;
+// 	else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
+// 	else if (str == "log_level") return LOG_LEVEL;
+// 	else return TOTAL;
+// }
 
 void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
@@ -131,66 +131,36 @@ void Config::parseConfig(Block& block){
 	if(block.name == "root"){
 		for(size_t i = 0; i < block.children.size(); i++)
 			parseConfig(block.children[i]);
-	// -----------------------------------------Parsing http part -------------------------------
 	}else if(block.name == "http"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		ServerDirectives server;
-		server.name = block.name;
-		for(size_t i = 0; i < block.parameters.size(); i++){
-			if(isValidDirective(block.parameters[i])){
-				size_t count = i + 1;
-				while(count < block.parameters.size() && block.parameters[count] != ";")
-					server._directives[block.parameters[i]].push_back(block.parameters[count++]);
-				i = count;
-			}
-		}
-		parseHttp(server._directives);
-		_serversConfig.push_back(server);
+		HttpDirectives http = getHttpStruct();
+		http.name = block.name;
+		parseHttp(http, block);
+		_httpConfig = http;
 		for(size_t i = 0; i < block.children.size(); i++){
 			if(block.children[i].name == "location"){
 				throw WrongLocationDeclaration();
 			} else if(block.children[i].name == "server")
 				parseConfig(block.children[i]);
 		}
-	// ------------------------------------------ Parsing server part ----------------------------
 	} else if(block.name == "server"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		ServerDirectives server;
+		ServerDirectives server = getServerStruct();
 		server.name = block.name;
-		for(size_t i = 0; i < block.parameters.size(); i++){
-			if(isValidDirective(block.parameters[i])){
-				size_t count = i + 1;
-				while(count < block.parameters.size() && block.parameters[count] != ";")
-					server._directives[block.parameters[i]].push_back(block.parameters[count++]);
-				i = count;
-			}
-		}
+		parseServer(server, block);
 		for(size_t i = 0; i < block.children.size(); i++){
 			if(block.children[i].name == "location"){
-				server._location_methods = block.children[i].methods;
-				for(size_t j = 0; j < block.children[i].parameters.size(); j++){
-					if(isValidDirective(block.children[i].parameters[j])){
-						size_t count = j + 1;
-						while(count < block.children[i].parameters.size() && block.children[i].parameters[count] != ";")
-							server._location_directives[block.children[i].parameters[j]].push_back(block.children[i].parameters[count++]);
-						j = count;
-					}
-				}
+				LocationDirectives location = getLocationStruct();
+				parseLocation(location, block.children[i]);
+				server.locations.push_back(location);
+			
 			} else if(block.children[i].name == "server")
-				parseConfig(block.children[i]);
+				throw WrongServerDeclaration();
 		}
 		_serversConfig.push_back(server);
 	}
-}
-
-bool Config::isValidDirective(std::string str){
-	if(str.size() == 0)
-		throw MissingDirective();
-	if (getParseLevel(str) == TOTAL)
-		throw WrongDirective();
-	return true;
 }
 
 Block Config::parseDirective(){
@@ -273,68 +243,163 @@ std::vector<std::string>& getVector(std::string str){
 	return v;
 }
 
-void parseHttp(std::map<std::string, std::vector<std::string> >& directives){
-	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
-		if(it->first == "client_max_body_size"){
-			if(it->second.size() == 0){
-				LOG_INFO("Missing directive will be assigned default value.");
-				directives["client_max_body_size"] = getVector(DefaultValues::CLIENT_MAX_BODY_SIZE);
-			}else if(it->second.size() > 1 || !isNumber(it->second[0]))
-				throw Config::WrongDirectiveAttributes();
-		}else if(it->first == "keepalive_timeout"){
-			if(it->second.size() == 0){
-				LOG_INFO("Missing directive will be assigned default value.");
-				std::vector <std::string> v;
-				v.push_back(DefaultValues::FILE_LOG);
-				directives["client_max_body_size"] = v;
-			}else if(it->second.size() != 1 || !isNumber(it->second[0]))
-				throw Config::WrongDirectiveAttributes();
-		}else if(it->first == "send_timeout"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]))
-				throw Config::WrongDirectiveAttributes();
-		} else
-			logInfo("Unknown directive", it->first, it->second);
+void Config::parseHttp(HttpDirectives& http, Block& block){
+	std::map<std::string, std::vector<std::string> > directives;
+	for(size_t i = 0; i < block.parameters.size(); i++){
+		size_t count = i + 1;
+		while(count < block.parameters.size() && block.parameters[count] != ";")
+			directives[block.parameters[i]].push_back(block.parameters[count++]);
+		i = count;
 	}
+	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
+		if(it->first == "keepalive_timeout"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			std::stringstream ss;
+			ss << it->second[0];
+			ss >> http.keepalive_timeout;
+		}else if(it->first == "send_timeout"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			std::stringstream ss;
+			ss << it->second[0];
+			ss >> http.send_timeout;
+		} else
+			logInfo("Unknown directive, will be ignored:", it->first, it->second);
+	}
+}
+
+void Config::parseServer(ServerDirectives& server, Block& block){
+	std::map<std::string, std::vector<std::string> > directives;
+	for(size_t i = 0; i < block.parameters.size(); i++){
+		size_t count = i + 1;
+		while(count < block.parameters.size() && block.parameters[count] != ";")
+			directives[block.parameters[i]].push_back(block.parameters[count++]);
+		i = count;
+	}
+	// ------- Parse the directives ----------
+	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
+		if(it->first == "server_name"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			server.server_name = it->second[0];
+		}else if(it->first == "autoindex"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			server.autoindex = it->second[0];
+		}else if(it->first == "index"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			server.index = it->second[0];
+		}else if(it->first == "log_file"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			server.log_file = it->second[0];
+		}else if(it->first == "root"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			server.root = it->second[0];
+		}else if(it->first == "client_max_body_size"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			std::stringstream ss;
+			ss << it->second[0];
+			ss >> server.client_max_body_size;
+		}else if(it->first == "listen"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			std::stringstream ss;
+			ss << it->second[0];
+			ss >> server.listen;
+		} else
+			logInfo("Unknown directive, will be ignored:", it->first, it->second);
+	}
+}
+
+void Config::parseLocation(LocationDirectives& location, Block& block){
+	if(block.methods.size() != 1 || block.methods[0].front() != '/')
+		throw WrongMethods();
+	else
+		location.module = block.methods[0];
+	// ------- Parse the directives ----------
+	std::map<std::string, std::vector<std::string> > directives;
+	for(size_t i = 0; i < block.parameters.size(); i++){
+		size_t count = i + 1;
+		while(count < block.parameters.size() && block.parameters[count] != ";")
+			directives[block.parameters[i]].push_back(block.parameters[count++]);
+		i = count;
+	}
+	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
+		if(it->first == "autoindex"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			location.autoindex = it->second[0];
+		}else if(it->first == "index"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			location.index = it->second[0];
+		}else if(it->first == "root"){
+			if(it->second.size() != 1)
+				throw Config::WrongDirectiveAttributes();
+			location.root = it->second[0];
+		}else if(it->first == "fastcgi_param"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			location.fastcgi_param.push_back(it->second[0]);
+		}else if(it->first == "limit_except"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+				throw Config::WrongDirectiveAttributes();
+			location.limit_except.push_back(it->second[0]);
+		} else
+			logInfo("Unknown directive, will be ignored:", it->first, it->second);
+	}
+	if(block.methods.size() == 1 && block.methods[0].front() == '/')
+		location.module = block.methods[0];
+	else
+		throw Config::WrongMethods();
+}
+
+// ----------------- Get Default Structures -----------------
+
+HttpDirectives& getHttpStruct(void){
+	HttpDirectives http;
+	http.keepalive_timeout = DefaultValues::getDefaultValue<int>(KEEP_ALIVE_TIMEOUT);
+	http.send_timeout = DefaultValues::getDefaultValue<double>(SEND_TIMEOUT);
+	return http;
+}
+
+ServerDirectives& getServerStruct(void){
+	ServerDirectives server;
+	server.autoindex = DefaultValues::getDefaultValue<bool>(AUTOINDEX);
+	server.client_max_body_size = DefaultValues::getDefaultValue<double>(CLIENT_MAX_BODY_SIZE);
+	server.index = DefaultValues::getDefaultValue<std::string>(INDEX);
+	server.listen = DefaultValues::getDefaultValue<int>(LISTEN);
+	server.log_file = DefaultValues::getDefaultValue<std::string>(LOG_FILE);
+	server.root = DefaultValues::getDefaultValue<std::string>(ROOT);
+	// server.error_page = DefaultValues::getDefaultValue<std::string>(ERROR_PAGE);
+}
+
+LocationDirectives& getLocationStruct(void){
+	LocationDirectives location;
+	location.autoindex = DefaultValues::getDefaultValue<bool>(AUTOINDEX);
+	location.index = DefaultValues::getDefaultValue<std::string>(INDEX);
+	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
+	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));
+	location.limit_except.push_back(DefaultValues::getDefaultValue<std::string>(LIMIT_EXCEPT));
+	// location.error_page = DefaultValues::getDefaultValue<std::string>(ERROR_PAGE);
 }
 
 // ---------------------------------------------- Printing Functions -----------------------------------------//
 
 void Config::printConfig(){
-	if(!_serversConfig.empty()){
-		for (size_t i = _serversConfig.size() - 1; ; --i){
-			const ServerDirectives& server = _serversConfig[i];
-			std::cout << server.name << ":" << std::endl;
-			// if(!server._directives.empty()){
-				std::cout << "  Directives:" << std::endl;
-				for (std::map<std::string, std::vector<std::string> >::const_iterator it = server._directives.begin(); it != server._directives.end(); ++it){
-					std::cout << "    " << it->first << ": ";
-					for (std::vector<std::string>::const_iterator vit = it->second.begin(); vit != it->second.end(); ++vit){
-						std::cout << *vit << " ";
-					}
-					std::cout << std::endl;
-				}
-			// }
-			// if(!server._location_directives.empty()){
-				std::cout << "  Location Directives:";
-				for (std::map<std::string, std::vector<std::string> >::const_iterator lit = server._location_directives.begin(); lit != server._location_directives.end(); ++lit){
-					std::cout << "    " << "##"<<  lit->first << "##"<< ": ";
-					for (std::vector<std::string>::const_iterator lvit = lit->second.begin(); lvit != lit->second.end(); ++lvit){
-						std::cout << "##"<<*lvit << "##"<< " ";
-					}
-					std::cout << std::endl;
-				}
-			// }
-			// if(!server._location_methods.empty()){
-			std::cout << "  Location Methods: ";
-			for (std::vector<std::string>::const_iterator mit = server._location_methods.begin(); mit != server._location_methods.end(); ++mit){
-				std::cout << "##"<< *mit <<"##";
-			}
-			std::cout << "\n" << std::endl;
-			if(i == 0)
-				break;
-			// }
-		}
-	}
+	std::cout << "//---------------------- HTTP STRUCTURE---------------------//" << std::endl;
+	std::cout << "name" << _httpConfig.name << std::endl;
+	std::cout << "keepalive_timeout" << _httpConfig.keepalive_timeout << std::endl;
+	std::cout << "send_timeout" << _httpConfig.send_timeout << std::endl;
+	
+
+	std::cout << "//---------------------- SERVER STRUCTURE---------------------//" << std::endl;
+	std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
 }
 
 void Config::printDirective(Block& block, int depth = 0){
@@ -350,7 +415,7 @@ void Config::printDirective(Block& block, int depth = 0){
 	if(!block.parameters.empty()){
 		std::cout <<  indent << "Directives: ";
 		for (size_t i = 0; i < block.parameters.size(); ++i){
-			std::cout << " " << block.parameters[i];
+			std::cout << " " << block.parameters[i] << std::endl;
 		}
 		std::cout << std::endl;
 	}

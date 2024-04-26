@@ -2,32 +2,51 @@
 #define DEFAULT_VALUES_HPP
 
 #include <string>
+#include "Config.hpp"
+
+enum ValuesEnum {
+	AUTOINDEX,
+	CLIENT_MAX_BODY_SIZE,
+	ERROR_PAGE,
+	FASTCGI_PARAM,
+	INDEX,
+	KEEP_ALIVE_TIMEOUT,
+	LIMIT_EXCEPT,
+	LISTEN,
+	LOG_FILE,
+	ROOT,
+	SEND_TIMEOUT,
+	SERVER_NAME
+};
 
 class DefaultValues{
-	public:
+	private:
 		static const std::string	AUTOINDEX;
 		static const double			CLIENT_MAX_BODY_SIZE;  // MANDATORY
 		static const std::string	ERROR_PAGE;
 		static const std::string	FASTCGI_PARAM;
 		static const std::string	INDEX;
-		static const double			KEEP_ALIVE_TIMEOUT; // MANDATORY
+		static const int			KEEP_ALIVE_TIMEOUT;  // MANDATORY
 		static const std::string	LIMIT_EXCEPT;
 		static const int			LISTEN;  // MANDATORY
 		static const std::string	LOG_FILE;
 		static const std::string	ROOT;
-		static const double			SEND_TIMEOUT;  // For CGI Timeout.
+		static const int			SEND_TIMEOUT;  // For CGI Timeout.
 		static const std::string	SERVER_NAME;  // MANDATORY
-}
+	public:
+		template<typename T>
+		static T getDefaultValue(enum ValuesEnum);
+};
 #endif
 
 // //--------------------- Http Config---------------------//
 // Directives for http block :
 // keepalive_timeout	-- time to keep a connection alive with a client
-// send_timeout 		-- timeout for CGI processes
+// send_timeout			-- timeout for CGI processes
 
 // // ------------------- Server config -------------------//
 // Directives for server block :
-// autoindex 				-- List all the directories present in the accessed directory.
+// autoindex				-- List all the directories present in the accessed directory.
 // client_max_body_size		-- Maximum size of the body sent by the client.
 // error_page				-- List all the default files that would be returned in case of an error, if not only the error code will be shown.
 // index					-- If a file is not found it will go to the file defined by index and will serve it.
