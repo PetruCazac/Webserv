@@ -314,6 +314,7 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
+	// checkDirectives(server);
 }
 
 void Config::parseLocation(LocationDirectives& location, Block& block){
@@ -396,7 +397,6 @@ void Config::printConfig(){
 	std::cout << "name" << _httpConfig.name << std::endl;
 	std::cout << "keepalive_timeout" << _httpConfig.keepalive_timeout << std::endl;
 	std::cout << "send_timeout" << _httpConfig.send_timeout << std::endl;
-	
 
 	std::cout << "//---------------------- SERVER STRUCTURE---------------------//" << std::endl;
 	std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
