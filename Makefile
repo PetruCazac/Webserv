@@ -4,7 +4,7 @@ CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -g
 
 SRC= Webserv.cpp HttpRequest.cpp
-SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp Http.cpp
+SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp
 # Parsing files
 SRC+= Config.cpp
 
