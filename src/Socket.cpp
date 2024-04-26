@@ -1,6 +1,6 @@
 #include "Socket.hpp"
 
-Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
+Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1), _http_request(NULL){
     socket_config = input_config;
     _socket_type = SERVER;
     setSocketStatus(LISTEN_STATE);
@@ -15,7 +15,7 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     }
 }
 
-Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL) {
+Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL) {
     _socket_type = CLIENT;
     setSocketStatus(RECEIVE);
 }
@@ -167,4 +167,16 @@ SocketStatus Socket::getSocketStatus() const {
 
 void Socket::setSocketStatus(SocketStatus status) {
     _socket_status = status;
+}
+
+HttpRequest* Socket::getHttpRequest() const {
+    return _http_request;
+}
+
+void Socket::setNewHttpRequest(std::istream &inputRequest) {
+    if (this->getHttpRequest() != NULL) {
+        delete _http_request;
+        _http_request = NULL;
+    }
+    _http_request = new HttpRequest(inputRequest);
 }

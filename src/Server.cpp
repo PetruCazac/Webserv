@@ -114,7 +114,6 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 int bytes_read = 0;
                 if (!_socket_map[poll_fd.fd]->receive(poll_fd.fd, &buffer, _server_config.max_data_size_incoming, bytes_read)) {
                     LOG_ERROR_NAME("Failed to receive data.", _server_config.server_name);
-                    return;
                 }
                 if (bytes_read == 0) {
                     LOG_DEBUG_NAME("Connection closed.", _server_config.server_name);
@@ -122,9 +121,12 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     delete _socket_map[poll_fd.fd];
                     _socket_map.erase(poll_fd.fd);
                     _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
+                    return ;
                 } else {
+                    std::istringstream iss(buffer);
+                    _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
                     std::ostringstream oss;
-                    oss << "Received data: \033[33m" << buffer << "\033[0m\n";
+                    oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
                     _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);

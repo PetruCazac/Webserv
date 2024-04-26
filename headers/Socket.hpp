@@ -3,6 +3,7 @@
 
 #include "Configuration.hpp"
 #include <vector>
+#include "HttpRequest.hpp"
 
 class SocketException : public std::exception {
 private:
@@ -31,17 +32,19 @@ class Socket {
         Socket(int connection_fd);
         ~Socket();
 
-        void removeSocket();
-        bool bindAndListen();
-        int acceptIncoming();
+        void removeSocket(void);
+        bool bindAndListen(void);
+        int acceptIncoming(void);
         bool sendtoClient(const std::string* data, size_t len);
         bool receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read);
-        int getSockFd() const;
+        int getSockFd(void) const;
         void* get_in_addr(struct sockaddr *sa);
-        bool setupAddrInfo();
-        SocketType getSocketType() const;
-        SocketStatus getSocketStatus() const;
+        bool setupAddrInfo(void);
+        SocketType getSocketType(void) const;
+        SocketStatus getSocketStatus(void) const;
         void setSocketStatus(SocketStatus status);
+        HttpRequest* getHttpRequest(void) const;
+        void setNewHttpRequest(std::istream &inputRequest);
 
     private:
         SocketConfiguration *socket_config;
@@ -49,8 +52,7 @@ class Socket {
         addrinfo_t *_addr_info;
         SocketType _socket_type;
         SocketStatus _socket_status;
-        // Add a pointer to HttpRequest
-        // Add a pointer to HttpResponse
+        HttpRequest *_http_request;
 
 
 };
