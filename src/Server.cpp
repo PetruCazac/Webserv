@@ -92,6 +92,8 @@ void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
             break;
         case RECEIVE:
             break;
+        case SEND_RESPONSE:
+            break;
         case WAIT_FOR_RESPONSE:
             break;
     }
@@ -101,6 +103,15 @@ void Server::updatePollFdForWrite(int fd) {
     for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
         if (_poll_fd_vector[i].fd == fd) {
             _poll_fd_vector[i].events = POLLOUT;
+            break;
+        }
+    }
+}
+
+void Server::updatePollFdForRead(int fd) {
+    for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
+        if (_poll_fd_vector[i].fd == fd) {
+            _poll_fd_vector[i].events = POLLIN;
             break;
         }
     }
@@ -128,12 +139,17 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     std::ostringstream oss;
                     oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config.server_name);
-                    _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
+                    // If you have to wait for CGI
+                    // _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
+                    // If you can send a response immediately
+                    _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);
                 }
             }
             break;
         case WAIT_FOR_RESPONSE:
+            break;
+        case SEND_RESPONSE:
         {
             std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
             std::stringstream response;
@@ -146,6 +162,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             const std::string& responseStr = response.str(); // Obtain the formatted response as a string
             _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
+            updatePollFdForRead(poll_fd.fd);
             LOG_INFO_NAME("Sent response to client.", _server_config.server_name);
         }
             break;

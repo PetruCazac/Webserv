@@ -15,6 +15,7 @@ class Server {
         void handleServerSocketEvents(const pollfd_t& poll_fd);
         void handleClientSocketEvents(const pollfd_t& poll_fd);
         void updatePollFdForWrite(int fd);
+        void updatePollFdForRead(int fd);
 
     private:
         std::vector<pollfd_t> _poll_fd_vector;

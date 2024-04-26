@@ -24,7 +24,8 @@ enum SocketType {
 enum SocketStatus {
     LISTEN_STATE,
     RECEIVE,
-    WAIT_FOR_RESPONSE
+    WAIT_FOR_RESPONSE,
+    SEND_RESPONSE
 };
 class Socket {
     public:
