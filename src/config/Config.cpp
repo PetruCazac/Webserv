@@ -43,14 +43,10 @@ std::string translateDirectives(enum Parser directive){
 			return "listen";
 		case LOCATION:
 			return "location";
-		case HOSTNAME:
-			return "host_name";
 		case SERVERNAME:
 			return "server_name";
 		case CLIENTSIZE:	
 			return "client_max_body_size";
-		case PORT:
-			return "port";
 		case ROOT:
 			return "root";
 		case TRY_FILES:
@@ -282,14 +278,14 @@ void parseHttp(std::map<std::string, std::vector<std::string> >& directives){
 		if(it->first == "client_max_body_size"){
 			if(it->second.size() == 0){
 				LOG_INFO("Missing directive will be assigned default value.");
-				directives["client_max_body_size"] = getVector(CLIENT_MAX_BODY_SIZE);
+				directives["client_max_body_size"] = getVector(DefaultValues::CLIENT_MAX_BODY_SIZE);
 			}else if(it->second.size() > 1 || !isNumber(it->second[0]))
 				throw Config::WrongDirectiveAttributes();
 		}else if(it->first == "keepalive_timeout"){
 			if(it->second.size() == 0){
 				LOG_INFO("Missing directive will be assigned default value.");
 				std::vector <std::string> v;
-				v.push_back(FILE_LOG);
+				v.push_back(DefaultValues::FILE_LOG);
 				directives["client_max_body_size"] = v;
 			}else if(it->second.size() != 1 || !isNumber(it->second[0]))
 				throw Config::WrongDirectiveAttributes();

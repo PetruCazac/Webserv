@@ -9,13 +9,11 @@ class DefaultValues{
 		static const double			CLIENT_MAX_BODY_SIZE;  // MANDATORY
 		static const std::string	ERROR_PAGE;
 		static const std::string	FASTCGI_PARAM;
-		static const std::string	FILE_LOG;
 		static const std::string	INDEX;
 		static const double			KEEP_ALIVE_TIMEOUT; // MANDATORY
 		static const std::string	LIMIT_EXCEPT;
 		static const int			LISTEN;  // MANDATORY
 		static const std::string	LOG_FILE;
-		static const std::string	MODULE;  //MANDATORY
 		static const std::string	ROOT;
 		static const double			SEND_TIMEOUT;  // For CGI Timeout.
 		static const std::string	SERVER_NAME;  // MANDATORY
