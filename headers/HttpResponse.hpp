@@ -1,6 +1,6 @@
 
-#ifndef HTTPRESPONCE_HPP
-#define HTTPRESPONCE_HPP
+#ifndef HTTPRESPONSE_HPP
+#define HTTPRESPONSE_HPP
 
 #include <map>
 #include <string>
@@ -19,14 +19,14 @@ public:
 	const std::string &getStatusCode(const int code);
 };
 
-struct HttpResponceExceptions {
+struct HttpResponseExceptions {
 	enum ResponceErrors {
 		ERR
 	};
 
 	ResponceErrors err;
 
-	explicit HttpResponceExceptions(ResponceErrors err) :
+	explicit HttpResponseExceptions(ResponceErrors err) :
 		err(err) { }
 
 	const char *what() const throw() {
@@ -37,16 +37,19 @@ struct HttpResponceExceptions {
 	}
 };
 
-class HttpResponce {
+class HttpResponse {
 private:
-	std::istream _responce;
+	int _code;
+	std::istream _response;
+
+	HttpResponse();
 
 public:
-	explicit HttpResponce(const int code);
+	explicit HttpResponse(const int code);
 	void addHeader(const std::string &header);
 	void setBody(const std::vector<uint8_t> &body);
 
-	const std::istream &getResponce() const;
+	const std::istream &getResponse() const;
 };
 
-#endif // HTTPRESPONCE_HPP
+#endif // HTTPRESPONSE_HPP

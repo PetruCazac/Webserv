@@ -1,12 +1,30 @@
 
-#include "../headers/HttpResponce.hpp"
+#include "../headers/HttpResponse.hpp"
 #include <map>
 #include <string>
+#include <istream>
+#include <iostream>
 
 // Responce: (class/struct? how to return)
 // <version> <status> <reason-phrase>
 // <headers>
 // <entity-body>
+
+HttpResponse::HttpResponse(const int code) {
+
+}
+
+void HttpResponse::addHeader(const std::string &header) {
+
+}
+
+void HttpResponse::setBody(const std::vector<uint8_t> &body) {
+
+}
+
+const std::istream &HttpResponse::getResponse() const {
+	return _response;
+}
 
 StatusCodeMap::StatusCodeMap() {
 	statusCodes[200] = "OK";
@@ -37,5 +55,5 @@ const std::string &StatusCodeMap::getStatusCode(const int code) {
 		if (code == it->first)
 			return it->second;
 	}
-	throw HttpResponceExceptions(HttpResponceExceptions::ERR);
+	throw HttpResponseExceptions(HttpResponseExceptions::ERR);
 }
