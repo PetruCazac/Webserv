@@ -1,4 +1,3 @@
-
 #include "HttpRequest.hpp"
 #include <iostream>			// std::cout
 #include <string>			// std::string

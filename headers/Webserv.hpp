@@ -1,5 +1,5 @@
-#ifndef HTTP_HPP
-#define HTTP_HPP
+#ifndef WEBSERV_HPP
+#define WEBSERV_HPP
 
 #include <iostream>
 #include <stdio.h>
@@ -9,16 +9,30 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <vector>
+#include <map>
+#include <deque>
+#include <fstream>
+#include <sstream>
 
+// #include "Server.hpp"
+#include "Logger.hpp"
+#include "Config.hpp"
 #include "HttpRequest.hpp"
+#include "Server.hpp"
 
-class Http{
-private:
+class Webserv{
+	public:
+		Webserv(char* str);
+		~Webserv();
 
+		void init_servers(void);
+		void run_servers(void);
 
-public:
-
-
+	private:
+		Config _webserv_config;
+		std::vector<Server> _servers;
+		std::map<std::string, std::vector<std::string> > _http_directives;
 };
 
 #endif

@@ -1,11 +1,16 @@
 NAME = webserv
 
-CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Wpedantic -Iheaders
+CXX= c++
+CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -g
 
-SRC = Webserv.cpp HttpRequest.cpp getMethod.cpp
+SRC= Webserv.cpp HttpRequest.cpp
+SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp Http.cpp
+# Parsing files
+SRC+= Config.cpp
 
-VPATH = src/:obj/:headers/
+
+
+VPATH= src/:obj/:headers/:http_request_parser/:src/config/
 
 OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
 OBJ_PATH = obj
