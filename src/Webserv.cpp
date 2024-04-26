@@ -31,9 +31,19 @@ void Webserv::init_servers(void){
 
 void Webserv::run_servers(void){
 	while(true){
-		for (size_t i = 0; i < _servers.size(); ++i){
-			// _servers[i].run();
-			_servers[i].socketHandler();
-		}
+        updatePollFds();
+        if (poll(&_master_poll_fds[0], _master_poll_fds.size(), 100) > 0){
+            for (size_t i = 0; i < _servers.size(); ++i){
+                _servers[i].handleEvents(_master_poll_fds);
+            }
+        }
 	}
+}
+
+void Webserv::updatePollFds(){
+    _master_poll_fds.clear();
+    for (size_t i = 0; i < _servers.size(); ++i){
+        const std::vector<pollfd_t>& tmp = _servers[i].getPollFdVector();
+        _master_poll_fds.insert(_master_poll_fds.end(), tmp.begin(), tmp.end());
+    }
 }

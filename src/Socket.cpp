@@ -3,7 +3,7 @@
 Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
     socket_config = input_config;
     _socket_type = SERVER;
-    _socket_status = LISTEN_STATE;
+    setSocketStatus(LISTEN_STATE);
     LOG_DEBUG("Constructor for listening Socket called.");
     if (!setupAddrInfo()) {
         LOG_ERROR("Failed to setup address info.");
@@ -17,7 +17,7 @@ Socket::Socket(SocketConfiguration *input_config) : _sockfd(-1){
 
 Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL) {
     _socket_type = CLIENT;
-    _socket_status = RECEIVE;
+    setSocketStatus(RECEIVE);
 }
 
 Socket::~Socket() {
@@ -116,25 +116,20 @@ int Socket::acceptIncoming() {
 }
 
 bool Socket::sendtoClient(const std::string* data, size_t len) {
-    if (send(_sockfd,data->c_str(), len, 0) == -1) {
-        LOG_ERROR("Failed to send data.");
-        return false;
+    size_t len_sent = 0;
+    int bytes_sent = 0;
+    while (len_sent < len) {
+        bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
+        if (bytes_sent < 0) {
+            LOG_ERROR("Failed to send data.");
+            return false;
+        }
+        len_sent += bytes_sent;
     }
     LOG_DEBUG("Successfully sent data.");
     return true;
 }
 
-// bool Socket::receive(std::string& buffer, size_t buffer_size, size_t& bytes_read) {
-//     char buf[buffer_size];
-//     bytes_read = recv(_sockfd, buf, buffer_size, 0);
-//     if (bytes_read == -1) {
-//         LOG_ERROR("Failed to receive data.");
-//         return false;
-//     }
-//     buffer = std::string(buf, bytes_read);
-//     LOG_DEBUG("Successfully received data.");
-//     return true;
-// }
 
 bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read) {
     bytes_read = recv(client_fd, buffer, buffer_size, 0);
@@ -147,6 +142,7 @@ bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes
         return false;
     }
     LOG_DEBUG("Successfully received data.");
+    setSocketStatus(WAIT_FOR_RESPONSE);
     return bytes_read > 0;
 }
 
@@ -163,4 +159,12 @@ int Socket::getSockFd() const {
 
 SocketType Socket::getSocketType() const {
     return _socket_type;
+}
+
+SocketStatus Socket::getSocketStatus() const {
+    return _socket_status;
+}
+
+void Socket::setSocketStatus(SocketStatus status) {
+    _socket_status = status;
 }
