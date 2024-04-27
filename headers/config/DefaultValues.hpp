@@ -21,21 +21,21 @@ enum ValuesEnum {
 
 class DefaultValues{
 	private:
-		static const std::string	AUTOINDEX;
-		static const double			CLIENT_MAX_BODY_SIZE;  // MANDATORY
-		static const std::string	ERROR_PAGE;
-		static const std::string	FASTCGI_PARAM;
-		static const std::string	INDEX;
-		static const int			KEEP_ALIVE_TIMEOUT;  // MANDATORY
-		static const std::string	LIMIT_EXCEPT;
-		static const int			LISTEN;  // MANDATORY
-		static const std::string	LOG_FILE;
-		static const std::string	ROOT;
-		static const int			SEND_TIMEOUT;  // For CGI Timeout.
-		static const std::string	SERVER_NAME;  // MANDATORY
+		static const std::string	_AUTOINDEX;
+		static const double			_CLIENT_MAX_BODY_SIZE;  // MANDATORY
+		static const std::string	_ERROR_PAGE;
+		static const std::string	_FASTCGI_PARAM;
+		static const std::string	_INDEX;
+		static const int			_KEEP_ALIVE_TIMEOUT;  // MANDATORY
+		static const std::string	_LIMIT_EXCEPT;
+		static const int			_LISTEN;  // MANDATORY
+		static const std::string	_LOG_FILE;
+		static const std::string	_ROOT;
+		static const int			_SEND_TIMEOUT;  // For CGI Timeout.
+		static const std::string	_SERVER_NAME;  // MANDATORY
 	public:
 		template<typename T>
-		static T getDefaultValue(enum ValuesEnum);
+		static T getDefaultValue(ValuesEnum directive);
 };
 #endif
 

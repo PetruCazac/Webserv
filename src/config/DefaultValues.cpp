@@ -1,45 +1,60 @@
 #include "DefaultValues.hpp"
 
-const std::string	DefaultValues::AUTOINDEX = "on";
-const double		DefaultValues::CLIENT_MAX_BODY_SIZE = 1000;  // MANDATORY
-const std::string	DefaultValues::ERROR_PAGE = "404.html";
-const std::string	DefaultValues::FASTCGI_PARAM = "GET";
-const std::string	DefaultValues::LOG_FILE = "log_file.log";
-const std::string	DefaultValues::INDEX = "index.html";
-const int			DefaultValues::KEEP_ALIVE_TIMEOUT = 10; // MANDATORY
-const std::string	DefaultValues::LIMIT_EXCEPT = "all";
-const int			DefaultValues::LISTEN = 0;  // MANDATORY
-const std::string	DefaultValues::ROOT = "/";
-const int		DefaultValues::SEND_TIMEOUT = 10;  // For CGI Timeout.
-const std::string	DefaultValues::SERVER_NAME = "server";  // MANDATORY
+const std::string	DefaultValues::_AUTOINDEX = "on";
+const double		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;  // MANDATORY
+const std::string	DefaultValues::_ERROR_PAGE = "404.html";
+const std::string	DefaultValues::_FASTCGI_PARAM = "GET";
+const std::string	DefaultValues::_LOG_FILE = "log_file.log";
+const std::string	DefaultValues::_INDEX = "index.html";
+const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10; // MANDATORY
+const std::string	DefaultValues::_LIMIT_EXCEPT = "all";
+const int			DefaultValues::_LISTEN = 0;  // MANDATORY
+const std::string	DefaultValues::_ROOT = "/";
+const int		DefaultValues::_SEND_TIMEOUT = 10;  // For CGI Timeout.
+const std::string	DefaultValues::_SERVER_NAME = "server";  // MANDATORY
 
-template< typename T>
-T DefaultValues::getDefaultValue(enum ValuesEnum directive){
+template< >
+std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 		switch(directive) {
-		case ValuesEnum::AUTOINDEX:
-			return AUTOINDEX;
-		case ValuesEnum::CLIENT_MAX_BODY_SIZE:
-			return CLIENT_MAX_BODY_SIZE;
-		case ValuesEnum::ERROR_PAGE:
-			return ERROR_PAGE;
-		case ValuesEnum::FASTCGI_PARAM:
-			return FASTCGI_PARAM;
-		case ValuesEnum::INDEX:
-			return INDEX;
-		case ValuesEnum::KEEP_ALIVE_TIMEOUT:
-			return KEEP_ALIVE_TIMEOUT;
-		case ValuesEnum::LIMIT_EXCEPT:
-			return LIMIT_EXCEPT;
-		case ValuesEnum::LISTEN:
-			return LISTEN;
-		case ValuesEnum::LOG_FILE:
-			return LOG_FILE;
-		case ValuesEnum::ROOT:
-			return ROOT;
-		case ValuesEnum::SEND_TIMEOUT:
-			return SEND_TIMEOUT;
-		case ValuesEnum::SERVER_NAME:
-			return SERVER_NAME;
+		case AUTOINDEX:
+			return _AUTOINDEX;
+		case ERROR_PAGE:
+			return _ERROR_PAGE;
+		case FASTCGI_PARAM:
+			return _FASTCGI_PARAM;
+		case INDEX:
+			return _INDEX;
+		case LIMIT_EXCEPT:
+			return _LIMIT_EXCEPT;
+		case LOG_FILE:
+			return _LOG_FILE;
+		case ROOT:
+			return _ROOT;
+		case SERVER_NAME:
+			return _SERVER_NAME;
+		default:
+			return "Unknown directive";
+	}
+	return 0;
+}
+template< >
+int DefaultValues::getDefaultValue(enum ValuesEnum directive){
+		switch(directive) {
+			return _KEEP_ALIVE_TIMEOUT;
+		case LISTEN:
+			return _LISTEN;
+		case SEND_TIMEOUT:
+			return _SEND_TIMEOUT;
+		default:
+			return 0;
+	}
+	return 0;
+}
+template< >
+double DefaultValues::getDefaultValue(enum ValuesEnum directive){
+		switch(directive) {
+		case CLIENT_MAX_BODY_SIZE:
+			return _CLIENT_MAX_BODY_SIZE;
 		default:
 			return 0;
 	}

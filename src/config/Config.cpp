@@ -1,5 +1,4 @@
 #include "Config.hpp"
-#include "DefaultValues.hpp"
 
 // //--------------------- Http Config---------------------//
 // Directives for http block :
@@ -134,7 +133,8 @@ void Config::parseConfig(Block& block){
 	}else if(block.name == "http"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		HttpDirectives http = getHttpStruct();
+		HttpDirectives http;
+		getHttpStruct(http);
 		http.name = block.name;
 		parseHttp(http, block);
 		_httpConfig = http;
@@ -147,12 +147,14 @@ void Config::parseConfig(Block& block){
 	} else if(block.name == "server"){
 		if(block.methods.size() != 0)
 			throw WrongMethods();
-		ServerDirectives server = getServerStruct();
+		ServerDirectives server;
+		getServerStruct(server);
 		server.name = block.name;
 		parseServer(server, block);
 		for(size_t i = 0; i < block.children.size(); i++){
 			if(block.children[i].name == "location"){
-				LocationDirectives location = getLocationStruct();
+				LocationDirectives location;
+				getLocationStruct(location);
 				parseLocation(location, block.children[i]);
 				server.locations.push_back(location);
 			
@@ -237,11 +239,11 @@ void logInfo(std::string message, std::string directive, std::vector<std::string
 	LOG_INFO(ss.str());
 }
 
-std::vector<std::string>& getVector(std::string str){
-	std::vector <std::string> v;
-	v.push_back(str);
-	return v;
-}
+// std::vector<std::string>& getVector(std::string str){
+// 	std::vector <std::string> v;
+// 	v.push_back(str);
+// 	return v;
+// }
 
 void Config::parseHttp(HttpDirectives& http, Block& block){
 	std::map<std::string, std::vector<std::string> > directives;
@@ -361,16 +363,13 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 
 // ----------------- Get Default Structures -----------------
 
-HttpDirectives& getHttpStruct(void){
-	HttpDirectives http;
+void Config::getHttpStruct(HttpDirectives& http){
 	http.keepalive_timeout = DefaultValues::getDefaultValue<int>(KEEP_ALIVE_TIMEOUT);
-	http.send_timeout = DefaultValues::getDefaultValue<double>(SEND_TIMEOUT);
-	return http;
+	http.send_timeout = DefaultValues::getDefaultValue<int>(SEND_TIMEOUT);
 }
 
-ServerDirectives& getServerStruct(void){
-	ServerDirectives server;
-	server.autoindex = DefaultValues::getDefaultValue<bool>(AUTOINDEX);
+void Config::getServerStruct(ServerDirectives& server){
+	server.autoindex = DefaultValues::getDefaultValue<std::string>(AUTOINDEX);
 	server.client_max_body_size = DefaultValues::getDefaultValue<double>(CLIENT_MAX_BODY_SIZE);
 	server.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	server.listen = DefaultValues::getDefaultValue<int>(LISTEN);
@@ -379,9 +378,8 @@ ServerDirectives& getServerStruct(void){
 	// server.error_page = DefaultValues::getDefaultValue<std::string>(ERROR_PAGE);
 }
 
-LocationDirectives& getLocationStruct(void){
-	LocationDirectives location;
-	location.autoindex = DefaultValues::getDefaultValue<bool>(AUTOINDEX);
+void Config::getLocationStruct(LocationDirectives& location){
+	location.autoindex = DefaultValues::getDefaultValue<std::string>(AUTOINDEX);
 	location.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));

@@ -19,12 +19,23 @@
 // #include "Webserv.hpp"
 #include "Directives.hpp"
 #include "Logger.hpp"
+#include "DefaultValues.hpp"
 
 typedef struct s_http{
 	std::string name;
-	double	keepalive_timeout;
-	double	send_timeout;
+	int	keepalive_timeout;
+	int	send_timeout;
 }	HttpDirectives;
+
+typedef struct s_location{
+	std::string					module;
+	std::string					autoindex;
+	std::vector<std::string>	fastcgi_param;
+	std::string					index;
+	std::vector<std::string>	limit_except;
+	std::string					root;
+	std::map<int, std::string>	error_pages;
+}	LocationDirectives;
 
 typedef struct s_server{
 	std::string					name;
@@ -39,16 +50,6 @@ typedef struct s_server{
 	std::vector<LocationDirectives>	locations;
 }	ServerDirectives;
 
-typedef struct s_location{
-	std::string					module;
-	std::string					autoindex;
-	std::vector<std::string>	fastcgi_param;
-	std::string					index;
-	std::vector<std::string>	limit_except;
-	std::string					root;
-	std::map<int, std::string>	error_pages;
-}	LocationDirectives;
-
 struct Block {
 	std::string name;
 	std::vector<std::string> methods;
@@ -57,8 +58,8 @@ struct Block {
 };
 
 // Static Function
-std::string translateDirectives(enum Parser directive);
-Parser getParseLevel(const std::string *str);
+// std::string translateDirectives(enum Parser directive);
+// Parser getParseLevel(const std::string *str);
 
 
 class Config {
@@ -86,9 +87,9 @@ class Config {
 
 		// Helper functions
 		bool isBlock(void);
-		HttpDirectives& getHttpStruct(void);
-		ServerDirectives& getServerStruct(void);
-		LocationDirectives& getLocationStruct(void);
+		void getHttpStruct(HttpDirectives& http);
+		void getServerStruct(ServerDirectives& server);
+		void getLocationStruct(LocationDirectives& location);
 
 		// Getter Funciton
 		std::vector<ServerDirectives> getServerConfig(void);
