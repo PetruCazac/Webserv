@@ -5,6 +5,9 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <stdint.h>
+#include <iterator>
+#include <stdlib.h>
 
 enum HttpMethods {
 	GET,
@@ -52,6 +55,8 @@ private:
 	std::map<std::string, std::string> _headers;
 	std::vector<uint8_t> _body;
 
+	HttpRequest();
+	
 	void parseStartLine(const std::string &line);
 	void parseHeaders(std::istream &inputRequest);
 	void readBody(std::istream &inputRequest);

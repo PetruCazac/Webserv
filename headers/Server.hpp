@@ -16,7 +16,7 @@ class Server {
 
     private:
         std::vector<pollfd_t> _poll_fd_vector;
-        ServerConfiguration *_server_config;
+        ServerConfiguration _server_config;
         std::map<int, Socket*> _socket_map;
         std::map<int, Http*> _http_sessions;
         void convert_directives_to_config(ServerDirectives *input_config);

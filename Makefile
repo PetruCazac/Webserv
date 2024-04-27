@@ -1,4 +1,4 @@
-NAME= webserv
+NAME = webserv
 
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -Iheaders/config -g
@@ -16,17 +16,19 @@ OBJ_PATH = obj
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJ)
+	@$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJ)
+	@printf "compiled\n"
 
 $(OBJ_PATH)/%.o: %.cpp
-	mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@mkdir -p $(@D)
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJ_PATH)
+	@rm -rf $(OBJ_PATH)
+	@printf "cleaned\n"
 
 fclean: clean
-	/bin/rm -f webserv
+	@/bin/rm -f webserv
 
 re: fclean all
 
