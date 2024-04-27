@@ -34,50 +34,6 @@ Config& Config::operator=(const Config&){
 	return *this;
 }
 
-// std::string translateDirectives(enum Parser directive){
-// 	switch(directive) {
-// 		case INDEX:
-// 			return 	"index";
-// 		case LISTEN:
-// 			return "listen";
-// 		case LOCATION:
-// 			return "location";
-// 		case SERVERNAME:
-// 			return "server_name";
-// 		case CLIENTSIZE:	
-// 			return "client_max_body_size";
-// 		case ROOT:
-// 			return "root";
-// 		case TRY_FILES:
-// 			return "try_files";
-// 		case LOG_FILE:
-// 			return "log_file";
-// 		case MAX_DATA_SIZE_INC:
-// 			return "max_data_size_incoming";
-// 		case LOG_LEVEL:
-// 			return "log_level";
-// 		case TOTAL:
-// 			return NULL;
-// 	}
-// 	return NULL;
-// }
-
-// Parser getParseLevel(const std::string& str){
-// 	if (str == "index") return INDEX;
-// 	else if (str == "listen") return LISTEN;
-// 	else if (str == "location") return LOCATION;
-// 	else if (str == "host_name") return HOSTNAME;
-// 	else if (str == "server_name") return SERVERNAME;
-// 	else if (str == "client_max_body_size") return CLIENTSIZE;
-// 	else if (str == "port") return PORT;
-// 	else if (str == "root") return ROOT;
-// 	else if (str == "try_files") return TRY_FILES;
-// 	else if (str == "log_file") return LOG_FILE;
-// 	else if (str == "max_data_size_incoming") return MAX_DATA_SIZE_INC;
-// 	else if (str == "log_level") return LOG_LEVEL;
-// 	else return TOTAL;
-// }
-
 void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
 	checkFilename(configFile);
@@ -239,12 +195,6 @@ void logInfo(std::string message, std::string directive, std::vector<std::string
 	LOG_INFO(ss.str());
 }
 
-// std::vector<std::string>& getVector(std::string str){
-// 	std::vector <std::string> v;
-// 	v.push_back(str);
-// 	return v;
-// }
-
 void Config::parseHttp(HttpDirectives& http, Block& block){
 	std::map<std::string, std::vector<std::string> > directives;
 	for(size_t i = 0; i < block.parameters.size(); i++){
@@ -316,11 +266,11 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
-	// checkDirectives(server);
+	// checkServerDirectives(server);
 }
 
 void Config::parseLocation(LocationDirectives& location, Block& block){
-	if(block.methods.size() != 1 || block.methods[0].front() != '/')
+	if(block.methods.size() != 1 || block.methods[0].at(0) != '/')
 		throw WrongMethods();
 	else
 		location.module = block.methods[0];
@@ -356,10 +306,11 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
-	if(block.methods.size() == 1 && block.methods[0].front() == '/')
+	if(block.methods.size() == 1 && block.methods[0].at(0) == '/')
 		location.module = block.methods[0];
 	else
 		throw Config::WrongMethods();
+	// checkLocationDirectives(server);
 }
 
 // ----------------- Get Default Structures -----------------
@@ -376,7 +327,6 @@ void Config::getServerStruct(ServerDirectives& server){
 	server.listen = DefaultValues::getDefaultValue<int>(LISTEN);
 	server.log_file = DefaultValues::getDefaultValue<std::string>(LOG_FILE);
 	server.root = DefaultValues::getDefaultValue<std::string>(ROOT);
-	// server.error_page = DefaultValues::getDefaultValue<std::string>(ERROR_PAGE);
 }
 
 void Config::getLocationStruct(LocationDirectives& location){
@@ -385,19 +335,37 @@ void Config::getLocationStruct(LocationDirectives& location){
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));
 	location.limit_except.push_back(DefaultValues::getDefaultValue<std::string>(LIMIT_EXCEPT));
-	// location.error_page = DefaultValues::getDefaultValue<std::string>(ERROR_PAGE);
 }
 
 // ---------------------------------------------- Printing Functions -----------------------------------------//
 
 void Config::printConfig(){
 	std::cout << "//---------------------- HTTP STRUCTURE---------------------//" << std::endl;
-	std::cout << "name" << _httpConfig.name << std::endl;
-	std::cout << "keepalive_timeout" << _httpConfig.keepalive_timeout << std::endl;
-	std::cout << "send_timeout" << _httpConfig.send_timeout << std::endl;
+	std::cout << "name: " << _httpConfig.name << std::endl;
+	std::cout << "keepalive_timeout: " << _httpConfig.keepalive_timeout << std::endl;
+	std::cout << "send_timeout: " << _httpConfig.send_timeout << std::endl;
 
+	for(size_t i = 0; i < _serversConfig.size(); i++){
 	std::cout << "//---------------------- SERVER STRUCTURE---------------------//" << std::endl;
-	std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
+		std::cout << "name: " << _serversConfig[i].name << std::endl;
+		std::cout << "server_name: " << _serversConfig[i].server_name << std::endl;
+		std::cout << "autoindex: " << _serversConfig[i].autoindex << std::endl;
+		std::cout << "client_max_body_size: " << _serversConfig[i].client_max_body_size << std::endl;
+		std::cout << "index: " << _serversConfig[i].index << std::endl;
+		std::cout << "listen: " << _serversConfig[i].listen << std::endl;
+		std::cout << "log_file: " << _serversConfig[i].log_file << std::endl;
+		std::cout << "root: " << _serversConfig[i].root << std::endl;
+		for(size_t j = 0; j < _serversConfig[i].locations.size(); j++){
+			std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
+			std::cout << "LOCATION module: " << _serversConfig[i].locations[j].module << std::endl;
+			std::cout << "LOCATION autoindex: " << _serversConfig[i].locations[j].autoindex << std::endl;
+			std::cout << "LOCATION fastcgio_params: " << _serversConfig[i].locations[j].fastcgi_param[0] << std::endl;
+			std::cout << "LOCATION index: " << _serversConfig[i].locations[j].index << std::endl;
+			std::cout << "LOCATION limit_except: " << _serversConfig[i].locations[j].limit_except[0] << std::endl;
+			std::cout << "LOCATION root: " << _serversConfig[i].locations[j].root << std::endl;
+		
+		}
+	}
 }
 
 void Config::printDirective(Block& block, int depth = 0){

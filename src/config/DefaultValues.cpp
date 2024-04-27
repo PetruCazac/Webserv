@@ -9,9 +9,9 @@ const std::string	DefaultValues::_INDEX = "index.html";
 const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10; // MANDATORY
 const std::string	DefaultValues::_LIMIT_EXCEPT = "all";
 const int			DefaultValues::_LISTEN = 0;  // MANDATORY
-const std::string	DefaultValues::_ROOT = "/";
+const std::string	DefaultValues::_ROOT = "";
 const int		DefaultValues::_SEND_TIMEOUT = 10;  // For CGI Timeout.
-const std::string	DefaultValues::_SERVER_NAME = "server";  // MANDATORY
+const std::string	DefaultValues::_SERVER_NAME = "default_server";  // MANDATORY
 
 template< >
 std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
@@ -40,6 +40,7 @@ std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 template< >
 int DefaultValues::getDefaultValue(enum ValuesEnum directive){
 		switch(directive) {
+		case KEEP_ALIVE_TIMEOUT:
 			return _KEEP_ALIVE_TIMEOUT;
 		case LISTEN:
 			return _LISTEN;
