@@ -8,8 +8,6 @@ SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp Http.cpp
 # Parsing files
 SRC+= Config.cpp DefaultValues.cpp 
 
-
-
 VPATH= src/:obj/:http_request_parser/:src/config/
 
 OBJ = $(SRC:%.cpp=$(OBJ_PATH)/%.o)
