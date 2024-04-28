@@ -15,8 +15,9 @@
 #include <fstream>
 #include <sstream>
 #include <exception>
+#include <cstring>
+#include <stdarg.h>
 
-// #include "Webserv.hpp"
 #include "Directives.hpp"
 #include "Logger.hpp"
 #include "DefaultValues.hpp"
@@ -57,20 +58,16 @@ struct Block {
 	std::vector<Block> children;
 };
 
-// Static Function
-// std::string translateDirectives(enum Parser directive);
-// Parser getParseLevel(const std::string *str);
-
-
 class Config {
 	private:
-		HttpDirectives	_httpConfig;
-		std::vector<ServerDirectives>	_serversConfig;
 		std::vector<std::string> tokens;
 		size_t	tokenIndex;
 		Block block;
 
 	public:
+		HttpDirectives	_httpConfig;
+		std::vector<ServerDirectives>	_serversConfig;
+		
 		Config();
 		~Config();
 		Config(const Config& c);
@@ -90,17 +87,23 @@ class Config {
 		void getHttpStruct(HttpDirectives& http);
 		void getServerStruct(ServerDirectives& server);
 		void getLocationStruct(LocationDirectives& location);
+		void checkServerDirectives(ServerDirectives& server);
+		void checkLocationDirectives(LocationDirectives& location);
 
-		// Getter Funciton
-		std::vector<ServerDirectives> getServerConfig(void);
-		
+
 		// Printing functions
 		void printDirective(Block& block, int i);
 		void printConfig();
 	
 		// class ParsinExceptions : public std::runtime_exception()
 		// Exception functions
-		class ParsingExceptions : public std::exception{};
+		class ParsingException : public std::exception{
+			private:
+				std::string errorMessage;
+			public:
+				ParsingException(const char* error, ...);
+				const char* what() const throw();
+		};
 		class OpenException : public ParsingExceptions{
 			public:
 				const char* what() const throw(){

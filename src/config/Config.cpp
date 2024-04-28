@@ -38,8 +38,7 @@ void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
 	checkFilename(configFile);
 	if(!fs.is_open()){
-		LOG_ERROR("Failed to open config file.");
-		throw OpenException();
+		throw ParsingException("Error opening config file: ", configFile);
 	}
 	std::string line;
 	while(std::getline(fs, line)){
@@ -171,11 +170,6 @@ void Config::checkFilename(const char* configFile){
 	return;
 }
 
-std::vector<ServerDirectives> Config::getServerConfig(void){
-	std::vector<ServerDirectives> config = _serversConfig;
-	return config;
-}
-
 // ---------------------------------------------------- Helper Functions ---------------------------------------- //
 
 bool isNumber(std::string str){
@@ -266,7 +260,7 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
-	// checkServerDirectives(server);
+	checkServerDirectives(server);
 }
 
 void Config::parseLocation(LocationDirectives& location, Block& block){
@@ -310,7 +304,7 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 		location.module = block.methods[0];
 	else
 		throw Config::WrongMethods();
-	// checkLocationDirectives(server);
+	checkLocationDirectives(location);
 }
 
 // ----------------- Get Default Structures -----------------
@@ -335,6 +329,16 @@ void Config::getLocationStruct(LocationDirectives& location){
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));
 	location.limit_except.push_back(DefaultValues::getDefaultValue<std::string>(LIMIT_EXCEPT));
+}
+
+void Config::checkServerDirectives(ServerDirectives& server){
+	if(server.listen == 0 || server.server_name.empty() || server.root.empty())
+		throw MissingDirective();
+}
+
+void Config::checkLocationDirectives(LocationDirectives& location){
+	if(location.module.empty())
+		throw MissingDirective();
 }
 
 // ---------------------------------------------- Printing Functions -----------------------------------------//
@@ -391,4 +395,23 @@ void Config::printDirective(Block& block, int depth = 0){
 			printDirective(block.children[i], depth + 2);
 		}
 	}
+}
+
+// ----------------------------- Exceptions ----------------------------
+Config::ParsingException::ParsingException(const char* firstError, ...){
+	errorMessage = firstError;
+	va_list args;
+	va_start(args, firstError);
+	const char* nextError = va_arg(args, const char*);
+	while (nextError != NULL) {
+		errorMessage += nextError;
+		nextError = va_arg(args, const char*);
+	}
+	va_end(args);
+}
+
+const char* Config::ParsingException::what() const throw(){
+	std::string message = "Parsing error occured:\n";
+	message += errorMessage + "\n";
+	return message.c_str();
 }

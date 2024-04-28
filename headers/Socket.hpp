@@ -25,6 +25,7 @@ enum SocketStatus {
     RECEIVE,
     WAIT_FOR_RESPONSE
 };
+
 class Socket {
     public:
         Socket(SocketConfiguration *input_config);
