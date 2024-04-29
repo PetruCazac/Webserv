@@ -26,6 +26,7 @@ typedef struct s_http{
 	std::string name;
 	int	keepalive_timeout;
 	int	send_timeout;
+	size_t	client_max_body_size;
 }	HttpDirectives;
 
 typedef struct s_location{
@@ -42,9 +43,8 @@ typedef struct s_server{
 	std::string					name;
 	std::string					server_name;
 	std::string					autoindex;
-	double						client_max_body_size;
 	std::string					index;
-	int							listen_port;
+	std::string					listen_port;
 	std::string					log_file;
 	std::string					root;
 	std::map<int, std::vector<std::string> >	error_page;

@@ -22,13 +22,13 @@ enum ValuesEnum {
 class DefaultValues{
 	private:
 		static const std::string	_AUTOINDEX;
-		static const double			_CLIENT_MAX_BODY_SIZE;  // MANDATORY
+		static const size_t			_CLIENT_MAX_BODY_SIZE;  // MANDATORY
 		static const std::string	_ERROR_PAGE;
 		static const std::string	_FASTCGI_PARAM;
 		static const std::string	_INDEX;
 		static const int			_KEEP_ALIVE_TIMEOUT;  // MANDATORY
 		static const std::string	_LIMIT_EXCEPT;
-		static const int			_LISTEN;  // MANDATORY
+		static const std::string	_LISTEN;  // MANDATORY
 		static const std::string	_LOG_FILE;
 		static const std::string	_ROOT;
 		static const int			_SEND_TIMEOUT;  // For CGI Timeout.

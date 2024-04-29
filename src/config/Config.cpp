@@ -78,7 +78,8 @@ void Config::parse(void){
 	}
 	printDirective(block, 0);
 	parseConfig(block);
-	std::cout << "\n"<< std::endl;
+	if(_httpConfig.name.empty())
+		getHttpStruct(_httpConfig);
 	printConfig();
 }
 
@@ -205,6 +206,12 @@ void Config::parseHttp(HttpDirectives& http, Block& block){
 			std::stringstream ss;
 			ss << it->second[0];
 			ss >> http.keepalive_timeout;
+		}else if(it->first == "client_max_body_size"){
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 19)
+				throw Config::WrongDirectiveAttributes();
+			std::stringstream ss;
+			ss << it->second[0];
+			ss >> http.client_max_body_size;
 		}else if(it->first == "send_timeout"){
 			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
 				throw Config::WrongDirectiveAttributes();
@@ -246,14 +253,8 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 			if(it->second.size() != 1)
 				throw Config::WrongDirectiveAttributes();
 			server.root = it->second[0];
-		}else if(it->first == "client_max_body_size"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
-				throw Config::WrongDirectiveAttributes();
-			std::stringstream ss;
-			ss << it->second[0];
-			ss >> server.client_max_body_size;
 		}else if(it->first == "listen"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 5)
 				throw Config::WrongDirectiveAttributes();
 			std::stringstream ss;
 			ss << it->second[0];
@@ -313,11 +314,11 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 void Config::getHttpStruct(HttpDirectives& http){
 	http.keepalive_timeout = DefaultValues::getDefaultValue<int>(KEEP_ALIVE_TIMEOUT);
 	http.send_timeout = DefaultValues::getDefaultValue<int>(SEND_TIMEOUT);
+	http.client_max_body_size = DefaultValues::getDefaultValue<size_t>(CLIENT_MAX_BODY_SIZE);
 }
 
 void Config::getServerStruct(ServerDirectives& server){
 	server.autoindex = DefaultValues::getDefaultValue<std::string>(AUTOINDEX);
-	server.client_max_body_size = DefaultValues::getDefaultValue<double>(CLIENT_MAX_BODY_SIZE);
 	server.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	server.listen_port = DefaultValues::getDefaultValue<int>(LISTEN);
 	server.log_file = DefaultValues::getDefaultValue<std::string>(LOG_FILE);
@@ -333,7 +334,7 @@ void Config::getLocationStruct(LocationDirectives& location){
 }
 
 void Config::checkServerDirectives(ServerDirectives& server){
-	if(server.listen_port == 0 || server.server_name.empty() || server.root.empty())
+	if(server.listen_port.empty() || server.server_name.empty() || server.root.empty())
 		throw MissingDirective();
 }
 
@@ -349,13 +350,13 @@ void Config::printConfig(){
 	std::cout << "name: " << _httpConfig.name << std::endl;
 	std::cout << "keepalive_timeout: " << _httpConfig.keepalive_timeout << std::endl;
 	std::cout << "send_timeout: " << _httpConfig.send_timeout << std::endl;
+	std::cout << "client_max_body_size: " << _httpConfig.client_max_body_size << std::endl;
 
 	for(size_t i = 0; i < _serversConfig.size(); i++){
 	std::cout << "//---------------------- SERVER STRUCTURE---------------------//" << std::endl;
 		std::cout << "name: " << _serversConfig[i].name << std::endl;
 		std::cout << "server_name: " << _serversConfig[i].server_name << std::endl;
 		std::cout << "autoindex: " << _serversConfig[i].autoindex << std::endl;
-		std::cout << "client_max_body_size: " << _serversConfig[i].client_max_body_size << std::endl;
 		std::cout << "index: " << _serversConfig[i].index << std::endl;
 		std::cout << "listen: " << _serversConfig[i].listen_port << std::endl;
 		std::cout << "log_file: " << _serversConfig[i].log_file << std::endl;

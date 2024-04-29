@@ -1,14 +1,14 @@
 #include "DefaultValues.hpp"
 
 const std::string	DefaultValues::_AUTOINDEX = "on";
-const double		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;  // MANDATORY
+const size_t		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;  // MANDATORY
 const std::string	DefaultValues::_ERROR_PAGE = "404.html";
 const std::string	DefaultValues::_FASTCGI_PARAM = "GET";
 const std::string	DefaultValues::_LOG_FILE = "log_file.log";
 const std::string	DefaultValues::_INDEX = "index.html";
 const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10; // MANDATORY
 const std::string	DefaultValues::_LIMIT_EXCEPT = "all";
-const int			DefaultValues::_LISTEN = 0;  // MANDATORY
+const std::string	DefaultValues::_LISTEN = "";  // MANDATORY
 const std::string	DefaultValues::_ROOT = "";
 const int		DefaultValues::_SEND_TIMEOUT = 10;  // For CGI Timeout.
 const std::string	DefaultValues::_SERVER_NAME = "";  // MANDATORY
@@ -28,6 +28,8 @@ std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 			return _LIMIT_EXCEPT;
 		case LOG_FILE:
 			return _LOG_FILE;
+		case LISTEN:
+			return _LISTEN;
 		case ROOT:
 			return _ROOT;
 		case SERVER_NAME:
@@ -42,8 +44,6 @@ int DefaultValues::getDefaultValue(enum ValuesEnum directive){
 		switch(directive) {
 		case KEEP_ALIVE_TIMEOUT:
 			return _KEEP_ALIVE_TIMEOUT;
-		case LISTEN:
-			return _LISTEN;
 		case SEND_TIMEOUT:
 			return _SEND_TIMEOUT;
 		default:
@@ -52,7 +52,7 @@ int DefaultValues::getDefaultValue(enum ValuesEnum directive){
 	return 0;
 }
 template< >
-double DefaultValues::getDefaultValue(enum ValuesEnum directive){
+size_t DefaultValues::getDefaultValue(enum ValuesEnum directive){
 		switch(directive) {
 		case CLIENT_MAX_BODY_SIZE:
 			return _CLIENT_MAX_BODY_SIZE;
