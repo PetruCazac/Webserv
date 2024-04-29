@@ -6,7 +6,7 @@
 
 class Server {
     public:
-        Server(ServerDirectives *input_config);
+        Server(ServerDirectives& inputConfig, size_t client_max_body_size);
         ~Server();
 
         bool addListeningSocket();
@@ -16,12 +16,14 @@ class Server {
         void handleClientSocketEvents(const pollfd_t& poll_fd);
         void updatePollFdForWrite(int fd);
         void updatePollFdForRead(int fd);
-
+        void addServerConfig(ServerDirectives& serverConfig);
     private:
+        size_t _client_max_body_size;;
+        std::vector<ServerDirectives> _server_config;
         std::vector<pollfd_t> _poll_fd_vector;
-        ServerConfiguration _server_config;
+        // std:vector<ServerConfiguration> _server_config;
         std::map<int, Socket*> _socket_map;
-        void convert_directives_to_config(ServerDirectives *input_config);
+        // void convert_directives_to_config(ServerDirectives *input_config);
 };
 
 #endif
