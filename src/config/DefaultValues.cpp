@@ -11,7 +11,7 @@ const std::string	DefaultValues::_LIMIT_EXCEPT = "all";
 const int			DefaultValues::_LISTEN = 0;  // MANDATORY
 const std::string	DefaultValues::_ROOT = "";
 const int		DefaultValues::_SEND_TIMEOUT = 10;  // For CGI Timeout.
-const std::string	DefaultValues::_SERVER_NAME = "default_server";  // MANDATORY
+const std::string	DefaultValues::_SERVER_NAME = "";  // MANDATORY
 
 template< >
 std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){

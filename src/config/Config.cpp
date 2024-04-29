@@ -38,7 +38,8 @@ void Config::tokenize(const char* configFile){
 	std::ifstream fs(configFile, std::ios_base::in);
 	checkFilename(configFile);
 	if(!fs.is_open()){
-		throw ParsingException("Error opening config file: ", configFile);
+		// throw ParsingException("Error opening config file: ", configFile);
+		throw OpenException();
 	}
 	std::string line;
 	while(std::getline(fs, line)){
@@ -398,20 +399,20 @@ void Config::printDirective(Block& block, int depth = 0){
 }
 
 // ----------------------------- Exceptions ----------------------------
-Config::ParsingException::ParsingException(const char* firstError, ...){
-	errorMessage = firstError;
-	va_list args;
-	va_start(args, firstError);
-	const char* nextError = va_arg(args, const char*);
-	while (nextError != NULL) {
-		errorMessage += nextError;
-		nextError = va_arg(args, const char*);
-	}
-	va_end(args);
-}
+// Config::ParsingException::ParsingException(const char* firstError, ...){
+// 	errorMessage = firstError;
+// 	va_list args;
+// 	va_start(args, firstError);
+// 	const char* nextError = va_arg(args, const char*);
+// 	while (nextError != NULL) {
+// 		errorMessage += nextError;
+// 		nextError = va_arg(args, const char*);
+// 	}
+// 	va_end(args);
+// }
 
-const char* Config::ParsingException::what() const throw(){
-	std::string message = "Parsing error occured:\n";
-	message += errorMessage + "\n";
-	return message.c_str();
-}
+// const char* Config::ParsingException::what() const throw(){
+// 	std::string message = "Parsing error occured:\n";
+// 	message += errorMessage + "\n";
+// 	return message.c_str();
+// }

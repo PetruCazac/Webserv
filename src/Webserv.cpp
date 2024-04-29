@@ -6,7 +6,7 @@ Webserv::Webserv(char* str){
 		_webserv_config.parse();
 		// init_servers();
 		// run_servers();
-	} catch (Config::ParsingExceptions& e){
+	} catch (Config::ParsingException& e){
 		std::cout << e.what() << str << std::endl;
 		exit(1);
 	}

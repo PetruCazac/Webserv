@@ -97,64 +97,65 @@ class Config {
 	
 		// class ParsinExceptions : public std::runtime_exception()
 		// Exception functions
-		class ParsingException : public std::exception{
-			private:
-				std::string errorMessage;
-			public:
-				ParsingException(const char* error, ...);
-				const char* what() const throw();
-		};
-		class OpenException : public ParsingExceptions{
+		class ParsingException : public std::exception{};
+		// class ParsingException : public std::runtime_error{
+			// private:
+				// std::string errorMessage;
+			// public:
+				// ParsingException(const char* error, ...);
+				// const char* what() const throw();
+		// };
+		class OpenException : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Error opening config file: ";}
 		};
-		class EmptyConfFile : public ParsingExceptions{
+		class EmptyConfFile : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Error: empty config file ";}
 		};
-		class InvalidFilename : public ParsingExceptions{
+		class InvalidFilename : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Wrong Config File: ";}
 		};
-		class WrongBracket : public ParsingExceptions{
+		class WrongBracket : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Brackets are not well set: ";}
 		};
-		class WrongDirective : public ParsingExceptions{
+		class WrongDirective : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Directive non valid: ";}
 		};
-		class MissingDirective : public ParsingExceptions{
+		class MissingDirective : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Directive non existent ";}
 		};
-		class WrongMethods : public ParsingExceptions{
+		class WrongMethods : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Non valid methods found: ";}
 		};
-		class MissingLastCharacter : public ParsingExceptions{
+		class MissingLastCharacter : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Invalid ending, missing: ";}
 		};
-		class WrongLocationDeclaration : public ParsingExceptions{
+		class WrongLocationDeclaration : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Location declared at the wrong place: ";}
 		};
-		class WrongServerDeclaration : public ParsingExceptions{
+		class WrongServerDeclaration : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Server declared at the wrong place: ";}
 		};
-		class WrongDirectiveAttributes : public ParsingExceptions{
+		class WrongDirectiveAttributes : public ParsingException{
 			public:
 				const char* what() const throw(){
 					return "Wrong directive attributes ";}
