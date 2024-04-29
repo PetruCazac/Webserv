@@ -2,6 +2,7 @@
 
 Webserv::Webserv(char* str){
 	try{
+		signalFlag = 0;
 		_webserv_config.tokenize(str);
 		_webserv_config.parse();
 		init_servers();

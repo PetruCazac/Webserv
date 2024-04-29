@@ -15,7 +15,7 @@
 #include <fstream>
 #include <sstream>
 
-// #include "Server.hpp"
+#include "Socket.hpp"
 #include "Logger.hpp"
 #include "Config.hpp"
 #include "HttpRequest.hpp"
@@ -23,6 +23,7 @@
 
 class Webserv{
 	public:
+		static int signalFlag;
 		Webserv(char* str);
 		~Webserv();
 
