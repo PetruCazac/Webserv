@@ -44,7 +44,7 @@ typedef struct s_server{
 	std::string					autoindex;
 	double						client_max_body_size;
 	std::string					index;
-	int							listen;
+	int							listen_port;
 	std::string					log_file;
 	std::string					root;
 	std::map<int, std::vector<std::string> >	error_page;

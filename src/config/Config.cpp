@@ -257,7 +257,7 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 				throw Config::WrongDirectiveAttributes();
 			std::stringstream ss;
 			ss << it->second[0];
-			ss >> server.listen;
+			ss >> server.listen_port;
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
@@ -319,7 +319,7 @@ void Config::getServerStruct(ServerDirectives& server){
 	server.autoindex = DefaultValues::getDefaultValue<std::string>(AUTOINDEX);
 	server.client_max_body_size = DefaultValues::getDefaultValue<double>(CLIENT_MAX_BODY_SIZE);
 	server.index = DefaultValues::getDefaultValue<std::string>(INDEX);
-	server.listen = DefaultValues::getDefaultValue<int>(LISTEN);
+	server.listen_port = DefaultValues::getDefaultValue<int>(LISTEN);
 	server.log_file = DefaultValues::getDefaultValue<std::string>(LOG_FILE);
 	server.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 }
@@ -333,7 +333,7 @@ void Config::getLocationStruct(LocationDirectives& location){
 }
 
 void Config::checkServerDirectives(ServerDirectives& server){
-	if(server.listen == 0 || server.server_name.empty() || server.root.empty())
+	if(server.listen_port == 0 || server.server_name.empty() || server.root.empty())
 		throw MissingDirective();
 }
 
@@ -357,7 +357,7 @@ void Config::printConfig(){
 		std::cout << "autoindex: " << _serversConfig[i].autoindex << std::endl;
 		std::cout << "client_max_body_size: " << _serversConfig[i].client_max_body_size << std::endl;
 		std::cout << "index: " << _serversConfig[i].index << std::endl;
-		std::cout << "listen: " << _serversConfig[i].listen << std::endl;
+		std::cout << "listen: " << _serversConfig[i].listen_port << std::endl;
 		std::cout << "log_file: " << _serversConfig[i].log_file << std::endl;
 		std::cout << "root: " << _serversConfig[i].root << std::endl;
 		for(size_t j = 0; j < _serversConfig[i].locations.size(); j++){
