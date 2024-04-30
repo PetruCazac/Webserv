@@ -62,7 +62,9 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 
 
 int main(int argc, char** argv){
-	if(argc != 2)
+    Logger::setLogFilename("");
+    Logger::setLogLevel(DEBUG);
+    if(argc != 2)
 		return 1;
 	if (!argv)
 		std::cerr << "ERROR" << std::endl;
