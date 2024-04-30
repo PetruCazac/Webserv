@@ -18,7 +18,6 @@
 #include <cstring>
 #include <stdarg.h>
 
-#include "Directives.hpp"
 #include "Logger.hpp"
 #include "DefaultValues.hpp"
 
@@ -34,9 +33,8 @@ typedef struct s_location{
 	std::string					autoindex;
 	std::vector<std::string>	fastcgi_param;
 	std::string					index;
-	std::vector<std::string>	limit_except;
+	std::vector<std::string>	allow;
 	std::string					root;
-	std::map<int, std::string>	error_pages;
 }	LocationDirectives;
 
 typedef struct s_server{
@@ -44,10 +42,10 @@ typedef struct s_server{
 	std::string					server_name;
 	std::string					autoindex;
 	std::string					index;
+	std::vector<std::string>	allow;
 	std::string					listen_port;
 	std::string					log_file;
 	std::string					root;
-	std::map<int, std::vector<std::string> >	error_page;
 	std::vector<LocationDirectives>	locations;
 }	ServerDirectives;
 

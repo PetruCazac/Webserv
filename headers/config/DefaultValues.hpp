@@ -11,7 +11,7 @@ enum ValuesEnum {
 	FASTCGI_PARAM,
 	INDEX,
 	KEEP_ALIVE_TIMEOUT,
-	LIMIT_EXCEPT,
+	ALLOW,
 	LISTEN,
 	LOG_FILE,
 	ROOT,
@@ -27,7 +27,7 @@ class DefaultValues{
 		static const std::string	_FASTCGI_PARAM;
 		static const std::string	_INDEX;
 		static const int			_KEEP_ALIVE_TIMEOUT;  // MANDATORY
-		static const std::string	_LIMIT_EXCEPT;
+		static const std::string	_ALLOW;
 		static const std::string	_LISTEN;  // MANDATORY
 		static const std::string	_LOG_FILE;
 		static const std::string	_ROOT;
@@ -61,6 +61,6 @@ class DefaultValues{
 // error_page			-- Defines the default error pages  for each error that occurs. If there is no file, a simple error will be returned.
 // fastcgi_param		-- Limit the FAST_CGI methods that are allowed to be used in this location.
 // index				-- If the page does not exist, the page defined by index will be returned. If there is no page, the error will be returned.
-// limit_except			-- Limit the HTTP methods that are allowed to be used in this location.
+// allow				-- Limit the HTTP methods that are allowed to be used in this location.
 // module				-- The directory from the root where the files will be searched.
 // root					-- redefines the root path for the location it is being used.

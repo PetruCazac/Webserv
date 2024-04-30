@@ -1,21 +1,23 @@
 #include "DefaultValues.hpp"
 
 const std::string	DefaultValues::_AUTOINDEX = "on";
-const size_t		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;  // MANDATORY
+const size_t		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;
 const std::string	DefaultValues::_ERROR_PAGE = "404.html";
 const std::string	DefaultValues::_FASTCGI_PARAM = "GET";
 const std::string	DefaultValues::_LOG_FILE = "log_file.log";
 const std::string	DefaultValues::_INDEX = "index.html";
-const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10; // MANDATORY
-const std::string	DefaultValues::_LIMIT_EXCEPT = "all";
+const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10;
+const std::string	DefaultValues::_ALLOW = "";
 const std::string	DefaultValues::_LISTEN = "";  // MANDATORY
 const std::string	DefaultValues::_ROOT = "";
-const int		DefaultValues::_SEND_TIMEOUT = 10;  // For CGI Timeout.
+const int		DefaultValues::_SEND_TIMEOUT = 10;
 const std::string	DefaultValues::_SERVER_NAME = "";  // MANDATORY
 
 template< >
 std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 		switch(directive) {
+		case ALLOW:
+			return _ALLOW;
 		case AUTOINDEX:
 			return _AUTOINDEX;
 		case ERROR_PAGE:
@@ -24,8 +26,6 @@ std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 			return _FASTCGI_PARAM;
 		case INDEX:
 			return _INDEX;
-		case LIMIT_EXCEPT:
-			return _LIMIT_EXCEPT;
 		case LOG_FILE:
 			return _LOG_FILE;
 		case LISTEN:

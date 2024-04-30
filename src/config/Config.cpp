@@ -4,25 +4,24 @@
 // Directives for http block :
 // keepalive_timeout		-- time to keep a connection alive with a client
 // send_timeout 			-- timeout for CGI processes
+// client_max_body_size		-- Maximum size of the body sent by the client.
 
 // // ------------------- Server config -------------------//
 // Directives for server block :
 // autoindex 				-- List all the directories present in the accessed directory.
-// client_max_body_size		-- Maximum size of the body sent by the client.
-// error_page				-- List all the default files that would be returned in case of an error, if not only the error code will be shown.
 // index					-- If a file is not found it will go to the file defined by index and will serve it.
 // listen					-- The number of the port which tghe server will operate on.
 // log_file					-- The name of the file where the logs will be stored.
 // root						-- The root directory where the files will be searched.
 // server_name				-- The name of the server.
+// allow				-- Limit the HTTP methods that are allowed to be used in this location.
 
 // // ---------------- Location config ----------------------//
 // Directives for server block :
 // autoindex				-- Command to show the directory listing.
-// error_page				-- Defines the default error pages  for each error that occurs. If there is no file, a simple error will be returned.
 // fastcgi_param			-- Limit the FAST_CGI methods that are allowed to be used in this location.
 // index					-- If the page does not exist, the page defined by index will be returned. If there is no page, the error will be returned.
-// limit_except				-- Limit the HTTP methods that are allowed to be used in this location.
+// allow				-- Limit the HTTP methods that are allowed to be used in this location.
 // module					-- The directory from the root where the files will be searched.
 // root						-- redefines the root path for the location it is being used.
 
@@ -43,12 +42,17 @@ void Config::tokenize(const char* configFile){
 	}
 	std::string line;
 	while(std::getline(fs, line)){
-		std::size_t posComment = line.find('#');
-		while(std::isspace(line[0])){
-			line.erase(0, 1);
+		while(!line.empty() && line.begin() != line.end() && std::isspace(line.back()))
+			line.pop_back();
+		while(std::isspace(line.front())){
+			line.erase(line.begin());
 		}
-		if(posComment != std::string::npos)
+		std::size_t posComment = line.find('#');
+		if(posComment != std::string::npos){
 			line = line.substr(0, posComment);
+			if(line.empty())
+				continue;
+		}
 		if(!line.empty() && line.find_last_of(";{}") != line.size() - 1)
 			throw MissingLastCharacter();
 		std::istringstream lineStream(line);
@@ -76,8 +80,10 @@ void Config::parse(void){
 	while(tokenIndex < tokens.size()){
 		block.children.push_back(parseDirective());
 	}
-	printDirective(block, 0);
+	// printDirective(block, 0);
 	parseConfig(block);
+	if(_serversConfig.empty())
+		throw EmptyConfFile();
 	if(_httpConfig.name.empty())
 		getHttpStruct(_httpConfig);
 	printConfig();
@@ -234,27 +240,31 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 	// ------- Parse the directives ----------
 	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
 		if(it->first == "server_name"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.server_name = it->second[0];
 		}else if(it->first == "autoindex"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.autoindex = it->second[0];
 		}else if(it->first == "index"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.index = it->second[0];
 		}else if(it->first == "log_file"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.log_file = it->second[0];
 		}else if(it->first == "root"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.root = it->second[0];
+		}else if(it->first == "allow"){
+			if(it->second.empty())
+				throw Config::WrongDirectiveAttributes();
+			server.allow = it->second;
 		}else if(it->first == "listen"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 5)
+			if(it->second.empty() || !isNumber(it->second[0]) || it->second.size() > 5)
 				throw Config::WrongDirectiveAttributes();
 			std::stringstream ss;
 			ss << it->second[0];
@@ -280,25 +290,25 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 	}
 	for(std::map<std::string, std::vector<std::string> >::iterator it = directives.begin(); it != directives.end(); it++){
 		if(it->first == "autoindex"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			location.autoindex = it->second[0];
 		}else if(it->first == "index"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			location.index = it->second[0];
 		}else if(it->first == "root"){
-			if(it->second.size() != 1)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			location.root = it->second[0];
 		}else if(it->first == "fastcgi_param"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
-			location.fastcgi_param.push_back(it->second[0]);
-		}else if(it->first == "limit_except"){
-			if(it->second.size() != 1 || !isNumber(it->second[0]) || it->second.size() > 12)
+			location.fastcgi_param = it->second;
+		}else if(it->first == "allow"){
+			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
-			location.limit_except.push_back(it->second[0]);
+			location.allow = it->second;
 		} else
 			logInfo("Unknown directive, will be ignored:", it->first, it->second);
 	}
@@ -330,16 +340,22 @@ void Config::getLocationStruct(LocationDirectives& location){
 	location.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));
-	location.limit_except.push_back(DefaultValues::getDefaultValue<std::string>(LIMIT_EXCEPT));
+	location.allow.push_back(DefaultValues::getDefaultValue<std::string>(ALLOW));
 }
 
 void Config::checkServerDirectives(ServerDirectives& server){
-	if(server.listen_port.empty() || server.server_name.empty() || server.root.empty())
+	// if(server.listen_port.size() == 0 || server.server_name.size() == 0 || server.root.size() == 0)
+	// 	throw MissingDirective();
+	if(server.listen_port.front() == '\0')
+		throw MissingDirective();
+	if(server.server_name.front() == '\0')
+		throw MissingDirective();
+	if(server.root.front() == '\0')
 		throw MissingDirective();
 }
 
 void Config::checkLocationDirectives(LocationDirectives& location){
-	if(location.module.empty())
+	if(location.module.front() == '\0')
 		throw MissingDirective();
 }
 
@@ -359,15 +375,33 @@ void Config::printConfig(){
 		std::cout << "autoindex: " << _serversConfig[i].autoindex << std::endl;
 		std::cout << "index: " << _serversConfig[i].index << std::endl;
 		std::cout << "listen: " << _serversConfig[i].listen_port << std::endl;
+		
+		std::cout << "allow:";
+		for(size_t n = 0; n < _serversConfig[i].allow.size(); n++)
+			std::cout << " " << _serversConfig[i].allow[n];
+		std::cout <<  std::endl;
+		
 		std::cout << "log_file: " << _serversConfig[i].log_file << std::endl;
 		std::cout << "root: " << _serversConfig[i].root << std::endl;
+	
 		for(size_t j = 0; j < _serversConfig[i].locations.size(); j++){
 			std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
 			std::cout << "LOCATION module: " << _serversConfig[i].locations[j].module << std::endl;
 			std::cout << "LOCATION autoindex: " << _serversConfig[i].locations[j].autoindex << std::endl;
-			std::cout << "LOCATION fastcgio_params: " << _serversConfig[i].locations[j].fastcgi_param[0] << std::endl;
+			
+			
+			std::cout << "LOCATION fastcgi_params:";
+			for(size_t n = 0; n < _serversConfig[i].locations[j].fastcgi_param.size(); n++)
+				std::cout << " " << _serversConfig[i].locations[j].fastcgi_param[n];
+			std::cout <<  std::endl;
+			
 			std::cout << "LOCATION index: " << _serversConfig[i].locations[j].index << std::endl;
-			std::cout << "LOCATION limit_except: " << _serversConfig[i].locations[j].limit_except[0] << std::endl;
+			
+			std::cout << "LOCATION allow:";
+			for(size_t n = 0; n < _serversConfig[i].locations[j].allow.size(); n++)
+				std::cout << " " << _serversConfig[i].locations[j].allow[n];
+			std::cout <<  std::endl;
+			
 			std::cout << "LOCATION root: " << _serversConfig[i].locations[j].root << std::endl;
 		
 		}

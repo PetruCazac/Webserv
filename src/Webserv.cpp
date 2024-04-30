@@ -1,5 +1,7 @@
 #include "Webserv.hpp"
 
+int Webserv::signalFlag = 0;
+
 Webserv::Webserv(char* str){
 	try{
 		_webserv_config.tokenize(str);
@@ -11,7 +13,8 @@ Webserv::Webserv(char* str){
 		exit(1);
 	}
 }
-Webserv::~Webserv(){}
+Webserv::~Webserv(){
+}
 
 void Webserv::init_servers() {
 	std::vector<ServerDirectives> serversConfig = _webserv_config._serversConfig;
@@ -34,6 +37,10 @@ void Webserv::init_servers() {
 
 void Webserv::run_servers(void){
 	while(true){
+		if(signalFlag == SIGINT){
+			this->~Webserv();
+			exit(EXIT_SUCCESS);
+		}
 		updatePollFds();
 		if (poll(&_master_poll_fds[0], _master_poll_fds.size(), 100) > 0){
 			for (size_t i = 0; i < _servers.size(); ++i){

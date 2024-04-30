@@ -1,9 +1,9 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 
-#include "Configuration.hpp"
 #include <vector>
 #include "HttpRequest.hpp"
+#include "Configuration.hpp"
 
 class SocketException : public std::exception {
 private:
@@ -17,13 +17,13 @@ public:
 };
 
 typedef struct SocketConfiguration {
-	// SocketConfiguration(std::string server_name, std::string listening_port, size_t max_data_size_incoming) : server_name(server_name), listening_port(listening_port), max_data_size_incoming(max_data_size_incoming){}
-	// SocketConfiguration(const ServerConfiguration& server_config);// : server_name(server_config.server_name), listening_port(server_config.listening_port), max_data_size_incoming(server_config.max_data_size_incoming){}
-	// std::string server_name;
 	std::string listening_port;
 	size_t max_data_size_incoming;
 } SocketConfiguration;
 
+// typedef struct addrinfo addrinfo_t;
+// typedef struct sockaddr_storage sockaddr_storage_t;
+// typedef struct pollfd pollfd_t;
 
 enum SocketType {
 	SERVER,
