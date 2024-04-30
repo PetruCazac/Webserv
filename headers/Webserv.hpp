@@ -14,6 +14,7 @@
 #include <deque>
 #include <fstream>
 #include <sstream>
+#include <csignal>
 
 #include "Socket.hpp"
 #include "Logger.hpp"

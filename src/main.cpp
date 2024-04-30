@@ -4,11 +4,6 @@
 #include <sstream>
 #include <csignal>
 
-// typedef struct sockaddr_in SA_IN;
-// typedef struct sockaddr SA;
-// #define BACKLOG 128
-
-
 void signal_handler(int signal){
 	Webserv::signalFlag = signal;
 }

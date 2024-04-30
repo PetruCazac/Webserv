@@ -1,5 +1,6 @@
 
-#include "../headers/HttpResponse.hpp"
+#include "HttpResponse.hpp"
+
 #include <map>
 #include <string>
 #include <istream>
@@ -10,8 +11,15 @@
 // <headers>
 // <entity-body>
 
-HttpResponse::HttpResponse(const int code) {
-
+HttpResponse::HttpResponse(HttpRequest& request) : _response(NULL), _request(request) {
+	if(request.getMethod() == GET)
+		runGetMethod();
+	else if(request.getMethod() == PUT)
+		runGetMethod();
+	else if(request.getMethod() == DELETE)
+		runGetMethod();
+	else
+		runErrorMethod();
 }
 
 void HttpResponse::addHeader(const std::string &header) {
@@ -56,4 +64,24 @@ const std::string &StatusCodeMap::getStatusCode(const int code) {
 			return it->second;
 	}
 	throw HttpResponseExceptions(HttpResponseExceptions::ERR);
+}
+
+void HttpResponse::runGetMethod(void){
+	checkAllowedMethod();
+}
+
+void HttpResponse::runPutMethod(void){
+
+}
+
+void HttpResponse::runDeleteMethod(void){
+
+}
+
+void HttpResponse::runErrorMethod(void){
+
+}
+
+void HttpResponse::checkAllowedMethod(void){
+	_request.
 }

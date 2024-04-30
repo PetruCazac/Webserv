@@ -27,7 +27,7 @@ FILE *openFileByUri(const std::string &uri) {
 	// std::cout << "Path: " << path << "; query: " << query << std::endl;
 	if (path == "/")
 		return fopen("test/index.html", "r");
-	// else if (.php)
+	// else if (MimeTypeDetector)
 		// return run_cgi(path, query);
 	else {
 		std::string mimeType = MimeTypeDetector::getInstance().getMimeType(path);
@@ -48,6 +48,7 @@ MimeTypeDetector::MimeTypeDetector() {
 	_mimeTypes[".png"] = "image/png";
 	_mimeTypes[".gif"] = "image/gif";
 	_mimeTypes[".ico"] = "image/x-icon";
+	_mimeTypes[".php"] = "?";
 }
 
 MimeTypeDetector &MimeTypeDetector::getInstance() {
