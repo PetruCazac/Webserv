@@ -8,6 +8,9 @@
 #include <string>
 #include <istream>
 
+#include "HttpRequest.hpp"
+#include "Config.hpp"
+
 class StatusCodeMap {
 private:
 	std::map<int, std::string> statusCodes;
@@ -42,8 +45,11 @@ struct HttpResponseExceptions {
 class HttpResponse {
 private:
 	std::stringstream _response;
+	private:
+		std::istream _response;
+		HttpRequest& _request;
 
-	HttpResponse();
+		HttpResponse();
 
 public:
 	HttpResponse(const int code);
@@ -51,6 +57,19 @@ public:
 	// void addHeader(const std::string &header);
 	std::string setErrorBody(const int code);
 	const std::stringstream &getResponse() const;
+	public:
+		HttpResponse(size_t status_code);
+		HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request);
+		void addHeader(const std::string &header);
+		void setBody(const std::vector<uint8_t> &body);
+		void runGetMethod(void);
+		void runPutMethod(void);
+		void runDeleteMethod(void);
+		void runErrorMethod(void);
+		void checkAllowedMethod(void);
+		const std::istream &getResponse() const;
+
+		void makeDefaultErrorPage(size_t statsCode);
 };
 
 #endif // HTTPRESPONSE_HPP

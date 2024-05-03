@@ -14,6 +14,7 @@
 #include <deque>
 #include <fstream>
 #include <sstream>
+#include <csignal>
 
 #include "Socket.hpp"
 #include "Logger.hpp"
@@ -33,9 +34,8 @@ class Webserv{
 	private:
 		Config _webserv_config;
 		std::vector<Server> _servers;
-        std::vector<pollfd> _master_poll_fds;
-		// std::map<std::string, std::vector<std::string> > _http_directives; // Http Directives are in the config file _webserv_config
-        void updatePollFds();
+		std::vector<pollfd> _master_poll_fds;
+		void updatePollFds();
 };
 
 #endif

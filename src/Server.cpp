@@ -1,8 +1,9 @@
 #include "Server.hpp"
 #include "HttpResponse.hpp"
 
-Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size){
-    _client_max_body_size = client_max_body_size;
+int errorFlag = 0;
+
+Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _client_max_body_size(client_max_body_size) {
     _server_config.push_back(inputConfig);
     // LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
     // convert_directives_to_config(input_config);
@@ -139,7 +140,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
         case RECEIVE:
             if (poll_fd.revents & POLLIN) {
-                char buffer[100000] = {0};
+                char buffer[_client_max_body_size];
+                std::memset(buffer, 0, _client_max_body_size);
                 int bytes_read = 0;
                 if (!_socket_map[poll_fd.fd]->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
                     LOG_ERROR_NAME("Failed to receive data.", _server_config[0].server_name);
@@ -151,15 +153,23 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     _socket_map.erase(poll_fd.fd);
                     _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
                     return ;
+                }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(404);
+                    // response.setBody("Requst is too big");
+                    return;
+                    _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                 } else {
                     std::istringstream iss(buffer);
                     _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config, _socket_map[poll_fd.fd]->getHttpRequest());
+                    
                     std::ostringstream oss;
                     oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
                     // If you have to wait for CGI
                     // _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
                     // If you can send a response immediately
+
                     _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);
                 }
@@ -169,20 +179,17 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             break;
         case SEND_RESPONSE:
         {
-            // std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
-            // std::stringstream response;
-            // response << "HTTP/1.1 200 OK\r\n"
-            //          << "Content-Type: text/html\r\n"
-            //          << "Content-Length: " << body.length() << "\r\n"
-            //          << "\r\n"  // Important: Blank line between headers and body
-            //          << body;
+            std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
+            std::stringstream response;
+            response << "HTTP/1.1 200 OK\r\n"
+                     << "Content-Type: text/html\r\n"
+                     << "Content-Length: " << body.length() << "\r\n"
+                     << "\r\n"  // Important: Blank line between headers and body
+                     << body;
 
-			HttpResponse resp(404);
-			const std::string responseStr = resp.getResponse().str();
-			std::cout << "[" << responseStr << "]" << std::endl;
-
-            // const std::string& responseStr = response.str(); // Obtain the formatted response as a string
+            const std::string& responseStr = _socket_map[poll_fd.fd]->_http_response.getResponse(); // Obtain the formatted response as a string
             _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
+            _socket_map[poll_fd.fd]->sendtoClient(responseStr);
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
             // TODO: Depending on keep alive or not, close the connection
             updatePollFdForRead(poll_fd.fd);

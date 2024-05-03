@@ -115,9 +115,10 @@ int Socket::acceptIncoming() {
 	return client_fd;
 }
 
-bool Socket::sendtoClient(const std::string* data, size_t len) {
+bool Socket::sendtoClient(const std::string* data) {
 	size_t len_sent = 0;
 	int bytes_sent = 0;
+	size_t len = data->length();
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
 		if (bytes_sent < 0) {
@@ -179,4 +180,20 @@ void Socket::setNewHttpRequest(std::istream &inputRequest) {
 		_http_request = NULL;
 	}
 	_http_request = new HttpRequest(inputRequest);
+}
+
+void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
+	if (this->getHttpRequest() == NULL) {
+		LOG_ERROR("The request is not available for a response.");
+		return ;
+	}
+	// _http_response = new HttpResponse(serverConfig, _http_request);
+}
+
+void Socket::setNewHttpResponse(size_t errorCode){
+	if (this->getHttpRequest() == NULL) {
+		LOG_ERROR("The request is not available for a response.");
+		return ;
+	}
+	// _http_response = new HttpResponse(errorCode);
 }

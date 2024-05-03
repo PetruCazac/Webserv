@@ -76,3 +76,23 @@ const std::string &StatusCodeMap::getStatusCode(const int code) {
 	}
 	throw HttpResponseExceptions(HttpResponseExceptions::ERR);
 }
+
+void HttpResponse::runGetMethod(void){
+	checkAllowedMethod();
+}
+
+void HttpResponse::runPutMethod(void){
+
+}
+
+void HttpResponse::runDeleteMethod(void){
+
+}
+
+void HttpResponse::runErrorMethod(void){
+
+}
+
+void HttpResponse::checkAllowedMethod(void){
+	_request.
+}
