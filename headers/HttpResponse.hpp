@@ -3,13 +3,10 @@
 #define HTTPRESPONSE_HPP
 
 #include "HttpRequest.hpp"
-#include "config/Config.hpp"
+#include "Config.hpp"
 #include <map>
 #include <string>
 #include <istream>
-
-#include "HttpRequest.hpp"
-#include "Config.hpp"
 
 class StatusCodeMap {
 private:
@@ -21,12 +18,12 @@ private:
 
 public:
 	static StatusCodeMap &getInstance();
-	const std::string &getStatusCode(const int code);
+	const std::string &getStatusCodeDescription(const int code);
 };
 
 struct HttpResponseExceptions {
 	enum ResponceErrors {
-		ERR
+		CODE_NOT_EXIST
 	};
 
 	ResponceErrors err;
@@ -36,7 +33,7 @@ struct HttpResponseExceptions {
 
 	const char *what() const throw() {
 		switch (err) {
-			case ERR: return "status code not found"; break;
+			case CODE_NOT_EXIST: return "status code not found"; break;
 			default: return "unknown error"; break;
 		}
 	}
@@ -45,31 +42,25 @@ struct HttpResponseExceptions {
 class HttpResponse {
 private:
 	std::stringstream _response;
-	private:
-		std::istream _response;
-		HttpRequest& _request;
 
-		HttpResponse();
+	HttpResponse();
+
+	void makeDefaultErrorPage(const int code);
+	std::string setErrorBody(const int code);
+
+	// void runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+
+	// 	void runPutMethod(void);
+	// 	void runDeleteMethod(void);
+	// 	void runErrorMethod(void);
+	// 	void checkAllowedMethod(void);
 
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	// void addHeader(const std::string &header);
-	std::string setErrorBody(const int code);
-	const std::stringstream &getResponse() const;
-	public:
-		HttpResponse(size_t status_code);
-		HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request);
-		void addHeader(const std::string &header);
-		void setBody(const std::vector<uint8_t> &body);
-		void runGetMethod(void);
-		void runPutMethod(void);
-		void runDeleteMethod(void);
-		void runErrorMethod(void);
-		void checkAllowedMethod(void);
-		const std::istream &getResponse() const;
 
-		void makeDefaultErrorPage(size_t statsCode);
+	const std::stringstream &getResponse() const;
 };
 
 #endif // HTTPRESPONSE_HPP

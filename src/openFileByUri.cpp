@@ -5,15 +5,6 @@
 #include <string>
 #include <stdio.h>
 
-/*
-Plan:
-- take a request
-- get method (check method and http version)
-- get content type
-- generate responce (template?)
-- execute method
-*/
-
 FILE *openFileByUri(const std::string &uri) {
 	std::string path;
 	std::string query;
@@ -48,7 +39,7 @@ MimeTypeDetector::MimeTypeDetector() {
 	_mimeTypes[".png"] = "image/png";
 	_mimeTypes[".gif"] = "image/gif";
 	_mimeTypes[".ico"] = "image/x-icon";
-	_mimeTypes[".php"] = "?";
+	// _mimeTypes[".php"] = "?";
 }
 
 MimeTypeDetector &MimeTypeDetector::getInstance() {
