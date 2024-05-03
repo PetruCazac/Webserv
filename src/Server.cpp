@@ -46,7 +46,7 @@ void Server::addServerConfig(ServerDirectives& serverConfig){
 }
 
 
-bool Server::e() {
+bool Server::addListeningSocket() {
     LOG_INFO_NAME("Server attempting to add listening socket.", _server_config[0].name);
     try{
         // Socket *socket = new Socket(_server_config[0].listen_port, _client_max_body_size);
@@ -149,9 +149,9 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 if (bytes_read == 0) {
                     LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
                     delete _socket_map[poll_fd.fd];
+                    close(poll_fd.fd);
                     _socket_map.erase(poll_fd.fd);
                     _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
-                    close(poll_fd.fd);
                     return ;
                 }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
                     _socket_map[poll_fd.fd]->setNewHttpResponse(404);
