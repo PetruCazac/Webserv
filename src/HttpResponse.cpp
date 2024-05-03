@@ -95,16 +95,12 @@ std::string HttpResponse::setErrorBody(const int code) {
 // }
 
 void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+	// Determine the server configuraiton
 	std::string header = request.getHeaders().at("Host");
 	std::string header_server_name = header.substr(0, header.find_first_of(':', 0));
 	std::string header_port = header.substr(header.find_first_of(':', 0) + 1, header.size());
-	
-	std::cout << "Header: " << header << std::endl;
-	std::cout << "Header server name: " << header_server_name << std::endl;
-	std::cout << "Header port: " << header_port << std::endl;
 	ServerDirectives server;
 	bool first = true;
-	
 	std::cout << request.getUri() << std::endl;
 	for(size_t i = 0; i < config.size(); i++){
 		if(header_port == config[i].listen_port && header_server_name == config[i].server_name){
@@ -116,27 +112,19 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			first = false;
 		}
 	}
-	std::cout << "Server name: " << server.server_name << std::endl;
-	std::cout << "Server root: " << server.root << std::endl;
-	std::cout << "Server port: " << server.listen_port << std::endl;
-	
+	// Determine the routing
+	// int j = 0;
+	// std::string uri = request.getUri();
+	// for(size_t i = 0; i < server.locations.size(); i++){
+	// 	if(uri.find(server.locations[i].module, 0) == 0){
+			
+	// 	}
+	// }
 	// if(isCGI(request.getUri()))
 	// 	handleCGI(config, request);
 
 }
 
-// ServerDirectives& HttpResponse::findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request){
-// 	ServerDirectives	server;
-// 	std::string			server_name;
-// 	// server_name = request.getUri().substr(std::find())
-// 	server = config[0];
-// 	// for(size_t i = 0; i < config.size(); i++){
-// 	// 	if(request.getUri()){
-// 	// 		server = config[i];
-// 	// 		return server;
-// 	// }
-// 	return server;
-// }
 
 // FILE *HttpResponse::openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
 // 	std::string path;
