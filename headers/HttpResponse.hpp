@@ -41,22 +41,25 @@ struct HttpResponseExceptions {
 };
 
 class HttpResponse {
-private:
-	std::istream _response;
-	HttpRequest& _request;
+	private:
+		std::istream _response;
+		HttpRequest& _request;
 
-	HttpResponse();
-public:
-	explicit HttpResponse(int status_code);
-	explicit HttpResponse(HttpRequest* request, std::vector<ServerDirectives>& _server_config);
-	void addHeader(const std::string &header);
-	void setBody(const std::vector<uint8_t> &body);
-	void runGetMethod(void);
-	void runPutMethod(void);
-	void runDeleteMethod(void);
-	void runErrorMethod(void);
-	void checkAllowedMethod(void);
-	const std::istream &getResponse() const;
+		HttpResponse();
+
+	public:
+		explicit HttpResponse(size_t status_code);
+		explicit HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request);
+		void addHeader(const std::string &header);
+		void setBody(const std::vector<uint8_t> &body);
+		void runGetMethod(void);
+		void runPutMethod(void);
+		void runDeleteMethod(void);
+		void runErrorMethod(void);
+		void checkAllowedMethod(void);
+		const std::istream &getResponse() const;
+
+		void makeDefaultErrorPage(size_t statsCode);
 };
 
 #endif // HTTPRESPONSE_HPP

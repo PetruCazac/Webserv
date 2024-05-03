@@ -181,3 +181,19 @@ void Socket::setNewHttpRequest(std::istream &inputRequest) {
 	}
 	_http_request = new HttpRequest(inputRequest);
 }
+
+void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
+	if (this->getHttpRequest() == NULL) {
+		LOG_ERROR("The request is not available for a response.");
+		return ;
+	}
+	// _http_response = new HttpResponse(serverConfig, _http_request);
+}
+
+void Socket::setNewHttpResponse(size_t errorCode){
+	if (this->getHttpRequest() == NULL) {
+		LOG_ERROR("The request is not available for a response.");
+		return ;
+	}
+	// _http_response = new HttpResponse(errorCode);
+}

@@ -11,7 +11,13 @@
 // <headers>
 // <entity-body>
 
-HttpResponse::HttpResponse(HttpRequest& request) : _response(NULL), _request(request) {
+HttpResponse::HttpResponse(size_t statusCode){
+	makeDefaultErrorPage(statusCode);
+	// Package the message
+}
+
+
+HttpResponse::HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request) : _response(NULL), _request(request) {
 	if(request.getMethod() == GET)
 		runGetMethod();
 	else if(request.getMethod() == PUT)
@@ -21,6 +27,12 @@ HttpResponse::HttpResponse(HttpRequest& request) : _response(NULL), _request(req
 	else
 		runErrorMethod();
 }
+
+
+void HttpResponse::makeDefaultErrorPage(size_t statsCode){
+
+}
+
 
 void HttpResponse::addHeader(const std::string &header) {
 

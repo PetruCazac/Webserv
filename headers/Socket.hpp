@@ -58,7 +58,8 @@ class Socket {
 		void setSocketStatus(SocketStatus status);
 		HttpRequest* getHttpRequest(void) const;
 		void setNewHttpRequest(std::istream &inputRequest);
-		void setNewHttpResponse(std::istream &inputRequest);
+		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
+		void setNewHttpResponse(size_t errorCode);
 
 	private:
 		// SocketConfiguration *socket_config;

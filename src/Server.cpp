@@ -154,16 +154,14 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
                     return ;
                 }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
-                    // errorFlag = 404;
-                    HttpResponse response(404);
-                    _socket_map[poll_fd.fd]->_http_response = response;
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(404);
                     // response.setBody("Requst is too big");
                     return;
                     _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                 } else {
                     std::istringstream iss(buffer);
                     _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-                    _socket_map[poll_fd.fd]->setNewHttpRsponse(_server_config, _socket_map[poll_fd.fd]->getHttpRequest());
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config, _socket_map[poll_fd.fd]->getHttpRequest());
                     
                     std::ostringstream oss;
                     oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
@@ -181,13 +179,13 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             break;
         case SEND_RESPONSE:
         {
-            if (errorFlag != 0)
-                HttpResponse response(200);
-                // addHeader
-                // setBody
-            else
-                HttpResponse response(_socket_map[poll_fd.fd]->getHttpRequest(), _server_config);
-        
+            // if (errorFlag != 0)
+            //     HttpResponse response(200);
+            //     // addHeader
+            //     // setBody
+            // else
+                // HttpResponse response(_socket_map[poll_fd.fd]->getHttpRequest(), _server_config);
+
         
         
             // std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
@@ -198,9 +196,9 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             //          << "\r\n"  // Important: Blank line between headers and body
             //          << body;
 
-            const std::string& responseStr = response.c_str(); // Obtain the formatted response as a string
+            const std::string& responseStr = _socket_map[poll_fd.fd]->_http_response.getResponse(); // Obtain the formatted response as a string
             // _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
-            _socket_map[poll_fd.fd]->sendtoClient();
+            _socket_map[poll_fd.fd]->sendtoClient(responseStr);
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
             // TODO: Depending on keep alive or not, close the connection
             updatePollFdForRead(poll_fd.fd);
