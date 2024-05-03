@@ -20,7 +20,8 @@ HttpResponse::HttpResponse(size_t statusCode){
 
 
 HttpResponse::HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request) : _response(NULL), _request(request) {
-	// if http 
+	// if(_request.getHttpVersion != "HTTP/1.1")
+	// 	makeDefaultErrorPage(405);
 	if(request.getMethod() == GET)
 		runGetMethod();
 	else if(request.getMethod() == PUT)
@@ -28,7 +29,7 @@ HttpResponse::HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequ
 	else if(request.getMethod() == DELETE)
 		runGetMethod();
 	else
-		runErrorMethod();
+		makeDefaultErrorPage(405);
 }
 
 
@@ -82,7 +83,7 @@ const std::string &StatusCodeMap::getStatusCode(const int code) {
 }
 
 void HttpResponse::runGetMethod(void){
-	checkAllowedMethod();
+	
 }
 
 void HttpResponse::runPutMethod(void){

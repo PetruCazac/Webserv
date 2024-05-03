@@ -174,8 +174,8 @@ HttpRequest* Socket::getHttpRequest() const {
 	return _http_request;
 }
 
-HttpRequest* Socket::getHttpResponse() const {
-	return this->_http_response ->getResponse();
+HttpResponse* Socket::getHttpResponse() const {
+	return _http_response;
 }
 
 void Socket::setNewHttpRequest(std::istream &inputRequest) {
