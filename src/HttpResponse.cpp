@@ -103,16 +103,18 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	std::cout << "Header server name: " << header_server_name << std::endl;
 	std::cout << "Header port: " << header_port << std::endl;
 	ServerDirectives server;
+	bool first = true;
 	
 	std::cout << request.getUri() << std::endl;
-	for(size_t i = config.size(); i >= 0; i--){
-		if(header_port == config[i].listen_port)
+	for(size_t i = 0; i < config.size(); i++){
+		if(header_port == config[i].listen_port && header_server_name == config[i].server_name){
 			server = config[i];
-		if(header_server_name == config[i].server_name){
-			server = config[i];
-		}
-		if(i == 0)
 			break;
+		}
+		else if(header_port == config[i].listen_port && first == true){
+			server = config[i];
+			first = false;
+		}
 	}
 	std::cout << "Server name: " << server.server_name << std::endl;
 	std::cout << "Server root: " << server.root << std::endl;
