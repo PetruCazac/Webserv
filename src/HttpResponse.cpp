@@ -12,12 +12,15 @@
 // <entity-body>
 
 HttpResponse::HttpResponse(size_t statusCode){
+	statusCode++;
+	statusCode--;
 	makeDefaultErrorPage(statusCode);
 	// Package the message
 }
 
 
 HttpResponse::HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request) : _response(NULL), _request(request) {
+	// if http 
 	if(request.getMethod() == GET)
 		runGetMethod();
 	else if(request.getMethod() == PUT)
@@ -29,8 +32,8 @@ HttpResponse::HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequ
 }
 
 
-void HttpResponse::makeDefaultErrorPage(size_t statsCode){
-
+void HttpResponse::makeDefaultErrorPage(size_t statusCode){
+	statusCode++;
 }
 
 

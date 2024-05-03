@@ -161,8 +161,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 } else {
                     std::istringstream iss(buffer);
                     _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config, _socket_map[poll_fd.fd]->getHttpRequest());
-                    
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
                     std::ostringstream oss;
                     oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
                     LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);

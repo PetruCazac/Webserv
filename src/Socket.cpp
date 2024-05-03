@@ -174,6 +174,10 @@ HttpRequest* Socket::getHttpRequest() const {
 	return _http_request;
 }
 
+HttpRequest* Socket::getHttpResponse() const {
+	return this->_http_response ->getResponse();
+}
+
 void Socket::setNewHttpRequest(std::istream &inputRequest) {
 	if (this->getHttpRequest() != NULL) {
 		delete _http_request;
@@ -187,7 +191,7 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 		LOG_ERROR("The request is not available for a response.");
 		return ;
 	}
-	// _http_response = new HttpResponse(serverConfig, _http_request);
+	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
 void Socket::setNewHttpResponse(size_t errorCode){
@@ -195,5 +199,5 @@ void Socket::setNewHttpResponse(size_t errorCode){
 		LOG_ERROR("The request is not available for a response.");
 		return ;
 	}
-	// _http_response = new HttpResponse(errorCode);
+	_http_response = new HttpResponse(errorCode);
 }

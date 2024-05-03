@@ -48,8 +48,8 @@ class HttpResponse {
 		HttpResponse();
 
 	public:
-		explicit HttpResponse(size_t status_code);
-		explicit HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request);
+		HttpResponse(size_t status_code);
+		HttpResponse(std::vector<ServerDirectives> &serverConfig, HttpRequest& request);
 		void addHeader(const std::string &header);
 		void setBody(const std::vector<uint8_t> &body);
 		void runGetMethod(void);
