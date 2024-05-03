@@ -118,7 +118,7 @@ int Socket::acceptIncoming() {
 bool Socket::sendtoClient(const std::string* data) {
 	size_t len_sent = 0;
 	int bytes_sent = 0;
-	size_t = data.length();
+	size_t len = data->length();
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
 		if (bytes_sent < 0) {

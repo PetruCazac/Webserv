@@ -3,8 +3,7 @@
 
 int errorFlag = 0;
 
-Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size){
-    _client_max_body_size = client_max_body_size;
+Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _client_max_body_size(client_max_body_size) {
     _server_config.push_back(inputConfig);
     // LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
     // convert_directives_to_config(input_config);
@@ -141,7 +140,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
         case RECEIVE:
             if (poll_fd.revents & POLLIN) {
-                char buffer[_client_max_body_size] = {0};
+                char buffer[_client_max_body_size];
+                std::memset(buffer, 0, _client_max_body_size);
                 int bytes_read = 0;
                 if (!_socket_map[poll_fd.fd]->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
                     LOG_ERROR_NAME("Failed to receive data.", _server_config[0].server_name);
@@ -156,7 +156,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
                     // errorFlag = 404;
                     HttpResponse response(404);
-                    _socket_map[poll_fd.fd]._http_response = response;
+                    _socket_map[poll_fd.fd]->_http_response = response;
                     // response.setBody("Requst is too big");
                     return;
                     _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);

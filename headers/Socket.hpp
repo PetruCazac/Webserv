@@ -69,7 +69,7 @@ class Socket {
 		SocketType      _socket_type;
 		SocketStatus    _socket_status;
 		HttpRequest     *_http_request;
-		HttpResponse	&_http_response;
+		HttpResponse	*_http_response;
 };
 
 #endif
