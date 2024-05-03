@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "HttpResponse.hpp"
 
 Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size){
     _client_max_body_size = client_max_body_size;
@@ -168,15 +169,19 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             break;
         case SEND_RESPONSE:
         {
-            std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
-            std::stringstream response;
-            response << "HTTP/1.1 200 OK\r\n"
-                     << "Content-Type: text/html\r\n"
-                     << "Content-Length: " << body.length() << "\r\n"
-                     << "\r\n"  // Important: Blank line between headers and body
-                     << body;
+            // std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
+            // std::stringstream response;
+            // response << "HTTP/1.1 200 OK\r\n"
+            //          << "Content-Type: text/html\r\n"
+            //          << "Content-Length: " << body.length() << "\r\n"
+            //          << "\r\n"  // Important: Blank line between headers and body
+            //          << body;
 
-            const std::string& responseStr = response.str(); // Obtain the formatted response as a string
+			HttpResponse resp(404);
+			const std::string responseStr = resp.getResponse().str();
+			std::cout << "[" << responseStr << "]" << std::endl;
+
+            // const std::string& responseStr = response.str(); // Obtain the formatted response as a string
             _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
             // TODO: Depending on keep alive or not, close the connection

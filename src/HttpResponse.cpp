@@ -1,9 +1,11 @@
 
 #include "../headers/HttpResponse.hpp"
+#include "HttpRequest.hpp"
+#include "config/Config.hpp"
 #include <map>
 #include <string>
 #include <istream>
-#include <iostream>
+#include <vector>
 
 // Responce: (class/struct? how to return)
 // <version> <status> <reason-phrase>
@@ -11,18 +13,35 @@
 // <entity-body>
 
 HttpResponse::HttpResponse(const int code) {
-
+	std::string body = setErrorBody(code);
+	_response << "HTTP/1.1 "
+			  << code
+			  << ' '
+			  << StatusCodeMap::getInstance().getStatusCode(code)
+			  << "\r\n"
+			  << "\r\n"
+			  << body;
 }
 
-void HttpResponse::addHeader(const std::string &header) {
-
+HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
+	
 }
 
-void HttpResponse::setBody(const std::vector<uint8_t> &body) {
+// void HttpResponse::addHeader(const std::string &header) {
 
+// }
+
+std::string HttpResponse::setErrorBody(const int code) {
+	std::stringstream body;
+	body << "<html><body><h1>"
+		 << code
+		 << ' '
+		 << StatusCodeMap::getInstance().getStatusCode(code)
+		 << "</h1></body></html>";
+	return body.str();
 }
 
-const std::istream &HttpResponse::getResponse() const {
+const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 

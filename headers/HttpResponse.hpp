@@ -2,6 +2,8 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+#include "HttpRequest.hpp"
+#include "config/Config.hpp"
 #include <map>
 #include <string>
 #include <istream>
@@ -39,17 +41,16 @@ struct HttpResponseExceptions {
 
 class HttpResponse {
 private:
-	int _code;
-	std::istream _response;
+	std::stringstream _response;
 
 	HttpResponse();
 
 public:
-	explicit HttpResponse(const int code);
-	void addHeader(const std::string &header);
-	void setBody(const std::vector<uint8_t> &body);
-
-	const std::istream &getResponse() const;
+	HttpResponse(const int code);
+	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	// void addHeader(const std::string &header);
+	std::string setErrorBody(const int code);
+	const std::stringstream &getResponse() const;
 };
 
 #endif // HTTPRESPONSE_HPP
