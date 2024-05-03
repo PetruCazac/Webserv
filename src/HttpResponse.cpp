@@ -1,64 +1,17 @@
-
-#include "HttpResponse.hpp"
-#include "HttpRequest.hpp"
-#include "Config.hpp"
 #include <map>
 #include <string>
 #include <istream>
 #include <vector>
 
+
+#include "HttpResponse.hpp"
+#include "HttpRequest.hpp"
+#include "Config.hpp"
+
 // Responce: (class/struct? how to return)
 // <version> <status> <reason-phrase>
 // <headers>
 // <entity-body>
-
-HttpResponse::HttpResponse(const int code) {
-	makeDefaultErrorPage(code);
-}
-
-HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
-	if (request.getHttpVersion() != "HTTP/1.1")
-		makeDefaultErrorPage(505);
-	else {
-		if (request.getMethod() == GET)
-			// runGetMethod(config, request);
-			;
-		else if (request.getMethod() == POST)
-			;
-		else if (request.getMethod() == DELETE)
-			;
-		else
-			makeDefaultErrorPage(501);
-	}
-}
-
-// void HttpResponse::addHeader(const std::string &header) {
-
-// }
-
-void HttpResponse::makeDefaultErrorPage(const int code) {
-	_response << "HTTP/1.1 "
-			  << code
-			  << ' '
-			  << StatusCodeMap::getInstance().getStatusCodeDescription(code)
-			  << "\r\n"
-			  << "\r\n"
-			  << setErrorBody(code);
-}
-
-std::string HttpResponse::setErrorBody(const int code) {
-	std::stringstream body;
-	body << "<html><body><h1>"
-		 << code
-		 << ' '
-		 << StatusCodeMap::getInstance().getStatusCodeDescription(code)
-		 << "</h1></body></html>";
-	return body.str();
-}
-
-const std::stringstream &HttpResponse::getResponse() const {
-	return _response;
-}
 
 StatusCodeMap::StatusCodeMap() {
 	statusCodes[200] = "OK";
@@ -93,7 +46,115 @@ const std::string &StatusCodeMap::getStatusCodeDescription(const int code) {
 	throw HttpResponseExceptions(HttpResponseExceptions::CODE_NOT_EXIST);
 }
 
-// void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+
+HttpResponse::HttpResponse(const int code) {
+	makeDefaultErrorPage(code);
+}
+
+HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
+	if (request.getHttpVersion() != "HTTP/1.1")
+		makeDefaultErrorPage(505);
+	else {
+		if (request.getMethod() == GET)
+			runGetMethod(config, request);
+		else if (request.getMethod() == POST)
+			;
+		else if (request.getMethod() == DELETE)
+			;
+		else
+			makeDefaultErrorPage(501);
+	}
+}
+
+// void HttpResponse::addHeader(const std::string &header) {
+
+// }
+
+void HttpResponse::makeDefaultErrorPage(const int code) {
+	_response << "HTTP/1.1 "
+			  << code
+			  << ' '
+			  << StatusCodeMap::getInstance().getStatusCodeDescription(code)
+			  << "\r\n"
+			  << "\r\n"
+			  << setErrorBody(code);
+}
+
+std::string HttpResponse::setErrorBody(const int code) {
+	std::stringstream body;
+	body << "<html><body><h1>"
+		 << code
+		 << ' '
+		 << StatusCodeMap::getInstance().getStatusCodeDescription(code)
+		 << "</h1></body></html>";
+	return body.str();
+}
+
+// const std::stringstream &HttpResponse::getResponse() const {
+// 	return _response;
+// }
+
+void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+	std::string header = request.getHeaders().at("Host");
+	std::string header_server_name = header.substr(0, header.find_first_of(':', 0));
+	std::string header_port = header.substr(header.find_first_of(':', 0) + 1, header.size());
+	
+	std::cout << "Header: " << header << std::endl;
+	std::cout << "Header server name: " << header_server_name << std::endl;
+	std::cout << "Header port: " << header_port << std::endl;
+	ServerDirectives server;
+	
+	std::cout << request.getUri() << std::endl;
+	for(size_t i = config.size(); i >= 0; i--){
+		if(header_port == config[i].listen_port)
+			server = config[i];
+		if(header_server_name == config[i].server_name){
+			server = config[i];
+		}
+		if(i == 0)
+			break;
+	}
+	std::cout << "Server name: " << server.server_name << std::endl;
+	std::cout << "Server root: " << server.root << std::endl;
+	std::cout << "Server port: " << server.listen_port << std::endl;
+	
+	// if(isCGI(request.getUri()))
+	// 	handleCGI(config, request);
+
+}
+
+// ServerDirectives& HttpResponse::findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+// 	ServerDirectives	server;
+// 	std::string			server_name;
+// 	// server_name = request.getUri().substr(std::find())
+// 	server = config[0];
+// 	// for(size_t i = 0; i < config.size(); i++){
+// 	// 	if(request.getUri()){
+// 	// 		server = config[i];
+// 	// 		return server;
+// 	// }
+// 	return server;
+// }
+
+// FILE *HttpResponse::openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
+// 	std::string path;
+// 	std::string query;
+// 	size_t questionMark = uri.find('?');
+// 	if (questionMark == std::string::npos)
+// 		path = uri;
+// 	else {
+// 		path = uri.substr(0, questionMark);
+// 		query = uri.substr(questionMark + 1);
+// 	}
+// 	// std::cout << "Path: " << path << "; query: " << query << std::endl;
+	
+// }
+
+// bool HttpResponse::isCGI(const std::string &uri){
+// 	if(std::)
+// }
+
+// void HttpResponse::handleCGI(const std::vector<ServerDirectives> &config, const HttpRequest &request){
 
 // }
 

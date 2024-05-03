@@ -41,19 +41,21 @@ struct HttpResponseExceptions {
 
 class HttpResponse {
 private:
-	std::stringstream _response;
-
+	std::stringstream	_response;
 	HttpResponse();
 
 	void makeDefaultErrorPage(const int code);
 	std::string setErrorBody(const int code);
+	FILE* openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
+	bool isCGI(const std::string &uri);
+	void handleCGI(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 
-	// void runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
-
-	// 	void runPutMethod(void);
-	// 	void runDeleteMethod(void);
-	// 	void runErrorMethod(void);
-	// 	void checkAllowedMethod(void);
+		void runPutMethod(void);
+		void runDeleteMethod(void);
+		void runErrorMethod(void);
+		void checkAllowedMethod(void);
 
 public:
 	HttpResponse(const int code);

@@ -161,7 +161,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 } else {
                     std::istringstream iss(buffer);
                     _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config, _socket_map[poll_fd.fd]->getHttpRequest());
+                    _socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
                     
                     std::ostringstream oss;
                     oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
@@ -187,9 +187,9 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                      << "\r\n"  // Important: Blank line between headers and body
                      << body;
 
-            const std::string& responseStr = _socket_map[poll_fd.fd]->getHttpResponse()._http_response.getResponse(); // Obtain the formatted response as a string
-            _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
-            _socket_map[poll_fd.fd]->sendtoClient(responseStr);
+            // const std::string& responseStr = _socket_map[poll_fd.fd]->getHttpResponse()._http_response.getResponse(); // Obtain the formatted response as a string
+            // _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
+            // _socket_map[poll_fd.fd]->sendtoClient(responseStr);
             _socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
             // TODO: Depending on keep alive or not, close the connection
             updatePollFdForRead(poll_fd.fd);

@@ -19,7 +19,7 @@ class Server {
 		void addServerConfig(ServerDirectives& serverConfig);
 		// whichconfig(host name from request)
 	private:
-		const size_t _client_max_body_size;
+		const int _client_max_body_size;
 		std::vector<ServerDirectives> _server_config;
 		std::vector<pollfd_t> _poll_fd_vector;
 		std::map<int, Socket*> _socket_map;

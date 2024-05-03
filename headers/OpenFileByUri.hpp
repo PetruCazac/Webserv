@@ -1,9 +1,11 @@
+#ifndef OPENBYURI_HPP
+#define OPENBYURI_HPP
 
-#pragma once
-
-#include "HttpRequest.hpp"
 #include <string>
 #include <map>
+
+#include "HttpRequest.hpp"
+#include "Config.hpp"
 
 class MimeTypeDetector {
 private:
@@ -37,4 +39,6 @@ struct MethodsException {
 	}
 };
 
-FILE *openFileByUri(const std::string &uri);
+FILE *openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
+
+#endif

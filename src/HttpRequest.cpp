@@ -5,6 +5,8 @@
 #include <map>				// std::map
 #include <vector>			// std::vector
 
+void printHttpRequest(HttpRequest &httpRequest);
+
 struct Methods {
 	std::string name;
 	HttpMethods method;
@@ -38,6 +40,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	readBody(inputRequest);
 	if (!isValidContentLength())
 		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+	printHttpRequest(*this);
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
@@ -108,4 +111,47 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 
 const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
+}
+
+
+// To be put in a class ////////////////////////////////////////
+
+void printMethod(HttpMethods method) { // delete
+	Methods methods[] = {
+		{"GET", GET},
+		{"HEAD", HEAD},
+		{"POST", POST},
+		{"PUT", PUT},
+		{"TRACE", TRACE},
+		{"OPTIONS", OPTIONS},
+		{"DELETE", DELETE}
+	};
+	const int size = sizeof(methods) / sizeof(methods[0]);
+	for (int i = 0; i != size; i++) {
+		if (method == methods[i].method)
+			std::cout << "[" << methods[i].name << "]" << std::endl;
+	}
+}
+
+void printHttpRequest(HttpRequest &httpRequest) { // delete
+	printMethod(httpRequest.getMethod());
+	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
+	std::map<std::string, std::string> headers = httpRequest.getHeaders();
+	if (headers.size() == 0)
+		std::cout << "[no headers]" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
+	}
+	std::vector<uint8_t> body = httpRequest.getBody();
+	if (body.size() == 0)
+		std::cout << "[no body]" << std::endl;
+	else {
+		std::cout << "[";
+		for (std::vector<uint8_t>::iterator it = body.begin(); it != body.end(); it++) {
+			std::cout << *it;
+		}
+		std::cout << "]";
+		std::cout << std::endl;
+	}
 }

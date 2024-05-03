@@ -1,11 +1,11 @@
 
-#include "../headers/getMethod.hpp"
+#include "OpenFileByUri.hpp"
 #include <iostream>
 #include <map>
 #include <string>
 #include <stdio.h>
 
-FILE *openFileByUri(const std::string &uri) {
+FILE *openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
 	std::string path;
 	std::string query;
 	size_t questionMark = uri.find('?');
@@ -16,6 +16,11 @@ FILE *openFileByUri(const std::string &uri) {
 		query = uri.substr(questionMark + 1);
 	}
 	// std::cout << "Path: " << path << "; query: " << query << std::endl;
+	
+	
+	
+	
+	
 	if (path == "/")
 		return fopen("test/index.html", "r");
 	// else if (MimeTypeDetector)
