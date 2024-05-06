@@ -2,11 +2,12 @@
 #include <string>
 #include <istream>
 #include <vector>
-
+#include <unistd.h>
 
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 #include "Config.hpp"
+#include <sys/stat.h>
 
 // Responce: (class/struct? how to return)
 // <version> <status> <reason-phrase>
@@ -112,8 +113,8 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	}
 	LocationDirectives location;
 	findLocationUri(server.locations, request.getUri(), location);
+	server.locations.clear();
 	if(!location.module.empty()){
-		server.locations.clear();
 		server.locations.push_back(location);
 	}
 	// if(isCGI(request.getUri()))
@@ -121,11 +122,13 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	FILE* fp = NULL;
 	if(isMethodAllowed(server, "GET")){
 		const char* path = composeLocalUrl(server, request);
-		if(path != NULL)
+		if(isDirectory(path) && checkAutoindex(server))
+			treatAutoindex(path);
+		else if (isFile(path))
 			fp = fopen(path, "r");
 		else{
 			makeDefaultErrorPage(404);
-			return ;
+			return;
 		}
 	}
 	char buff[1000];
@@ -136,6 +139,19 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 
 }
 
+bool HttpResponse::checkAutoindex(ServerDirectives& server){
+	if(!server.locations.empty() && server.locations[0].autoindex == "on")
+		return true;
+	else if(server.autoindex == "on")
+		return true;
+	return false;
+}
+
+void HttpResponse::treatAutoindex(const char* path){
+	// not implemented
+	std::cout  << path << std::endl;
+}
+
 const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request){
 	std::string path = request.getUri();
 	if(!server.locations.empty()){
@@ -144,27 +160,25 @@ const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const 
 			pos = path.find(server.locations[0].module);
 			if(pos != std::string::npos)
 				path = server.locations[0].root + path.substr(pos, path.size());
-			std::ifstream fs(path.c_str(), std::ios_base::in);
-			if(!fs.is_open()){
-				if(!server.locations[0].index.empty()){
-					path = server.locations[0].root + '/' + server.locations[0].index;
-					std::ifstream fs(path.c_str(), std::ios_base::in);
-					if(!fs.is_open())
-						return NULL;
-					return path.c_str();
-				}
-				return NULL;
-			}
-			return path.c_str();
+		} else{
+			path = server.root + path;
 		}
+		if(access(path.c_str(), F_OK)){
+			if(!server.locations[0].index.empty()){
+				path = server.locations[0].root + '/' + server.locations[0].index;
+				if(access(path.c_str(), F_OK))
+					return NULL;
+				return path.c_str();
+			}
+			return NULL;
+		}
+		return path.c_str();
 	}else{
-		path = server.locations[0].root + path;
-		std::ifstream fs(path.c_str(), std::ios_base::in);
-		if(!fs.is_open()){
+		path = server.root + path;
+		if(access(path.c_str(), F_OK)){
 			if(!server.index.empty()){
 				path = server.root + '/' + server.index;
-				std::ifstream fs(path.c_str(), std::ios_base::in);
-				if(!fs.is_open())
+				if(access(path.c_str(), F_OK))
 					return NULL;
 				return path.c_str();
 			}
@@ -176,7 +190,7 @@ const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const 
 }
 
 bool	HttpResponse::isMethodAllowed(const ServerDirectives& server, const std::string method){
-	for(size_t i = 0; i < server.locations[0].allow.size(); i++){
+	for(size_t i = 0; !server.locations.empty() && i < server.locations[0].allow.size(); i++){
 		if(server.locations[0].allow[i] == method)
 			return true;
 	}
@@ -202,9 +216,7 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 		if(!segment.empty())
 			uriSegments.push_back('/' + segment);
 	}
-	if(uriSegments.empty())
-		return;
-	if (locations.empty())
+	if(uriSegments.empty() || locations.empty())
 		return;
 	std::vector<LocationDirectives> matchingLocations;
 	std::vector<std::string> locationMethods;
@@ -220,6 +232,8 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 		for(size_t j = 0; j < locationMethods.size() && j < uriSegments.size(); j++){
 			if(uriSegments[j] == locationMethods[j])
 				count++;
+			else
+				break;
 		}
 		if(count > countActual){
 			countActual = count;
@@ -230,6 +244,22 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 	}
 }
 
+
+bool HttpResponse::isDirectory(const char* path){
+	struct stat fileInfo;
+	if (stat(path, &fileInfo) != 0) {
+		return false;
+	}
+	return S_ISDIR(fileInfo.st_mode);
+}
+
+bool HttpResponse::isFile(const char* path){
+	struct stat fileInfo;
+	if (stat(path, &fileInfo) != 0) {
+		return false;
+	}
+	return S_ISREG(fileInfo.st_mode);
+}
 
 // FILE *HttpResponse::openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
 // 	std::string path;

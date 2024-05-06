@@ -54,6 +54,10 @@ private:
 	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
 	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
 	const char*	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request);
+	bool	isDirectory(const char* path);
+	bool	isFile(const char* path);
+	bool	checkAutoindex(ServerDirectives& server);
+	void	treatAutoindex(const char* path);
 
 		void runPutMethod(void);
 		void runDeleteMethod(void);
