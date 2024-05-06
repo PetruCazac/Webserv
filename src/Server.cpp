@@ -122,6 +122,20 @@ void Server::updatePollFdForRead(int fd) {
     }
 }
 
+void Server::removeSocketFromMap(int fd) {
+    if (_socket_map[fd] != NULL) {
+        delete _socket_map[fd];
+        close(fd);
+        _socket_map.erase(fd);
+        for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
+            if (_poll_fd_vector[i].fd == fd) {
+                _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
+                break;
+            }
+        }
+    }
+}
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     LOG_DEBUG_NAME("Handling client socket events.", _server_config[0].server_name);
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
@@ -135,21 +149,13 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 }
                 if (bytes_read == 0) {
                     LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
-                    delete _socket_map[poll_fd.fd];
-                    close(poll_fd.fd);
-                    _socket_map.erase(poll_fd.fd);
-                    for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
-                        if (_poll_fd_vector[i].fd == poll_fd.fd) {
-                            _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
-                            break;
-                        }
-                    }
+                    removeSocketFromMap(poll_fd.fd);
                     return ;
                 }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
                     _socket_map[poll_fd.fd]->setNewHttpResponse(404);
+                    removeSocketFromMap(poll_fd.fd);
                     // response.setBody("Requst is too big");
                     return;
-                    _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                 } else {
                     std::istringstream iss(buffer);
                     _socket_map[poll_fd.fd]->setNewHttpRequest(iss);
