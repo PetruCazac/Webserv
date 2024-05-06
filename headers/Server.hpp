@@ -18,8 +18,8 @@ class Server {
 		void updatePollFdForRead(int fd);
 		void addServerConfig(ServerDirectives& serverConfig);
         void closeServer(void);
-		// whichconfig(host name from request)
 	private:
+        void removeSocketFromMap(int fd);
 		const int _client_max_body_size;
 		std::vector<ServerDirectives> _server_config;
 		std::vector<pollfd_t> _poll_fd_vector;
