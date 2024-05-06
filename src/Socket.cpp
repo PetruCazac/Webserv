@@ -19,9 +19,7 @@ Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _h
 	_socket_type = CLIENT;
 	setSocketStatus(RECEIVE);
 }
-// Socket::~Socket() {
-//     LOG_DEBUG("Socket Destructor called.");
-// }
+
 Socket::~Socket() {
 	LOG_DEBUG("Socket Destructor called.");
 	removeSocket();
