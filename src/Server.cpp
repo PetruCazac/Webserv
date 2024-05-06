@@ -8,10 +8,22 @@ Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _cl
     // LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
     addListeningSocket();
 }
+Server::~Server() {
+}
 
-
-Server::~Server() {}
-
+void Server::closeServer(void){
+    LOG_DEBUG_NAME("Close Server Socket Map.", _server_config[0].server_name);
+    std::map<int, Socket*>::iterator it;
+    for (it = _socket_map.begin(); it != _socket_map.end(); ++it) {
+        if (it->second != NULL) {
+            delete it->second;
+            it->second = NULL;
+        }
+    }
+    _socket_map.clear();
+    _poll_fd_vector.clear();
+    LOG_DEBUG_NAME("Server Socket Map cleaned up.", _server_config[0].server_name);
+}
 
 void Server::addServerConfig(ServerDirectives& serverConfig){
     _server_config.push_back(serverConfig);
