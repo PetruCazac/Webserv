@@ -17,6 +17,7 @@ class Server {
 		void updatePollFdForWrite(int fd);
 		void updatePollFdForRead(int fd);
 		void addServerConfig(ServerDirectives& serverConfig);
+        void closeServer(void);
 		// whichconfig(host name from request)
 	private:
 		const int _client_max_body_size;

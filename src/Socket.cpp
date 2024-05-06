@@ -1,6 +1,6 @@
 #include "Socket.hpp"
 
-Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL){
+Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL){
 	_socket_type = SERVER;
 	setSocketStatus(LISTEN_STATE);
 	LOG_DEBUG("Constructor for listening Socket called.");
@@ -15,18 +15,26 @@ Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1
 }
 
 // Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL) {
-Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL) {
+Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL), _http_response(NULL) {
 	_socket_type = CLIENT;
 	setSocketStatus(RECEIVE);
 }
 
 Socket::~Socket() {
+	LOG_DEBUG("Socket Destructor called.");
 	removeSocket();
 	if (_addr_info != NULL) {
 		freeaddrinfo(_addr_info);
 		LOG_DEBUG("Address info freed.");
 	}
-	LOG_DEBUG("Socket destroyed.");
+    if (_http_request != NULL) {
+        delete _http_request;
+        LOG_DEBUG("HTTP Request freed.");
+    }
+    if (_http_response != NULL) {
+        delete _http_response;
+        LOG_DEBUG("HTTP Response freed.");
+    }
 }
 
 bool Socket::setupAddrInfo() {

@@ -14,6 +14,10 @@ Webserv::Webserv(char* str){
 	}
 }
 Webserv::~Webserv(){
+    LOG_DEBUG("Webserv Destructor called.");
+    for (size_t i = 0; i < _servers.size(); ++i){
+        _servers[i].closeServer();
+    }
 }
 
 void Webserv::init_servers() {
