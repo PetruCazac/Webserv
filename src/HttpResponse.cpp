@@ -95,13 +95,11 @@ std::string HttpResponse::setErrorBody(const int code) {
 // }
 
 void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
-	// Determine the server configuraiton
 	std::string header = request.getHeaders().at("Host");
 	std::string header_server_name = header.substr(0, header.find_first_of(':', 0));
 	std::string header_port = header.substr(header.find_first_of(':', 0) + 1, header.size());
 	ServerDirectives server;
 	bool first = true;
-	std::cout << request.getUri() << std::endl;
 	for(size_t i = 0; i < config.size(); i++){
 		if(header_port == config[i].listen_port && header_server_name == config[i].server_name){
 			server = config[i];
@@ -112,17 +110,124 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			first = false;
 		}
 	}
-	// Determine the routing
-	// int j = 0;
-	// std::string uri = request.getUri();
-	// for(size_t i = 0; i < server.locations.size(); i++){
-	// 	if(uri.find(server.locations[i].module, 0) == 0){
-			
-	// 	}
-	// }
+	LocationDirectives location;
+	findLocationUri(server.locations, request.getUri(), location);
+	if(!location.module.empty()){
+		server.locations.clear();
+		server.locations.push_back(location);
+	}
 	// if(isCGI(request.getUri()))
-	// 	handleCGI(config, request);
+	// 	handleCGI(server, request);
+	FILE* fp = NULL;
+	if(isMethodAllowed(server, "GET")){
+		const char* path = composeLocalUrl(server, request);
+		if(path != NULL)
+			fp = fopen(path, "r");
+		else{
+			makeDefaultErrorPage(404);
+			return ;
+		}
+	}
+	char buff[1000];
 
+	while(std::fgets(buff, sizeof(buff), fp) != 0)
+		_response << buff;
+	std::cout  << _response << std::endl;
+
+}
+
+const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request){
+	std::string path = request.getUri();
+	if(!server.locations.empty()){
+		if(!server.locations[0].root.empty()){
+			size_t pos;
+			pos = path.find(server.locations[0].module);
+			if(pos != std::string::npos)
+				path = server.locations[0].root + path.substr(pos, path.size());
+			std::ifstream fs(path.c_str(), std::ios_base::in);
+			if(!fs.is_open()){
+				if(!server.locations[0].index.empty()){
+					path = server.locations[0].root + '/' + server.locations[0].index;
+					std::ifstream fs(path.c_str(), std::ios_base::in);
+					if(!fs.is_open())
+						return NULL;
+					return path.c_str();
+				}
+				return NULL;
+			}
+			return path.c_str();
+		}
+	}else{
+		path = server.locations[0].root + path;
+		std::ifstream fs(path.c_str(), std::ios_base::in);
+		if(!fs.is_open()){
+			if(!server.index.empty()){
+				path = server.root + '/' + server.index;
+				std::ifstream fs(path.c_str(), std::ios_base::in);
+				if(!fs.is_open())
+					return NULL;
+				return path.c_str();
+			}
+			return NULL;
+		}
+		return path.c_str();
+	}
+	return NULL;
+}
+
+bool	HttpResponse::isMethodAllowed(const ServerDirectives& server, const std::string method){
+	for(size_t i = 0; i < server.locations[0].allow.size(); i++){
+		if(server.locations[0].allow[i] == method)
+			return true;
+	}
+	for(size_t i = 0; i < server.allow.size(); i++){
+		if(server.allow[i] == method)
+			return true;
+	}
+	return false;
+}
+
+bool HttpResponse::isCGI(const std::string& uri){
+	std::string cgiBin = "/cgi_bin";
+	if(uri.find(cgiBin) == 0)
+		return true;
+	return false;
+}
+
+void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location){
+	std::stringstream ss(uri);
+	std::string segment;
+	std::vector<std::string> uriSegments;
+	while(std::getline(ss, segment, '/')){
+		if(!segment.empty())
+			uriSegments.push_back('/' + segment);
+	}
+	if(uriSegments.empty())
+		return;
+	if (locations.empty())
+		return;
+	std::vector<LocationDirectives> matchingLocations;
+	std::vector<std::string> locationMethods;
+	int count = 0;
+	int countActual = 0;
+
+	for (size_t i = 0; i < locations.size(); i++){
+		std::stringstream ss(locations[i].module);
+		while(std::getline(ss, segment, '/')){
+			if(!segment.empty())
+				locationMethods.push_back('/' + segment);
+		}
+		for(size_t j = 0; j < locationMethods.size() && j < uriSegments.size(); j++){
+			if(uriSegments[j] == locationMethods[j])
+				count++;
+		}
+		if(count > countActual){
+			countActual = count;
+			location = locations[i];
+			count = 0;
+		}
+		locationMethods.clear();
+	}
 }
 
 

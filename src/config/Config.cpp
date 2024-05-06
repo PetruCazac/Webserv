@@ -42,9 +42,9 @@ void Config::tokenize(const char* configFile){
 	}
 	std::string line;
 	while(std::getline(fs, line)){
-		while(!line.empty() && line.begin() != line.end() && std::isspace(line.back()))
-			line.pop_back();
-		while(std::isspace(line.front())){
+		while(!line.empty() && line.begin() != line.end() && std::isspace(line[line.size()-1]))
+			line.resize(line.size() - 1);
+		while(std::isspace(line[0])){
 			line.erase(line.begin());
 		}
 		std::size_t posComment = line.find('#');
@@ -346,16 +346,16 @@ void Config::getLocationStruct(LocationDirectives& location){
 void Config::checkServerDirectives(ServerDirectives& server){
 	// if(server.listen_port.size() == 0 || server.server_name.size() == 0 || server.root.size() == 0)
 	// 	throw MissingDirective();
-	if(server.listen_port.front() == '\0')
+	if(server.listen_port[0] == '\0')
 		throw MissingDirective();
-	if(server.server_name.front() == '\0')
+	if(server.server_name[0] == '\0')
 		throw MissingDirective();
-	if(server.root.front() == '\0')
+	if(server.root[0] == '\0')
 		throw MissingDirective();
 }
 
 void Config::checkLocationDirectives(LocationDirectives& location){
-	if(location.module.front() == '\0')
+	if(location.module[0] == '\0')
 		throw MissingDirective();
 }
 
