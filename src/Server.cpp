@@ -6,37 +6,9 @@ int errorFlag = 0;
 Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _client_max_body_size(client_max_body_size) {
     _server_config.push_back(inputConfig);
     // LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
-    // convert_directives_to_config(input_config);
     addListeningSocket();
 }
 
-
-// void Server::convert_directives_to_config(ServerDirectives *input_config) {
-//     std::string tmp = input_config->_directives[translateDirectives(SERVERNAME)][0];
-//     _server_config.server_name = tmp;//input_config->_directives[translateDirectives(SERVERNAME)][0];
-//     _server_config.listen_port = input_config->_directives[translateDirectives(LISTEN)][0];
-//     // if(input_config->_directives.count(translateDirectives(MAX_DATA_SIZE_INC)) != 0){
-//         // std::string debug_str = (input_config->_directives[translateDirectives(MAX_DATA_SIZE_INC)][0]);
-//     //     std::stringstream str_tmp(debug_str);
-//     // }
-//     // size_t tmp;
-//     // str_tmp >> tmp;
-//     _server_config._client_max_body_size = 100000;//tmp;
-//     Logger::setLogLevel(DEBUG);
-//     Logger::setLogFilename("");
-//     // _server_config->log_filename = input_config->_directives[translateDirectives(LOG_FILE)][0];
-//     // _server_config->log_level = Logger::getLogLevel(input_config->_directives[translateDirectives(LOG_LEVEL)][0]);
-//     _server_config.server_socket_config = new SocketConfiguration(_server_config.server_name, _server_config.listen_port, _server_config._client_max_body_size);
-
-// // }
-
-// void Server::run() {
-//     LOG_INFO_NAME("Server running.", _server_config.server_name);
-//     LOG_DEBUG_NAME("Server listening on port " + _server_config.listen_port, _server_config.server_name);
-//     while (1){
-//         socketHandler();
-//     }
-// }
 
 Server::~Server() {}
 
@@ -73,6 +45,7 @@ const std::vector<pollfd_t>& Server::getPollFdVector() const {
 }
 
 void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
+    LOG_DEBUG_NAME("Handling events.", _server_config[0].server_name);
      for (size_t i = 0; i < active_fds.size(); ++i) {
             for (size_t j = 0; j < _poll_fd_vector.size(); ++j) {
                 if (_poll_fd_vector[j].fd == active_fds[i].fd) {
@@ -90,6 +63,7 @@ void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 }
 
 void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
+    LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
         case LISTEN_STATE:
             if (poll_fd.revents & POLLIN) {
@@ -137,6 +111,7 @@ void Server::updatePollFdForRead(int fd) {
 }
 
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
+    LOG_DEBUG_NAME("Handling client socket events.", _server_config[0].server_name);
     switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
         case RECEIVE:
             if (poll_fd.revents & POLLIN) {
@@ -151,7 +126,12 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     delete _socket_map[poll_fd.fd];
                     close(poll_fd.fd);
                     _socket_map.erase(poll_fd.fd);
-                    _poll_fd_vector.erase(_poll_fd_vector.begin() + poll_fd.fd);
+                    for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
+                        if (_poll_fd_vector[i].fd == poll_fd.fd) {
+                            _poll_fd_vector.erase(_poll_fd_vector.begin() + i);
+                            break;
+                        }
+                    }
                     return ;
                 }else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
                     _socket_map[poll_fd.fd]->setNewHttpResponse(404);
@@ -169,7 +149,6 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     // If you have to wait for CGI
                     // _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
                     // If you can send a response immediately
-
                     _socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);
                 }
