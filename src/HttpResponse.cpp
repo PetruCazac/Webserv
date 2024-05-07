@@ -111,6 +111,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			first = false;
 		}
 	}
+
 	LocationDirectives location;
 	findLocationUri(server.locations, request.getUri(), location);
 	server.locations.clear();
@@ -119,14 +120,20 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	}
 	// if(isCGI(request.getUri()))
 	// 	handleCGI(server, request);
+	std::string path;
 	FILE* fp = NULL;
 	if(isMethodAllowed(server, "GET")){
-		const char* path = composeLocalUrl(server, request);
-		if(isDirectory(path) && checkAutoindex(server))
-			treatAutoindex(path);
-		else if (isFile(path))
-			fp = fopen(path, "r");
-		else{
+		composeLocalUrl(server, request, path);
+		if (isFile(path.c_str())){
+			fp = fopen(path.c_str(), "r");
+		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
+			treatAutoindex(path.c_str());
+			return;
+		} else{
+			makeDefaultErrorPage(404);
+			return;
+		}
+		if(fp == NULL){
 			makeDefaultErrorPage(404);
 			return;
 		}
@@ -152,8 +159,9 @@ void HttpResponse::treatAutoindex(const char* path){
 	std::cout  << path << std::endl;
 }
 
-const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request){
-	std::string path = request.getUri();
+void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
+	path = request.getUri();
+	struct stat fileInfo;
 	if(!server.locations.empty()){
 		if(!server.locations[0].root.empty()){
 			size_t pos;
@@ -163,30 +171,42 @@ const char* HttpResponse::composeLocalUrl(const ServerDirectives& server, const 
 		} else{
 			path = server.root + path;
 		}
-		if(access(path.c_str(), F_OK)){
+		if(stat(path.c_str(), &fileInfo) == -1){
 			if(!server.locations[0].index.empty()){
 				path = server.locations[0].root + '/' + server.locations[0].index;
-				if(access(path.c_str(), F_OK))
-					return NULL;
-				return path.c_str();
+				return;
 			}
-			return NULL;
+			return path.clear();;
 		}
-		return path.c_str();
+		return;
 	}else{
 		path = server.root + path;
-		if(access(path.c_str(), F_OK)){
+		if(stat(path.c_str(), &fileInfo) == -1){
 			if(!server.index.empty()){
 				path = server.root + '/' + server.index;
-				if(access(path.c_str(), F_OK))
-					return NULL;
-				return path.c_str();
+				return;
 			}
-			return NULL;
+			return path.clear();
 		}
-		return path.c_str();
+		return;
 	}
-	return NULL;
+	return path.clear();
+}
+
+bool HttpResponse::isDirectory(const char* path){
+	struct stat fileInfo;
+	if (stat(path, &fileInfo) != 0) {
+		return false;
+	}
+	return S_ISDIR(fileInfo.st_mode);
+}
+
+bool HttpResponse::isFile(const char* path){
+	struct stat fileInfo;
+	if (stat(path, &fileInfo) != 0) {
+		return false;
+	}
+	return S_ISREG(fileInfo.st_mode);
 }
 
 bool	HttpResponse::isMethodAllowed(const ServerDirectives& server, const std::string method){
@@ -245,21 +265,6 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 }
 
 
-bool HttpResponse::isDirectory(const char* path){
-	struct stat fileInfo;
-	if (stat(path, &fileInfo) != 0) {
-		return false;
-	}
-	return S_ISDIR(fileInfo.st_mode);
-}
-
-bool HttpResponse::isFile(const char* path){
-	struct stat fileInfo;
-	if (stat(path, &fileInfo) != 0) {
-		return false;
-	}
-	return S_ISREG(fileInfo.st_mode);
-}
 
 // FILE *HttpResponse::openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
 // 	std::string path;

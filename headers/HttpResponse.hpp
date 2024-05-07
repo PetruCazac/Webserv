@@ -53,7 +53,7 @@ private:
 	void	findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location);
 	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
 	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
-	const char*	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request);
+	void	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	bool	isDirectory(const char* path);
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
