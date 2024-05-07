@@ -3,6 +3,7 @@
 #include <istream>
 #include <vector>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
@@ -113,8 +114,10 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	if(!location.module.empty()){
 		server.locations.push_back(location);
 	}
-	if(isCGI(request.getUri()))
+	if(isCGI(request.getUri())){
 		handleCGI(server, request); // Needs to be implemented
+		return;
+	}
 	std::string path;
 	FILE* fp = NULL;
 	if(isMethodAllowed(server, "GET")){
@@ -136,10 +139,10 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	
 	// File pointer to be sent to the read part and sent to the client.
 	char buff[1000];
-	while(std::fgets(buff, sizeof(buff), fp) != 0)
+	while(std::fgets(buff, sizeof(buff), fp) != 0){
+		_response << buff;
 		std::cout  << buff << std::endl;
-		// std::cout  << _response << std::endl;
-		// _response << buff;
+	}
 }
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
@@ -216,14 +219,35 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 // 	return _response;
 // }
 
-// void HttpResponse::handleCGI(const std::vector<ServerDirectives> &config, const HttpRequest &request){
-
-// }
+void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
+	std::cout << config.name << std::endl;
+	std::cout << request.getUri() << std::endl;
+}
 
 void HttpResponse::handleAutoindex(const char* path){
-	// not implemented
-	std::cout  << path << std::endl;
+	DIR* dir = opendir(path);
+	if (dir != NULL) {
+		_response << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
+		struct dirent* entry;
+		while ((entry = readdir(dir)) != NULL) {
+			_response << "<li>" << entry->d_name << "</li>";
+		}
+		_response << "</ul></body></html>";
+		closedir(dir);
+	} else
+		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
 }
+
+const std::string &HttpResponse::getResponse(){
+	const std::string& str = _response.str();
+	if(str.empty()){
+		makeDefaultErrorPage(500);
+		const std::string& errorStr = _response.str();
+		return errorStr;
+	}
+	return str;
+}
+
 
 // ------------------------ Helper Functions -------------------------
 

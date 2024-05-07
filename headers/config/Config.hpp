@@ -44,7 +44,7 @@ typedef struct s_server{
 	std::string					index;
 	std::vector<std::string>	allow;
 	std::string					listen_port;
-	std::string					log_file;
+	std::string					log_file; // Not used NEED TO ADAPT CONFIG.CPP
 	std::string					root;
 	std::vector<LocationDirectives>	locations;
 }	ServerDirectives;

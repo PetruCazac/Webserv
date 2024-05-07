@@ -44,32 +44,34 @@ private:
 	HttpResponse();
 
 	void makeDefaultErrorPage(const int code);
-	std::string setErrorBody(const int code);
-	FILE*	openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
-	bool	isCGI(const std::string &uri);
-	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
-	void	runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	FILE*	openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
+	void	runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location);
-	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
-	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
 	void	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
-	bool	isDirectory(const char* path);
-	bool	isFile(const char* path);
-	bool	checkAutoindex(ServerDirectives& server);
 	void	handleAutoindex(const char* path);
+	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
 		void runPutMethod(void);
 		void runDeleteMethod(void);
 		void runErrorMethod(void);
 		void checkAllowedMethod(void);
 
+	// Helper Functions
+	bool	isCGI(const std::string &uri);
+	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
+	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
+	bool	isDirectory(const char* path);
+	bool	isFile(const char* path);
+	bool	checkAutoindex(ServerDirectives& server);
+	std::string setErrorBody(const int code);
+
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	// void addHeader(const std::string &header);
 
-	const std::stringstream &getResponse() const;
+	const std::string &getResponse();
 };
 
 #endif // HTTPRESPONSE_HPP

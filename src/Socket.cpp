@@ -182,6 +182,10 @@ HttpRequest* Socket::getHttpRequest() const {
 	return _http_request;
 }
 
+HttpResponse* Socket::getHttpResponse() const {
+	return _http_response;
+}
+
 void Socket::setNewHttpRequest(std::istream &inputRequest) {
 	if (this->getHttpRequest() != NULL) {
 		delete _http_request;
