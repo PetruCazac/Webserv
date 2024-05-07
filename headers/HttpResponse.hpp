@@ -57,7 +57,7 @@ private:
 	bool	isDirectory(const char* path);
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
-	void	treatAutoindex(const char* path);
+	void	handleAutoindex(const char* path);
 
 		void runPutMethod(void);
 		void runDeleteMethod(void);
