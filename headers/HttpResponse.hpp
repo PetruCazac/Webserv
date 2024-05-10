@@ -1,23 +1,30 @@
+
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
 #include "HttpRequest.hpp"
+#include "UtilsHttp.hpp"
 #include "Config.hpp"
 #include <map>
 #include <string>
 #include <istream>
 
-class StatusCodeMap {
-private:
-	std::map<int, std::string> statusCodes;
+struct MethodsException {
+	enum MethodErrors {
+		ERR
+	};
 
-	StatusCodeMap();
-	StatusCodeMap(const StatusCodeMap &other);
-	StatusCodeMap &operator=(const StatusCodeMap &other);
+	MethodErrors err;
 
-public:
-	static StatusCodeMap &getInstance();
-	const std::string &getStatusCodeDescription(const int code);
+	explicit MethodsException(MethodErrors err) :
+		err(err) { }
+
+	const char *what() const throw() {
+		switch (err) {
+			case ERR: return "cannot open file by uri"; break;
+			default: return "unknown error"; break;
+		}
+	}
 };
 
 struct HttpResponseExceptions {
@@ -52,10 +59,7 @@ private:
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
-		void runPutMethod(void);
-		void runDeleteMethod(void);
-		void runErrorMethod(void);
-		void checkAllowedMethod(void);
+	void setBody(std::fstream &file, std::string &path);
 
 	// Helper Functions
 	bool	isCGI(const std::string &uri);
@@ -69,9 +73,9 @@ private:
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
-	// void addHeader(const std::string &header);
 
-	const std::stringstream &getResponse();
+	// const std::string &getResponse();
+	const std::stringstream &getResponse() const;
 };
 
 #endif // HTTPRESPONSE_HPP
