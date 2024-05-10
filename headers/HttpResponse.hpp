@@ -71,7 +71,7 @@ public:
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	// void addHeader(const std::string &header);
 
-	const std::string &getResponse();
+	const std::stringstream &getResponse();
 };
 
 #endif // HTTPRESPONSE_HPP

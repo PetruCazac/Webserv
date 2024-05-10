@@ -238,14 +238,10 @@ void HttpResponse::handleAutoindex(const char* path){
 		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
 }
 
-const std::string &HttpResponse::getResponse(){
-	const std::string& str = _response.str();
-	if(str.empty()){
+const std::stringstream &HttpResponse::getResponse(){
+	if(_response.str().empty())
 		makeDefaultErrorPage(500);
-		const std::string& errorStr = _response.str();
-		return errorStr;
-	}
-	return str;
+	return _response;
 }
 
 

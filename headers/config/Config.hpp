@@ -31,7 +31,6 @@ typedef struct s_http{
 typedef struct s_location{
 	std::string					module;
 	std::string					autoindex;
-	std::vector<std::string>	fastcgi_param;
 	std::string					index;
 	std::vector<std::string>	allow;
 	std::string					root;

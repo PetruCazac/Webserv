@@ -19,7 +19,6 @@
 // // ---------------- Location config ----------------------//
 // Directives for server block :
 // autoindex				-- Command to show the directory listing.
-// fastcgi_param			-- Limit the FAST_CGI methods that are allowed to be used in this location.
 // index					-- If the page does not exist, the page defined by index will be returned. If there is no page, the error will be returned.
 // allow				-- Limit the HTTP methods that are allowed to be used in this location.
 // module					-- The directory from the root where the files will be searched.
@@ -301,10 +300,6 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			location.root = it->second[0];
-		}else if(it->first == "fastcgi_param"){
-			if(it->second.empty())
-				throw Config::WrongDirectiveAttributes();
-			location.fastcgi_param = it->second;
 		}else if(it->first == "allow"){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
@@ -339,7 +334,6 @@ void Config::getLocationStruct(LocationDirectives& location){
 	location.autoindex = DefaultValues::getDefaultValue<std::string>(AUTOINDEX);
 	location.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
-	location.fastcgi_param.push_back(DefaultValues::getDefaultValue<std::string>(FASTCGI_PARAM));
 	location.allow.push_back(DefaultValues::getDefaultValue<std::string>(ALLOW));
 }
 
@@ -388,13 +382,7 @@ void Config::printConfig(){
 			std::cout << "//---------------------- LOACATION STRUCTURE---------------------//" << std::endl;
 			std::cout << "LOCATION module: " << _serversConfig[i].locations[j].module << std::endl;
 			std::cout << "LOCATION autoindex: " << _serversConfig[i].locations[j].autoindex << std::endl;
-			
-			
-			std::cout << "LOCATION fastcgi_params:";
-			for(size_t n = 0; n < _serversConfig[i].locations[j].fastcgi_param.size(); n++)
-				std::cout << " " << _serversConfig[i].locations[j].fastcgi_param[n];
-			std::cout <<  std::endl;
-			
+
 			std::cout << "LOCATION index: " << _serversConfig[i].locations[j].index << std::endl;
 			
 			std::cout << "LOCATION allow:";
