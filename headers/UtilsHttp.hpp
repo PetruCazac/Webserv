@@ -1,5 +1,6 @@
-#ifndef OPENBYURI_HPP
-#define OPENBYURI_HPP
+
+#ifndef UTILSHTTP_HPP
+#define UTILSHTTP_HPP
 
 #include <string>
 #include <map>
@@ -21,24 +22,17 @@ public:
 	const std::string &getMimeType(const std::string &fileName) const;
 };
 
-struct MethodsException {
-	enum MethodErrors {
-		ERR
-	};
+class StatusCodeMap {
+private:
+	std::map<int, std::string> statusCodes;
 
-	MethodErrors err;
+	StatusCodeMap();
+	StatusCodeMap(const StatusCodeMap &other);
+	StatusCodeMap &operator=(const StatusCodeMap &other);
 
-	explicit MethodsException(MethodErrors err) :
-		err(err) { }
-
-	const char *what() const throw() {
-		switch (err) {
-			case ERR: return "cannot open file by uri"; break;
-			default: return "unknown error"; break;
-		}
-	}
+public:
+	static StatusCodeMap &getInstance();
+	const std::string &getStatusCodeDescription(const int code);
 };
 
-FILE *openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
-
-#endif
+#endif // UTILSHTTP_HPP

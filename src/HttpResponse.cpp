@@ -1,3 +1,4 @@
+
 #include <map>
 #include <string>
 #include <istream>
@@ -7,47 +8,9 @@
 
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
+#include "UtilsHttp.hpp"
 #include "Config.hpp"
 #include <sys/stat.h>
-
-// Responce: (class/struct? how to return)
-// <version> <status> <reason-phrase>
-// <headers>
-// <entity-body>
-
-StatusCodeMap::StatusCodeMap() {
-	statusCodes[200] = "OK";
-	statusCodes[201] = "Created";
-	statusCodes[202] = "Accepted";
-	statusCodes[204] = "No Content";
-	statusCodes[304] = "Not Modified";
-	statusCodes[400] = "Bad Request";
-	statusCodes[401] = "Unauthorized";
-	statusCodes[403] = "Forbidden";
-	statusCodes[404] = "Not Found";
-	statusCodes[405] = "Method Not Allowed";
-	statusCodes[409] = "Conflict";
-	statusCodes[410] = "Gone";
-	statusCodes[500] = "Internal Server Error";
-	statusCodes[501] = "Not Implemented";
-	statusCodes[502] = "Bad Gateway";
-	statusCodes[503] = "Service Unavailable";
-	statusCodes[505] = "HTTP Version Not Supported";
-}
-
-StatusCodeMap &StatusCodeMap::getInstance() {
-	static StatusCodeMap statusCodeMap;
-	return statusCodeMap;
-}
-
-const std::string &StatusCodeMap::getStatusCodeDescription(const int code) {
-	for (std::map<int, std::string>::iterator it = statusCodes.begin(); it != statusCodes.end(); it++) {
-		if (code == it->first)
-			return it->second;
-	}
-	throw HttpResponseExceptions(HttpResponseExceptions::CODE_NOT_EXIST);
-}
-
 
 HttpResponse::HttpResponse(const int code) {
 	makeDefaultErrorPage(code);
@@ -67,10 +30,6 @@ HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const Ht
 			makeDefaultErrorPage(501);
 	}
 }
-
-// void HttpResponse::addHeader(const std::string &header) {
-
-// }
 
 void HttpResponse::makeDefaultErrorPage(const int code) {
 	_response << "HTTP/1.1 "
@@ -119,11 +78,13 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 		return;
 	}
 	std::string path;
-	FILE* fp = NULL;
+	// FILE* fp = NULL;
 	if(isMethodAllowed(server, "GET")){
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
-			fp = fopen(path.c_str(), "r");
+			// fp = fopen(path.c_str(), "r");
+			std::fstream fp(path);
+			setBody(fp, path);
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str()); // Needs to be implemented
 			return;
@@ -131,18 +92,42 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			makeDefaultErrorPage(404);
 			return;
 		}
-		if(fp == NULL){
-			makeDefaultErrorPage(404);
-			return;
-		}
+		// if(fp == NULL){
+		// 	makeDefaultErrorPage(404);
+		// 	return;
+		// }
 	}
 	
 	// File pointer to be sent to the read part and sent to the client.
-	char buff[1000];
-	while(std::fgets(buff, sizeof(buff), fp) != 0){
-		_response << buff;
-		std::cout  << buff << std::endl;
-	}
+	// char buff[1000];
+	// while(std::fgets(buff, sizeof(buff), fp) != 0){
+	// 	_response << buff;
+	// 	std::cout  << buff << std::endl;
+	// }
+}
+
+void HttpResponse::setBody(std::fstream &file, std::string &path) {
+	_response << "HTTP/1.1 200 OK\r\n";
+
+	_response << "Content-Length: ";
+
+    file.seekg(0, std::ios::end);
+    std::streampos fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+	_response << fileSize
+			  << "\r\n";
+
+	_response << "Content-type: "
+			  << MimeTypeDetector::getInstance().getMimeType(path)
+			  << "\r\n";
+
+	_response << "\r\n"; // Important: Blank line between headers and body
+
+	std::string line;
+    while (std::getline(file, line)) {
+        _response << line << std::endl;
+    }
 }
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
@@ -215,10 +200,6 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 	}
 }
 
-// const std::stringstream &HttpResponse::getResponse() const {
-// 	return _response;
-// }
-
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
 	std::cout << config.name << std::endl;
 	std::cout << request.getUri() << std::endl;
@@ -244,6 +225,15 @@ const std::stringstream &HttpResponse::getResponse(){
 	return _response;
 }
 
+// const std::string &HttpResponse::getResponse(){
+// 	const std::string& str = _response.str();
+// 	if(str.empty()){
+// 		makeDefaultErrorPage(500);
+// 		const std::string& errorStr = _response.str();
+// 		return errorStr;
+// 	}
+// 	return str;
+// }
 
 // ------------------------ Helper Functions -------------------------
 
@@ -289,36 +279,3 @@ bool HttpResponse::isCGI(const std::string& uri){
 		return true;
 	return false;
 }
-
-// FILE *HttpResponse::openFileByUri(const std::string &uri, std::vector<ServerDirectives> server){
-// 	std::string path;
-// 	std::string query;
-// 	size_t questionMark = uri.find('?');
-// 	if (questionMark == std::string::npos)
-// 		path = uri;
-// 	else {
-// 		path = uri.substr(0, questionMark);
-// 		query = uri.substr(questionMark + 1);
-// 	}
-// 	// std::cout << "Path: " << path << "; query: " << query << std::endl;
-	
-// }
-
-
-
-
-// void HttpResponse::runPutMethod(void){
-
-// }
-
-// void HttpResponse::runDeleteMethod(void){
-
-// }
-
-// void HttpResponse::runErrorMethod(void){
-
-// }
-
-// void HttpResponse::checkAllowedMethod(void){
-// 	_request.
-// }
