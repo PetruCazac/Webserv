@@ -229,7 +229,7 @@ void HttpResponse::handleAutoindex(const char* path){
 		str = str + "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>" + "\r\n";
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL) {
-			str = str + "<li> " + "<a href=\"" + path + "/" + entry->d_name + "\">" + entry->d_name + "</a>"+ "</li>" + "\r\n";
+			str = str + "<li> " + "<a href=\"" + path + "/" + entry->d_name + "/>" + entry->d_name + "</a>"+ "</li>" + "\r\n";
 		}
 		str = str + "</ul></body></html>" + "\r\n";
 		closedir(dir);
