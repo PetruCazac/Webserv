@@ -205,23 +205,42 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 	std::cout << request.getUri() << std::endl;
 }
 
+// void HttpResponse::handleAutoindex(const char* path){
+// 	DIR* dir = opendir(path);
+// 	if (dir != NULL) {
+// 		_response << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
+// 		struct dirent* entry;
+// 		while ((entry = readdir(dir)) != NULL) {
+// 			_response << "<li>" << entry->d_name << "</li>";
+// 		}
+// 		_response << "</ul></body></html>";
+// 		closedir(dir);
+// 	} else
+// 		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
+// }
+
 void HttpResponse::handleAutoindex(const char* path){
 	DIR* dir = opendir(path);
+	_response << "HTTP/1.1 200 OK\r\n";
+	_response << "Content-Length: ";
+	std::string str;
 	if (dir != NULL) {
-		_response << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
+		str = str + "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>" + "\r\n";
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL) {
-			_response << "<li>" << entry->d_name << "</li>";
+			str = str + "<li> " + "<a href=\"" + path + "/" + entry->d_name + "\">" + entry->d_name + "</a>"+ "</li>" + "\r\n";
 		}
-		_response << "</ul></body></html>";
+		str = str + "</ul></body></html>" + "\r\n";
 		closedir(dir);
 	} else
-		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
+		str = str + "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>" + "\r\n";
+	_response << str.size() << "\r\n";
+	_response << "Content-type: text/html\r\n";
+	_response << "\r\n";
+	_response << str;
 }
 
-const std::stringstream &HttpResponse::getResponse(){
-	if(_response.str().empty())
-		makeDefaultErrorPage(500);
+const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 

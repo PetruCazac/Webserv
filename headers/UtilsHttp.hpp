@@ -11,7 +11,7 @@
 class MimeTypeDetector {
 private:
 	std::map<std::string, std::string> _mimeTypes;
-	const std::string _noneType = "application/octet-stream";
+	const std::string _noneType;
 
 	MimeTypeDetector();
 	MimeTypeDetector(const MimeTypeDetector &other);

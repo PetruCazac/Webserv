@@ -6,7 +6,7 @@
 #include <string>
 #include <stdio.h>
 
-MimeTypeDetector::MimeTypeDetector() {
+MimeTypeDetector::MimeTypeDetector() : _noneType("application/octet-stream") {
 	_mimeTypes[".html"] = "text/html";
 	_mimeTypes[".htm"] = "text/html";
 	_mimeTypes[".txt"] = "text/plain";

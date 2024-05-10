@@ -185,6 +185,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			//          << body;
 
 			const std::string& responseStr = _socket_map[poll_fd.fd]-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
+			LOG_DEBUG(responseStr);
 			// _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
 			_socket_map[poll_fd.fd]->sendtoClient(&responseStr);
 			_socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
