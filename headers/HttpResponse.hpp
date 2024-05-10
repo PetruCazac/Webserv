@@ -11,7 +11,8 @@
 
 struct MethodsException {
 	enum MethodErrors {
-		ERR
+		CANNOT_OPEN_FILE,
+		CODE_NOT_EXIST
 	};
 
 	MethodErrors err;
@@ -21,24 +22,7 @@ struct MethodsException {
 
 	const char *what() const throw() {
 		switch (err) {
-			case ERR: return "cannot open file by uri"; break;
-			default: return "unknown error"; break;
-		}
-	}
-};
-
-struct HttpResponseExceptions {
-	enum ResponceErrors {
-		CODE_NOT_EXIST
-	};
-
-	ResponceErrors err;
-
-	explicit HttpResponseExceptions(ResponceErrors err) :
-		err(err) { }
-
-	const char *what() const throw() {
-		switch (err) {
+			case CANNOT_OPEN_FILE: return "cannot open file by uri"; break;
 			case CODE_NOT_EXIST: return "status code not found"; break;
 			default: return "unknown error"; break;
 		}

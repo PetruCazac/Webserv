@@ -83,8 +83,10 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
 			// fp = fopen(path.c_str(), "r");
-			std::fstream fp(path);
-			setBody(fp, path);
+			std::fstream file(path);
+			if (!file.is_open())
+				throw MethodsException(MethodsException::CANNOT_OPEN_FILE);
+			setBody(file, path);
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str()); // Needs to be implemented
 			return;
@@ -107,16 +109,15 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 }
 
 void HttpResponse::setBody(std::fstream &file, std::string &path) {
-	_response << "HTTP/1.1 200 OK\r\n";
-
-	_response << "Content-Length: ";
-
     file.seekg(0, std::ios::end);
     std::streampos fileSize = file.tellg();
     file.seekg(0, std::ios::beg);
 
-	_response << fileSize
-			  << "\r\n";
+	_response << "HTTP/1.1 200 OK\r\n";
+
+	_response << "Content-Length: ";
+
+	_response << fileSize << "\r\n";
 
 	_response << "Content-type: "
 			  << MimeTypeDetector::getInstance().getMimeType(path)
@@ -125,9 +126,9 @@ void HttpResponse::setBody(std::fstream &file, std::string &path) {
 	_response << "\r\n"; // Important: Blank line between headers and body
 
 	std::string line;
-    while (std::getline(file, line)) {
-        _response << line << std::endl;
-    }
+	while (std::getline(file, line)) {
+	    _response << line << std::endl;
+	}
 }
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
@@ -219,9 +220,7 @@ void HttpResponse::handleAutoindex(const char* path){
 		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
 }
 
-const std::stringstream &HttpResponse::getResponse(){
-	if(_response.str().empty())
-		makeDefaultErrorPage(500);
+const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 
