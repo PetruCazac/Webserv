@@ -52,17 +52,15 @@ std::string HttpResponse::setErrorBody(const int code) {
 }
 
 void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
-	std::string header = request.getHeaders().at("Host");
-	std::string header_server_name = header.substr(0, header.find_first_of(':', 0));
-	std::string header_port = header.substr(header.find_first_of(':', 0) + 1, header.size());
+	std::string header_server_name = request.getHeaders().at("Host").substr(0, request.getHeaders().at("Host").find_first_of(':', 0));
 	ServerDirectives server;
 	bool first = true;
 	for(size_t i = 0; i < config.size(); i++){
-		if(header_port == config[i].listen_port && header_server_name == config[i].server_name){
+		if(header_server_name == config[i].server_name){
 			server = config[i];
 			break;
 		}
-		else if(header_port == config[i].listen_port && first == true){
+		else if(first == true){
 			server = config[i];
 			first = false;
 		}
@@ -70,9 +68,8 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	LocationDirectives location;
 	findLocationUri(server.locations, request.getUri(), location);
 	server.locations.clear();
-	if(!location.module.empty()){
+	if(!location.module.empty())
 		server.locations.push_back(location);
-	}
 	if(isCGI(request.getUri())){
 		handleCGI(server, request); // Needs to be implemented
 		return;
@@ -83,7 +80,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
 			// fp = fopen(path.c_str(), "r");
-			std::fstream file(path);
+			std::fstream file(path.c_str());
 			if (!file.is_open())
 				throw MethodsException(MethodsException::CANNOT_OPEN_FILE);
 			setBody(file, path);
@@ -171,7 +168,7 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 	std::vector<std::string> uriSegments;
 	while(std::getline(ss, segment, '/')){
 		if(!segment.empty())
-			uriSegments.push_back('/' + segment);
+			uriSegments.push_back(segment + '/');
 	}
 	if(uriSegments.empty() || locations.empty())
 		return;
@@ -184,7 +181,7 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 		std::stringstream ss(locations[i].module);
 		while(std::getline(ss, segment, '/')){
 			if(!segment.empty())
-				locationMethods.push_back('/' + segment);
+				locationMethods.push_back(segment + '/');
 		}
 		for(size_t j = 0; j < locationMethods.size() && j < uriSegments.size(); j++){
 			if(uriSegments[j] == locationMethods[j])
@@ -228,9 +225,8 @@ void HttpResponse::handleAutoindex(const char* path){
 	if (dir != NULL) {
 		str = str + "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>" + "\r\n";
 		struct dirent* entry;
-		while ((entry = readdir(dir)) != NULL) {
-			str = str + "<li> " + "<a href=\"" + path + "/" + entry->d_name + "/>" + entry->d_name + "</a>"+ "</li>" + "\r\n";
-		}
+		while ((entry = readdir(dir)) != NULL)
+			str = str + "<li> " + "<a href=\"" + path + entry->d_name + "\">" + entry->d_name + "</a>"+ "</li>" + "\r\n";
 		str = str + "</ul></body></html>" + "\r\n";
 		closedir(dir);
 	} else
