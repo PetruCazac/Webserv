@@ -128,8 +128,25 @@ void HttpResponse::setBody(std::fstream &file, std::string &path) {
 	}
 }
 
+void cleanPath(std::string& path, const std::string& serverRoot){
+	std::stringstream ss(path);
+	std::string segment;
+	std::vector<std::string> uriSegments;
+	while(std::getline(ss, segment, '/')){
+		if(!segment.empty())
+			uriSegments.push_back(segment);
+	}
+	if(!uriSegments.empty() && uriSegments[0] == serverRoot){
+		std::string withoutRoot;
+		for(size_t i = 1; i < uriSegments.size(); i++)
+			withoutRoot.append("/" + uriSegments[i]);
+		path = withoutRoot;
+	}
+}
+
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
+	cleanPath(path, server.root);
 	struct stat fileInfo;
 	if(!server.locations.empty()){
 		if(!server.locations[0].root.empty()){
