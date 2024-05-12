@@ -217,6 +217,15 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 // 		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
 // }
 
+std::string getPath(const char *path){
+	std::string str(path);
+	size_t start = str.find("/", 0);
+	std::string withoutRoot(str, start, str.size());
+	if(*(withoutRoot.end() - 1) != '/')
+		withoutRoot.append("/");
+	return withoutRoot.c_str();
+}
+
 void HttpResponse::handleAutoindex(const char* path){
 	DIR* dir = opendir(path);
 	_response << "HTTP/1.1 200 OK\r\n";
@@ -226,7 +235,7 @@ void HttpResponse::handleAutoindex(const char* path){
 		str = str + "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>" + "\r\n";
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL)
-			str = str + "<li> " + "<a href=\"" + path + entry->d_name + "\">" + entry->d_name + "</a>"+ "</li>" + "\r\n";
+			str = str + "<li> " + "<a href=\"" + getPath(path) + entry->d_name + "\">" + entry->d_name + "</a>"+ "</li>" + "\r\n";
 		str = str + "</ul></body></html>" + "\r\n";
 		closedir(dir);
 	} else
