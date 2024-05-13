@@ -18,6 +18,7 @@ class Server {
 		void updatePollFdForRead(int fd);
 		void addServerConfig(ServerDirectives& serverConfig);
         void closeServer(void);
+        void checkKeepAlive(void);
 	private:
         void removeSocketFromMap(int fd);
 		const int _client_max_body_size;

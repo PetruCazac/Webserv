@@ -198,3 +198,21 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			break;
 	}
 }
+
+void Server::checkKeepAlive() {
+    time_t currentTime = time(NULL);
+
+    for (std::map<int, Socket*>::iterator it = _socket_map.begin(); it != _socket_map.end(); ) {
+        if (it->second->getSocketType() == CLIENT) {
+            double secondsElapsed = difftime(currentTime, it->second->getLastAccessTime());
+            if (secondsElapsed > _keepalive_timeout) {
+                LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
+                int fd = it->first;
+                ++it;
+                removeSocketFromMap(fd);
+                continue;
+            }
+        }
+        ++it;
+    }
+}
