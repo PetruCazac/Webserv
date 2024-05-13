@@ -75,40 +75,27 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 		return;
 	}
 	std::string path;
-	// FILE* fp = NULL;
 	if(isMethodAllowed(server, "GET")){
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
-			// fp = fopen(path.c_str(), "r");
 			std::fstream file(path.c_str());
 			if (!file.is_open())
 				throw MethodsException(MethodsException::CANNOT_OPEN_FILE);
 			setBody(file, path);
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
-			handleAutoindex(path.c_str()); // Needs to be implemented
+			handleAutoindex(path.c_str());
 			return;
 		} else{
 			makeDefaultErrorPage(404);
 			return;
 		}
-		// if(fp == NULL){
-		// 	makeDefaultErrorPage(404);
-		// 	return;
-		// }
 	}
-	
-	// File pointer to be sent to the read part and sent to the client.
-	// char buff[1000];
-	// while(std::fgets(buff, sizeof(buff), fp) != 0){
-	// 	_response << buff;
-	// 	std::cout  << buff << std::endl;
-	// }
 }
 
 void HttpResponse::setBody(std::fstream &file, std::string &path) {
-    file.seekg(0, std::ios::end);
-    std::streampos fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
+	file.seekg(0, std::ios::end);
+	std::streampos fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
 
 	_response << "HTTP/1.1 200 OK\r\n";
 
@@ -119,12 +106,10 @@ void HttpResponse::setBody(std::fstream &file, std::string &path) {
 	_response << "Content-type: "
 			  << MimeTypeDetector::getInstance().getMimeType(path)
 			  << "\r\n";
-
-	_response << "\r\n"; // Important: Blank line between headers and body
-
+	_response << "\r\n";
 	std::string line;
 	while (std::getline(file, line)) {
-	    _response << line << std::endl;
+		_response << line << std::endl;
 	}
 }
 
@@ -220,20 +205,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 	std::cout << request.getUri() << std::endl;
 }
 
-// void HttpResponse::handleAutoindex(const char* path){
-// 	DIR* dir = opendir(path);
-// 	if (dir != NULL) {
-// 		_response << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
-// 		struct dirent* entry;
-// 		while ((entry = readdir(dir)) != NULL) {
-// 			_response << "<li>" << entry->d_name << "</li>";
-// 		}
-// 		_response << "</ul></body></html>";
-// 		closedir(dir);
-// 	} else
-// 		_response << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
-// }
-
 std::string getPath(const char *path){
 	std::string str(path);
 	size_t start = str.find("/", 0);
@@ -267,21 +238,15 @@ const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 
-// const std::string &HttpResponse::getResponse(){
-// 	const std::string& str = _response.str();
-// 	if(str.empty()){
-// 		makeDefaultErrorPage(500);
-// 		const std::string& errorStr = _response.str();
-// 		return errorStr;
-// 	}
-// 	return str;
-// }
-
 // ------------------------ Helper Functions -------------------------
 
 bool HttpResponse::checkAutoindex(ServerDirectives& server){
-	if(!server.locations.empty() && server.locations[0].autoindex == "on")
-		return true;
+	if(!server.locations.empty()){
+		if(server.locations[0].autoindex == "on")
+			return true;
+		else
+			return false;
+	}
 	else if(server.autoindex == "on")
 		return true;
 	return false;

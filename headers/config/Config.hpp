@@ -40,6 +40,7 @@ typedef struct s_server{
 	std::string					name;
 	std::string					server_name;
 	std::string					autoindex;
+	std::vector<std::string>	fastcgi_params;
 	std::string					index;
 	std::vector<std::string>	allow;
 	std::string					listen_port;

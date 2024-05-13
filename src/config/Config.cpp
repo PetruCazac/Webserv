@@ -14,7 +14,8 @@
 // log_file					-- The name of the file where the logs will be stored.
 // root						-- The root directory where the files will be searched.
 // server_name				-- The name of the server.
-// allow				-- Limit the HTTP methods that are allowed to be used in this location.
+// allow					-- Limit the HTTP methods that are allowed to be used in this location.
+// fastcgi_param			-- Limit the methods on CGI scripts, that are located in root/cgi_bin/
 
 // // ---------------- Location config ----------------------//
 // Directives for server block :
@@ -192,7 +193,7 @@ void logInfo(std::string message, std::string directive, std::vector<std::string
 	ss << message << ": ";
 	ss << directive << " ";
 	for(size_t i = 0; i < attributes.size(); i++)
-		ss << attributes[i];
+		ss << attributes[i] << " ";
 	LOG_INFO(ss.str());
 }
 
@@ -258,6 +259,10 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.root = it->second[0];
+		}else if(it->first == "fastcgi_param"){
+			if(it->second.empty())
+				throw Config::WrongDirectiveAttributes();
+			server.fastcgi_params = it->second;
 		}else if(it->first == "allow"){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
@@ -373,6 +378,10 @@ void Config::printConfig(){
 		std::cout << "allow:";
 		for(size_t n = 0; n < _serversConfig[i].allow.size(); n++)
 			std::cout << " " << _serversConfig[i].allow[n];
+		std::cout <<  std::endl;
+		std::cout << "fastcgi_params:";
+		for(size_t n = 0; n < _serversConfig[i].fastcgi_params.size(); n++)
+			std::cout << " " << _serversConfig[i].fastcgi_params[n];
 		std::cout <<  std::endl;
 		
 		std::cout << "log_file: " << _serversConfig[i].log_file << std::endl;
