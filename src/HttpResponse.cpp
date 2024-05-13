@@ -5,12 +5,13 @@
 #include <vector>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <ctime>
 
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
 #include "UtilsHttp.hpp"
 #include "Config.hpp"
-#include <sys/stat.h>
 
 HttpResponse::HttpResponse(const int code) {
 	makeDefaultErrorResponse(code);
@@ -49,9 +50,24 @@ std::string HttpResponse::getErrorBody(const int code) {
 	return body.str();
 }
 
-void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+// --------------------------------- POST Method --------------------------------------
+
+void storeFormData(const std::string& formData) {
+	std::stringstream time_int;
+	time_int << time(NULL);
+	std::string filename = "form_submission_" + time_int.str() + ".txt";
+	std::ofstream outFile(filename.c_str());
+	if (!outFile) {
+		std::cerr << "Error opening file for writing: " << filename << std::endl;
+		return;
+	}
+	outFile << formData;
+	outFile.close();
+	std::cout << "Form data stored in file: " << filename << std::endl;
+}
+
+void HttpResponse::chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server){
 	std::string header_server_name = request.getHeaders().at("Host").substr(0, request.getHeaders().at("Host").find_first_of(':', 0));
-	ServerDirectives server;
 	bool first = true;
 	for(size_t i = 0; i < config.size(); i++){
 		if(header_server_name == config[i].server_name){
@@ -68,6 +84,18 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	server.locations.clear();
 	if(!location.module.empty())
 		server.locations.push_back(location);
+}
+
+void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+	ServerDirectives server;
+	chooseServerConfig(config, request, server);
+}
+
+// --------------------------------- GET Method --------------------------------------
+
+void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+	ServerDirectives server;
+	chooseServerConfig(config, request, server);
 	if(isCGI(request.getUri())){
 		handleCGI(server, request); // Needs to be implemented
 		return;
@@ -262,6 +290,8 @@ void HttpResponse::handleAutoindex(const char* path){
 const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
+
+// ------------------------ POST Method ------------------------------
 
 // ------------------------ Helper Functions -------------------------
 

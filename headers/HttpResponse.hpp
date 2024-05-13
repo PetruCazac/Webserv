@@ -37,18 +37,23 @@ private:
 	std::map<std::string, std::string> _headers;
 	HttpResponse();
 
-	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	// GET Method
 	void	runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location);
 	void	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
-	void readFile(std::string &path);
-	void makeDefaultErrorResponse(const int code);
+
+	// POST Method
+	void 	runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+
+	// Response Constituting Functions
+	void 	readFile(std::string &path);
+	void 	makeDefaultErrorResponse(const int code);
 	std::string getErrorBody(const int code);
-	void setHeader(const std::string &header, const std::string &value);
-	void setResponse();
+	void 	setHeader(const std::string &header, const std::string &value);
+	void 	setResponse();
 
 	// Helper Functions
 	bool	isCGI(const std::string &uri);
@@ -57,6 +62,7 @@ private:
 	bool	isDirectory(const char* path);
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
+	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
 
 public:
 	HttpResponse(const int code);
