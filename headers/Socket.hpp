@@ -57,6 +57,7 @@ class Socket {
 		void setNewHttpRequest(std::istream &inputRequest);
 		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
 		void setNewHttpResponse(size_t errorCode);
+        time_t getLastAccessTime(void) const;
 
 	private:
 		std::string     _listen_port;

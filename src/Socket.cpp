@@ -209,3 +209,7 @@ void Socket::setNewHttpResponse(size_t errorCode){
 	}
 	_http_response = new HttpResponse(errorCode);
 }
+
+time_t Socket::getLastAccessTime() const {
+    return _last_access_time;
+}
