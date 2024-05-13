@@ -43,7 +43,7 @@ void Webserv::run_servers(void){
     int timesincelastcheck = 0;
 	while(true){
 		if(signalFlag == SIGINT){
-			delete this;
+			this->~Webserv();
 			exit(EXIT_SUCCESS);
 		}
 		updatePollFds();
