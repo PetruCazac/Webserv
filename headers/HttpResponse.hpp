@@ -31,19 +31,24 @@ struct MethodsException {
 
 class HttpResponse {
 private:
-	std::stringstream	_response;
+	std::stringstream _startLine;
+	std::map<std::string, std::string> _headers;
+	std::stringstream _body;
+	std::stringstream _response;
 	HttpResponse();
 
-	void makeDefaultErrorPage(const int code);
 	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
-	FILE*	openFileByUri(const std::string &uri, std::vector<ServerDirectives> server);
 	void	runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location);
 	void	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
-	void setBody(std::fstream &file, std::string &path);
+	void makeDefaultErrorResponse(const int code);
+	std::string getErrorBody(const int code);
+	void setHeader(const std::string &header, const std::string &value);
+	void setBody(std::stringstream &body);
+	void setResponse();
 
 	// Helper Functions
 	bool	isCGI(const std::string &uri);
@@ -52,13 +57,11 @@ private:
 	bool	isDirectory(const char* path);
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
-	std::string setErrorBody(const int code);
 
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 
-	// const std::string &getResponse();
 	const std::stringstream &getResponse() const;
 };
 
