@@ -63,9 +63,7 @@ class Socket {
 		void setNewHttpResponse(size_t errorCode);
 
 	private:
-		// SocketConfiguration *socket_config;
 		std::string     _listen_port;
-		// size_t          _client_max_body_size;
 		int             _sockfd;
 		addrinfo_t      *_addr_info;
 		SocketType      _socket_type;
