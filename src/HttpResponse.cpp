@@ -20,8 +20,9 @@ HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const Ht
 	if (request.getHttpVersion() != "HTTP/1.1")
 		makeDefaultErrorResponse(505);
 	else {
-		if (request.getMethod() == GET)
+		if (request.getMethod() == GET) {
 			runGetMethod(config, request);
+		}
 		else if (request.getMethod() == POST)
 			;
 		else if (request.getMethod() == DELETE)
@@ -79,7 +80,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			readFile(path);
 			setResponse();
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
-			handleAutoindex(path.c_str()); // Needs to be implemented
+			handleAutoindex(path.c_str());
 		} else{
 			makeDefaultErrorResponse(404);
 		}
@@ -93,10 +94,12 @@ void HttpResponse::readFile(std::string &path) {
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
 		makeDefaultErrorResponse(500);
-	_contentType = MimeTypeDetector::getInstance().getMimeType(path);
-	std::stringstream body;
-	body << file.rdbuf();
-	_body = body.str();
+	else {
+		_contentType = MimeTypeDetector::getInstance().getMimeType(path);
+		std::stringstream body;
+		body << file.rdbuf();
+		_body = body.str();
+	}
 }
 
 void HttpResponse::setHeader(const std::string &header, const std::string &value) {
@@ -107,10 +110,8 @@ void HttpResponse::setResponse() {
 	_response << "HTTP/1.1 200 OK\r\n";
 	_response << "Content-Type: " << _contentType << "\r\n";
 	_response << "Content-Length: " <<_body.length() << "\r\n";
-	if (!_headers.empty()) {
-		for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
-			_response << it->first << ": " << it->second << "\r\n";
-		}
+	for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
+		_response << it->first << ": " << it->second << "\r\n";
 	}
 	_response << "\r\n" << _body;
 }
@@ -235,29 +236,6 @@ void HttpResponse::handleAutoindex(const char* path){
 	_response << "\r\n";
 	_response << str;
 }
-
-// void HttpResponse::handleAutoindex(const char* path){
-// 	DIR* dir = opendir(path);
-// 	setHeader("Content-type", "text/html");
-// 	// std::string str;
-// 	std::stringstream str;
-// 	if (dir != NULL) {
-// 		str << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><ul>";
-// 		struct dirent* entry;
-// 		while ((entry = readdir(dir)) != NULL)
-// 			str << "<li> " << "<a href=\"" << path << entry->d_name << "\">" << entry->d_name << "</a>" << "</li>";
-// 		str << "</ul></body></html>";
-// 		closedir(dir);
-// 	} else
-// 		str << "<html><head><title>Error</title></head><body><h1>Error: Unable to open directory</h1></body></html>";
-//     str.seekg(0, std::ios::end);
-//     std::streampos size = str.tellg();
-//     str.seekg(0, std::ios::beg);
-// 	std::stringstream strSize(size);
-// 	setHeader("Content-Length", strSize.str());
-// 	setBody(str);
-// 	setResponse();
-// }
 
 const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
