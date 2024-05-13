@@ -76,18 +76,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	if(isMethodAllowed(server, "GET")){
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
-			std::ifstream file(path.c_str());
-			if (!file.is_open())
-				makeDefaultErrorResponse(500);
-			setHeader("Content-Type", MimeTypeDetector::getInstance().getMimeType(path));
-    		file.seekg(0, std::ios::end);
-    		std::streampos size = file.tellg();
-    		file.seekg(0, std::ios::beg);
-			std::stringstream fileSize(size);
-			setHeader("Content-Length", fileSize.str());
-			std::stringstream body;
-			body << file.rdbuf();
-			setBody(body);
+			readFile(path);
 			setResponse();
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str()); // Needs to be implemented
@@ -95,20 +84,33 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			makeDefaultErrorResponse(404);
 		}
 	}
+	else {
+		makeDefaultErrorResponse(405);
+	}
+}
+
+void HttpResponse::readFile(std::string &path) {
+	std::ifstream file(path.c_str());
+	if (!file.is_open())
+		makeDefaultErrorResponse(500);
+	_contentType = MimeTypeDetector::getInstance().getMimeType(path);
+	std::stringstream body;
+	body << file.rdbuf();
+	_body = body.str();
 }
 
 void HttpResponse::setHeader(const std::string &header, const std::string &value) {
 	_headers[header] = value;
 }
 
-void HttpResponse::setBody(std::stringstream &body) {
-	_body << body.rdbuf();
-}
-
 void HttpResponse::setResponse() {
 	_response << "HTTP/1.1 200 OK\r\n";
-	for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
-		_response << it->first << ": " << it->second << "\r\n";
+	_response << "Content-Type: " << _contentType << "\r\n";
+	_response << "Content-Length: " <<_body.length() << "\r\n";
+	if (!_headers.empty()) {
+		for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
+			_response << it->first << ": " << it->second << "\r\n";
+		}
 	}
 	_response << "\r\n" << _body;
 }

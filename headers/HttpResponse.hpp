@@ -31,10 +31,10 @@ struct MethodsException {
 
 class HttpResponse {
 private:
-	std::stringstream _startLine;
-	std::map<std::string, std::string> _headers;
-	std::stringstream _body;
 	std::stringstream _response;
+	std::string _body;
+	std::string _contentType;
+	std::map<std::string, std::string> _headers;
 	HttpResponse();
 
 	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
@@ -44,10 +44,10 @@ private:
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
+	void readFile(std::string &path);
 	void makeDefaultErrorResponse(const int code);
 	std::string getErrorBody(const int code);
 	void setHeader(const std::string &header, const std::string &value);
-	void setBody(std::stringstream &body);
 	void setResponse();
 
 	// Helper Functions
