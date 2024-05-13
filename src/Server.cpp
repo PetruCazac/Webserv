@@ -3,7 +3,7 @@
 
 int errorFlag = 0;
 
-Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _client_max_body_size(client_max_body_size) {
+Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size, size_t keepalive_timeout) : _client_max_body_size(client_max_body_size), _keepalive_timeout(keepalive_timeout) {
 	_server_config.push_back(inputConfig);
 	// LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
 	addListeningSocket();

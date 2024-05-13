@@ -6,7 +6,7 @@
 
 class Server {
 	public:
-		Server(ServerDirectives& inputConfig, size_t client_max_body_size);
+		Server(ServerDirectives& inputConfig, size_t client_max_body_size, size_t keepalive_timeout);
 		~Server();
 
 		bool addListeningSocket();
@@ -21,6 +21,7 @@ class Server {
 	private:
         void removeSocketFromMap(int fd);
 		const int _client_max_body_size;
+        const size_t _keepalive_timeout;
 		std::vector<ServerDirectives> _server_config;
 		std::vector<pollfd_t> _poll_fd_vector;
 		std::map<int, Socket*> _socket_map;
