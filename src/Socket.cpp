@@ -1,6 +1,6 @@
 #include "Socket.hpp"
 
-Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL){
+Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)){
 	_socket_type = SERVER;
 	setSocketStatus(LISTEN_STATE);
 	LOG_DEBUG("Constructor for listening Socket called.");
@@ -14,8 +14,7 @@ Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1
 	}
 }
 
-// Socket::Socket(int connection_fd) : socket_config(NULL), _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL) {
-Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL), _http_response(NULL) {
+Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)) {
 	_socket_type = CLIENT;
 	setSocketStatus(RECEIVE);
 }
@@ -111,7 +110,6 @@ bool Socket::bindAndListen() {
 	return true;
 }
 
-// probably add sockaddr_storage_t as a parameter
 int Socket::acceptIncoming() {
 	sockaddr_storage_t client_addr;
 	socklen_t addr_size = sizeof(client_addr);
@@ -127,6 +125,7 @@ bool Socket::sendtoClient(const std::string* data) {
 	size_t len_sent = 0;
 	int bytes_sent = 0;
 	size_t len = data->length();
+    _last_access_time = time(NULL);
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
 		if (bytes_sent < 0) {
@@ -141,6 +140,7 @@ bool Socket::sendtoClient(const std::string* data) {
 
 
 bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read) {
+    _last_access_time = time(NULL);
 	bytes_read = recv(client_fd, buffer, buffer_size, 0);
 	if (bytes_read == -1) {
 		LOG_ERROR("Failed to receive data.");
@@ -208,4 +208,8 @@ void Socket::setNewHttpResponse(size_t errorCode){
 		return ;
 	}
 	_http_response = new HttpResponse(errorCode);
+}
+
+time_t Socket::getLastAccessTime() const {
+    return _last_access_time;
 }

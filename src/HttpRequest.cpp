@@ -156,3 +156,12 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 		std::cout << std::endl;
 	}
 }
+
+bool HttpRequest::isKeepAlive() const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find("Connection");
+    if (it != _headers.end()) {
+        if (it->second == "keep-alive")
+            return true;
+    }
+    return false;
+}

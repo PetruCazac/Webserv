@@ -5,6 +5,7 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Configuration.hpp"
+#include <ctime>
 
 class SocketException : public std::exception {
 private:
@@ -22,10 +23,6 @@ typedef struct SocketConfiguration {
 	size_t max_data_size_incoming;
 } SocketConfiguration;
 
-// typedef struct addrinfo addrinfo_t;
-// typedef struct sockaddr_storage sockaddr_storage_t;
-// typedef struct pollfd pollfd_t;
-
 enum SocketType {
 	SERVER,
 	CLIENT
@@ -40,7 +37,6 @@ enum SocketStatus {
 
 class Socket {
 	public:
-		// Socket(std::string& listening_port, size_t& _client_max_body_size);
 		Socket(std::string& listening_port);
 		Socket(int connection_fd);
 		~Socket();
@@ -61,17 +57,17 @@ class Socket {
 		void setNewHttpRequest(std::istream &inputRequest);
 		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
 		void setNewHttpResponse(size_t errorCode);
+        time_t getLastAccessTime(void) const;
 
 	private:
-		// SocketConfiguration *socket_config;
 		std::string     _listen_port;
-		// size_t          _client_max_body_size;
 		int             _sockfd;
 		addrinfo_t      *_addr_info;
 		SocketType      _socket_type;
 		SocketStatus    _socket_status;
 		HttpRequest     *_http_request;
 		HttpResponse	*_http_response;
+        time_t          _last_access_time;
 };
 
 #endif
