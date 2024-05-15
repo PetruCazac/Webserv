@@ -28,10 +28,15 @@ static HttpMethods methodToEnum(const std::string &method) {
 		if (method == validMethods[i].name)
 			return validMethods[i].method;
 	}
+	// return validMethods[2].method;
 	throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
 }
 
 HttpRequest::HttpRequest(std::istream &inputRequest) {
+	std::ostringstream output;
+	output << inputRequest;
+	std::string request = output.str();
+	std::cout << request << std::endl;
 	std::string startLine;
 	std::getline(inputRequest, startLine);
 	if (startLine.empty() || startLine[0] == '\r')
@@ -39,8 +44,8 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseStartLine(startLine);
 	parseHeaders(inputRequest);
 	readBody(inputRequest);
-	if (!isValidContentLength())
-		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+	// if (!isValidContentLength())
+	// 	throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
 	printHttpRequest(*this);
 }
 
@@ -88,7 +93,9 @@ bool HttpRequest::isValidHttpVersion() const {
 bool HttpRequest::isValidContentLength() const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
 	if (it != _headers.end()) {
-		if (_body.size() != static_cast<size_t>(std::atol(it->second.c_str())))
+		size_t bodySize = _body.size();
+		size_t messageSize = static_cast<size_t>(std::atol(it->second.c_str()));
+		if (bodySize != messageSize)
 			return false;
 	}
 	return true;

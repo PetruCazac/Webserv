@@ -202,6 +202,14 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
+const char* Socket::getClientMessage(void){
+	return (_clientMessage.c_str());
+}
+
+void Socket::addClientMessage(char* buffer){
+	_clientMessage += buffer;
+}
+
 void Socket::setNewHttpResponse(size_t errorCode){
 	if (this->getHttpRequest() == NULL) {
 		LOG_ERROR("The request is not available for a response.");
@@ -212,4 +220,12 @@ void Socket::setNewHttpResponse(size_t errorCode){
 
 time_t Socket::getLastAccessTime() const {
     return _last_access_time;
+}
+
+bool Socket::isCompleteMessage(void){
+	if(_http_request->isValidContentLength()){
+		_clientMessage.clear();
+		return true;
+	}
+	return false;
 }

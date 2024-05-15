@@ -62,7 +62,6 @@ private:
 	void readBody(std::istream &inputRequest);
 
 	bool isValidHttpVersion() const;
-	bool isValidContentLength() const;
 
 public:
 	explicit HttpRequest(std::istream &inputRequest);
@@ -73,6 +72,7 @@ public:
 	const std::string &getHttpVersion() const;
 	const std::map<std::string, std::string> &getHeaders() const;
 	const std::vector<uint8_t> &getBody() const;
+	bool isValidContentLength() const;
 };
 
 #endif // HTTPREQUEST_HPP

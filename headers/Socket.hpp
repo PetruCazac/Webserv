@@ -2,6 +2,9 @@
 #define SOCKET_HPP
 
 #include <vector>
+#include <iostream>
+#include <sstream>
+
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Configuration.hpp"
@@ -58,14 +61,18 @@ class Socket {
 		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
 		void setNewHttpResponse(size_t errorCode);
         time_t getLastAccessTime(void) const;
+		void addClientMessage(char* buffer);
+		const char* getClientMessage(void);
+		bool isCompleteMessage(void);
 
 	private:
-		std::string     _listen_port;
-		int             _sockfd;
-		addrinfo_t      *_addr_info;
-		SocketType      _socket_type;
-		SocketStatus    _socket_status;
-		HttpRequest     *_http_request;
+		std::string		_listen_port;
+		int						_sockfd;
+		std::string		_clientMessage;
+		addrinfo_t		*_addr_info;
+		SocketType		_socket_type;
+		SocketStatus	_socket_status;
+		HttpRequest		*_http_request;
 		HttpResponse	*_http_response;
         time_t          _last_access_time;
 };

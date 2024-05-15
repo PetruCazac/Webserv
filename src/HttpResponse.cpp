@@ -53,7 +53,7 @@ std::string HttpResponse::getErrorBody(const int code) {
 
 // --------------------------------- POST Method --------------------------------------
 
-void storeFormData(const std::string& formData) {
+void storeFormData(const std::vector<std::string>& formData) {
 	std::stringstream time_int;
 	time_int << time(NULL);
 	std::string filename = "form_submission_" + time_int.str() + ".txt";
@@ -62,7 +62,7 @@ void storeFormData(const std::string& formData) {
 		std::cerr << "Error opening file for writing: " << filename << std::endl;
 		return;
 	}
-	outFile << formData;
+	outFile << formData[0];
 	outFile.close();
 	std::cout << "Form data stored in file: " << filename << std::endl;
 }
@@ -90,6 +90,7 @@ void HttpResponse::chooseServerConfig(const std::vector<ServerDirectives>& confi
 void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
+	// storeFormData(request.getBody());
 }
 
 // --------------------------------- GET Method --------------------------------------

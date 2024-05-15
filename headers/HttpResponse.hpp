@@ -31,10 +31,10 @@ struct MethodsException {
 
 class HttpResponse {
 private:
-	std::stringstream _response;
-	std::string _body;
-	std::string _contentType;
-	std::map<std::string, std::string> _headers;
+	std::stringstream	_response;
+	std::string			_body;
+	std::string			_contentType;
+	std::map<std::string, std::string>	_headers;
 	HttpResponse();
 
 	// GET Method
