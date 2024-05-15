@@ -3,10 +3,11 @@ NAME = webserv
 CXX= c++
 CXXFLAGS= -Wall -Wextra -Werror -std=c++98 -Iheaders -Iheaders/config -g
 
-SRC= Webserv.cpp HttpRequest.cpp
+SRC= Webserv.cpp HttpRequest.cpp HttpResponse.cpp
 SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp
 # Parsing files
-SRC+= Config.cpp DefaultValues.cpp 
+SRC+= Config.cpp DefaultValues.cpp
+SRC+= UtilsHttp.cpp
 
 VPATH= src/:obj/:http_request_parser/:src/config/
 
