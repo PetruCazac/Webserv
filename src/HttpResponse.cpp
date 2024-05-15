@@ -13,35 +13,34 @@
 #include <sys/stat.h>
 
 HttpResponse::HttpResponse(const int code) {
-	makeDefaultErrorPage(code);
+	makeDefaultErrorResponse(code);
 }
 
 HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
 	if (request.getHttpVersion() != "HTTP/1.1")
-		makeDefaultErrorPage(505);
+		makeDefaultErrorResponse(505);
 	else {
-		if (request.getMethod() == GET)
+		if (request.getMethod() == GET) {
 			runGetMethod(config, request);
+		}
 		else if (request.getMethod() == POST)
 			;
 		else if (request.getMethod() == DELETE)
 			;
 		else
-			makeDefaultErrorPage(501);
+			makeDefaultErrorResponse(501);
 	}
 }
 
-void HttpResponse::makeDefaultErrorPage(const int code) {
-	_response << "HTTP/1.1 "
-			  << code
-			  << ' '
-			  << StatusCodeMap::getInstance().getStatusCodeDescription(code)
-			  << "\r\n"
-			  << "\r\n"
-			  << setErrorBody(code);
+void HttpResponse::makeDefaultErrorResponse(const int code) {
+	std::string errorBody = getErrorBody(code);
+	_response << "HTTP/1.1 " << code << ' ' << StatusCodeMap::getInstance().getStatusCodeDescription(code)
+			  << "\r\n" << "Content-Type: text/html" << "\r\n"
+			  << "Content-Length: " << errorBody.size() << "\r\n\r\n"
+			  << errorBody;
 }
 
-std::string HttpResponse::setErrorBody(const int code) {
+std::string HttpResponse::getErrorBody(const int code) {
 	std::stringstream body;
 	body << "<html><body><h1>"
 		 << code
@@ -78,39 +77,43 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	if(isMethodAllowed(server, "GET")){
 		composeLocalUrl(server, request, path);
 		if (isFile(path.c_str())){
-			std::fstream file(path.c_str());
-			if (!file.is_open())
-				throw MethodsException(MethodsException::CANNOT_OPEN_FILE);
-			setBody(file, path);
+			readFile(path);
+			setResponse();
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str());
-			return;
 		} else{
-			makeDefaultErrorPage(404);
-			return;
+			makeDefaultErrorResponse(404);
 		}
+	}
+	else {
+		makeDefaultErrorResponse(405);
 	}
 }
 
-void HttpResponse::setBody(std::fstream &file, std::string &path) {
-	file.seekg(0, std::ios::end);
-	std::streampos fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
-
-	_response << "HTTP/1.1 200 OK\r\n";
-
-	_response << "Content-Length: ";
-
-	_response << fileSize << "\r\n";
-
-	_response << "Content-type: "
-			  << MimeTypeDetector::getInstance().getMimeType(path)
-			  << "\r\n";
-	_response << "\r\n";
-	std::string line;
-	while (std::getline(file, line)) {
-		_response << line << std::endl;
+void HttpResponse::readFile(std::string &path) {
+	std::ifstream file(path.c_str());
+	if (!file.is_open())
+		makeDefaultErrorResponse(500);
+	else {
+		_contentType = MimeTypeDetector::getInstance().getMimeType(path);
+		std::stringstream body;
+		body << file.rdbuf();
+		_body = body.str();
 	}
+}
+
+void HttpResponse::setHeader(const std::string &header, const std::string &value) {
+	_headers[header] = value;
+}
+
+void HttpResponse::setResponse() {
+	_response << "HTTP/1.1 200 OK\r\n";
+	_response << "Content-Type: " << _contentType << "\r\n";
+	_response << "Content-Length: " <<_body.length() << "\r\n";
+	for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
+		_response << it->first << ": " << it->second << "\r\n";
+	}
+	_response << "\r\n" << _body;
 }
 
 void cleanPath(std::string& path, const std::string& serverRoot){

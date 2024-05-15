@@ -46,10 +46,10 @@ StatusCodeMap::StatusCodeMap() {
 	statusCodes[401] = "Unauthorized";
 	statusCodes[403] = "Forbidden";
 	statusCodes[404] = "Not Found"; // +
-	statusCodes[405] = "Method Not Allowed";
+	statusCodes[405] = "Method Not Allowed"; // +
 	statusCodes[409] = "Conflict";
 	statusCodes[410] = "Gone";
-	statusCodes[500] = "Internal Server Error";
+	statusCodes[500] = "Internal Server Error"; // +
 	statusCodes[501] = "Not Implemented"; // +
 	statusCodes[502] = "Bad Gateway";
 	statusCodes[503] = "Service Unavailable";
