@@ -3,7 +3,7 @@
 
 int errorFlag = 0;
 
-Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size) : _client_max_body_size(client_max_body_size) {
+Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size, size_t keepalive_timeout) : _client_max_body_size(client_max_body_size), _keepalive_timeout(keepalive_timeout) {
 	_server_config.push_back(inputConfig);
 	// LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
 	addListeningSocket();
@@ -33,7 +33,6 @@ void Server::addServerConfig(ServerDirectives& serverConfig){
 bool Server::addListeningSocket() {
 	LOG_INFO_NAME("Server attempting to add listening socket.", _server_config[0].name);
 	try{
-		// Socket *socket = new Socket(_server_config[0].listen_port, _client_max_body_size);
 		Socket *socket = new Socket(_server_config[0].listen_port);
 		//Add socket to pollfd vector and map
 		pollfd_t poll_fd;
@@ -57,7 +56,6 @@ const std::vector<pollfd_t>& Server::getPollFdVector() const {
 }
 
 void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
-	LOG_DEBUG_NAME("Handling events.", _server_config[0].server_name);
 	 for (size_t i = 0; i < active_fds.size(); ++i) {
 			for (size_t j = 0; j < _poll_fd_vector.size(); ++j) {
 				if (_poll_fd_vector[j].fd == active_fds[i].fd) {
@@ -67,6 +65,7 @@ void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 							break;
 						case CLIENT:
 							handleClientSocketEvents(active_fds[i]);
+                            _poll_fd_vector[j].revents = 0;
 							break;
 					}
 			}
@@ -75,7 +74,7 @@ void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 }
 
 void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
-	LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
+    LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
 	switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
 		case LISTEN_STATE:
 			if (poll_fd.revents & POLLIN) {
@@ -92,7 +91,9 @@ void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
 				fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
 				_poll_fd_vector.push_back(new_poll_fd);
 				_socket_map[new_poll_fd.fd] = new Socket(connection_fd);
-				LOG_INFO_NAME("Accepted new incoming connection.", _server_config[0].server_name);
+                std::ostringstream oss;
+                oss << "Accepted new incoming connection: " << connection_fd;
+				LOG_INFO_NAME(oss.str(), _server_config[0].server_name);
 			}
 			break;
 		case RECEIVE:
@@ -137,37 +138,46 @@ void Server::removeSocketFromMap(int fd) {
 }
 
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
-	LOG_DEBUG_NAME("Handling client socket events.", _server_config[0].server_name);
-	switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
+    Socket* clientSocket = _socket_map[poll_fd.fd];
+    time_t currentTime = time(NULL);
+    double secondsElapsed = difftime(currentTime, clientSocket->getLastAccessTime());
+    if (secondsElapsed > _keepalive_timeout) {
+        LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
+        removeSocketFromMap(poll_fd.fd);
+        return;
+    }
+	switch (clientSocket->getSocketStatus()) {
 		case RECEIVE:
 			if (poll_fd.revents & POLLIN) {
 				char buffer[_client_max_body_size];
 				std::memset(buffer, 0, _client_max_body_size);
 				int bytes_read = 0;
-				if (!_socket_map[poll_fd.fd]->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
-					LOG_ERROR_NAME("Failed to receive data.", _server_config[0].server_name);
+				if (!clientSocket->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
+                    std::ostringstream oss;
+                    oss << "Failed to receive data from client: " << poll_fd.fd;
+					LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
 				}
 				if (bytes_read == 0) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
 				}else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
-					_socket_map[poll_fd.fd]->setNewHttpResponse(404);
+					clientSocket->setNewHttpResponse(404);
 					removeSocketFromMap(poll_fd.fd);
 					// response.setBody("Requst is too big");
 					return;
 				} else {
 					std::istringstream iss(buffer);
-					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-					_socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
-
+					clientSocket->setNewHttpRequest(iss);
+					clientSocket->setNewHttpResponse(_server_config);
+					
 					std::ostringstream oss;
 					oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
 					// If you have to wait for CGI
-					// _socket_map[poll_fd.fd]->setSocketStatus(WAIT_FOR_RESPONSE);
+					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
 					// If you can send a response immediately
-					_socket_map[poll_fd.fd]->setSocketStatus(SEND_RESPONSE);
+					clientSocket->setSocketStatus(SEND_RESPONSE);
 					updatePollFdForWrite(poll_fd.fd);
 				}
 			}
@@ -175,26 +185,38 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 		case WAIT_FOR_RESPONSE:
 			break;
 		case SEND_RESPONSE:
-		{
-			// std::string body = "<html><body><h1>Hello, World!</h1></body></html>";
-			// std::stringstream response;
-			// response << "HTTP/1.1 200 OK\r\n"
-			//          << "Content-Type: text/html\r\n"
-			//          << "Content-Length: " << body.length() << "\r\n"
-			//          << "\r\n"  // Important: Blank line between headers and body
-			//          << body;
-
-			const std::string& responseStr = _socket_map[poll_fd.fd]-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
-			LOG_DEBUG(responseStr);
-			// _socket_map[poll_fd.fd]->sendtoClient(&responseStr, responseStr.length());
-			_socket_map[poll_fd.fd]->sendtoClient(&responseStr);
-			_socket_map[poll_fd.fd]->setSocketStatus(RECEIVE); // Reset state if needed
-			// TODO: Depending on keep alive or not, close the connection
-			updatePollFdForRead(poll_fd.fd);
-			LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
-		}
+            if (poll_fd.revents & POLLOUT) {
+                const std::string& responseStr = clientSocket-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
+                LOG_DEBUG(responseStr);
+                clientSocket->sendtoClient(&responseStr);
+                LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
+                if (clientSocket->getHttpRequest()->isKeepAlive()) {
+                    updatePollFdForRead(poll_fd.fd);
+                    clientSocket->setSocketStatus(RECEIVE);
+                } else {
+                    removeSocketFromMap(poll_fd.fd);
+                }
+            }
 			break;
 		case LISTEN_STATE:
 			break;
 	}
+}
+
+void Server::checkKeepAlive() {
+    time_t currentTime = time(NULL);
+
+    for (std::map<int, Socket*>::iterator it = _socket_map.begin(); it != _socket_map.end(); ) {
+        if (it->second->getSocketType() == CLIENT) {
+            double secondsElapsed = difftime(currentTime, it->second->getLastAccessTime());
+            if (secondsElapsed > _keepalive_timeout) {
+                LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
+                int fd = it->first;
+                ++it;
+                removeSocketFromMap(fd);
+                continue;
+            }
+        }
+        ++it;
+    }
 }
