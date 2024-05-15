@@ -68,6 +68,7 @@ public:
 	explicit HttpRequest(std::istream &inputRequest);
 
 	HttpMethods getMethod() const;
+    bool isKeepAlive() const;
 	const std::string &getUri() const;
 	const std::string &getHttpVersion() const;
 	const std::map<std::string, std::string> &getHeaders() const;
