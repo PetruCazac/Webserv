@@ -2,6 +2,9 @@
 
 Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)){
 	_socket_type = SERVER;
+	_endBody = 0;
+	_messageLength = 0;
+	_headerComplete = false;
 	setSocketStatus(LISTEN_STATE);
 	LOG_DEBUG("Constructor for listening Socket called.");
 	if (!setupAddrInfo()) {
@@ -26,14 +29,14 @@ Socket::~Socket() {
 		freeaddrinfo(_addr_info);
 		LOG_DEBUG("Address info freed.");
 	}
-    if (_http_request != NULL) {
-        delete _http_request;
-        LOG_DEBUG("HTTP Request freed.");
-    }
-    if (_http_response != NULL) {
-        delete _http_response;
-        LOG_DEBUG("HTTP Response freed.");
-    }
+	if (_http_request != NULL) {
+		delete _http_request;
+		LOG_DEBUG("HTTP Request freed.");
+	}
+	if (_http_response != NULL) {
+		delete _http_response;
+		LOG_DEBUG("HTTP Response freed.");
+	}
 }
 
 bool Socket::setupAddrInfo() {
@@ -125,7 +128,7 @@ bool Socket::sendtoClient(const std::string* data) {
 	size_t len_sent = 0;
 	int bytes_sent = 0;
 	size_t len = data->length();
-    _last_access_time = time(NULL);
+	_last_access_time = time(NULL);
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
 		if (bytes_sent < 0) {
@@ -138,9 +141,45 @@ bool Socket::sendtoClient(const std::string* data) {
 	return true;
 }
 
+void Socket::resetFlags(void){
+	_clientMessage.clear();
+	_endBody = 0;
+	_bytesRead = 0;
+	_messageLength = 0;
+	_headerComplete = false;
+}
 
-bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read) {
-    _last_access_time = time(NULL);
+bool Socket::isMessageReceived(int& bytes_read){
+	_bytesRead += bytes_read;
+	if(_endBody == 0)
+		_endBody = _clientMessage.find("\r\n\r\n");
+	if(_endBody == std::string::npos){
+		return false;
+	}
+	_endBody += 2;
+	size_t startContent = _clientMessage.find("Content-Length: ");
+	if(startContent == std::string::npos){
+		_headerComplete = true;
+		return true;
+	} else if(startContent != std::string::npos){
+		size_t endContent = _clientMessage.find("\r\n");
+		_messageLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
+		size_t size = _bytesRead - _endBody;
+ 		std::cout << _clientMessage << std::endl;
+		if(size < _messageLength)
+			return false;
+		else{
+			return true;
+		}
+	}
+	return true;
+}
+
+bool Socket::receive(int client_fd, int& bytes_read) {
+	_last_access_time = time(NULL);
+	size_t buffer_size = 1024 * 32;
+	char buffer[buffer_size];
+	std::memset(buffer, 0, buffer_size);
 	bytes_read = recv(client_fd, buffer, buffer_size, 0);
 	if (bytes_read == -1) {
 		LOG_ERROR("Failed to receive data.");
@@ -150,9 +189,13 @@ bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes
 		LOG_DEBUG("Connection closed by client.");
 		return false;
 	}
-	LOG_DEBUG("Successfully received data.");
-	setSocketStatus(WAIT_FOR_RESPONSE);
-	return bytes_read > 0;
+	_clientMessage.append(buffer, bytes_read);
+	if(isMessageReceived(bytes_read)){
+		LOG_DEBUG("Successfully received data.");
+		setSocketStatus(WAIT_FOR_RESPONSE);
+		return bytes_read > 0;
+	}
+	return true;
 }
 
 void* Socket::get_in_addr(struct sockaddr *sa) {
@@ -206,6 +249,10 @@ const char* Socket::getClientMessage(void){
 	return (_clientMessage.c_str());
 }
 
+size_t Socket::getClientMessageSize(void){
+	return (_clientMessage.size());
+}
+
 void Socket::addClientMessage(char* buffer){
 	_clientMessage += buffer;
 }
@@ -219,13 +266,13 @@ void Socket::setNewHttpResponse(size_t errorCode){
 }
 
 time_t Socket::getLastAccessTime() const {
-    return _last_access_time;
+	return _last_access_time;
 }
 
-bool Socket::isCompleteMessage(void){
-	if(_http_request->isValidContentLength()){
-		_clientMessage.clear();
-		return true;
-	}
-	return false;
-}
+// bool Socket::isCompleteMessage(void){
+// 	if(_http_request->isValidContentLength()){
+// 		_clientMessage.clear();
+// 		return true;
+// 	}
+// 	return false;
+// }

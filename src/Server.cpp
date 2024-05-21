@@ -149,10 +149,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 	switch (clientSocket->getSocketStatus()) {
 		case RECEIVE:
 			if (poll_fd.revents & POLLIN) {
-				char buffer[_client_max_body_size];
-				std::memset(buffer, 0, _client_max_body_size);
 				int bytes_read = 0;
-				if (!clientSocket->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
+				if (!clientSocket->receive(poll_fd.fd, bytes_read)) {
 					std::ostringstream oss;
 					oss << "Failed to receive data from client: " << poll_fd.fd;
 					LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
@@ -161,30 +159,27 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
+				}else if (_socket_map[poll_fd.fd]->getClientMessageSize() == static_cast<size_t>(_client_max_body_size)){
 					clientSocket->setNewHttpResponse(404);
 					removeSocketFromMap(poll_fd.fd);
 					// response.setBody("Request is too big");
 					return;
+				}else if(_socket_map[poll_fd.fd]->getSocketStatus() == RECEIVE){
+					break;
 				} else {
-					_socket_map[poll_fd.fd]->addClientMessage(buffer);
 					std::istringstream iss(_socket_map[poll_fd.fd]->getClientMessage());
 					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-					if(!_socket_map[poll_fd.fd]->isCompleteMessage()){
-						clientSocket->setSocketStatus(RECEIVE);
-						updatePollFdForRead(poll_fd.fd);
-						return;
-					}
 					LOG_INFO("Received Client Message");
 					_socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
 					LOG_INFO("Created Server Response");
 					std::ostringstream oss;
-					oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
+					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
 					// If you have to wait for CGI
 					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
 					// If you can send a response immediately
 					clientSocket->setSocketStatus(SEND_RESPONSE);
+					_socket_map[poll_fd.fd]->resetFlags();
 					updatePollFdForWrite(poll_fd.fd);
 				}
 			}
