@@ -137,6 +137,7 @@ void Server::removeSocketFromMap(int fd) {
 	}
 }
 
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 	Socket* clientSocket = _socket_map[poll_fd.fd];
 	time_t currentTime = time(NULL);
@@ -159,7 +160,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (_socket_map[poll_fd.fd]->getClientMessageSize() == static_cast<size_t>(_client_max_body_size)){
+				}else if (_socket_map[poll_fd.fd]->getClientMessageSize() >= static_cast<size_t>(_client_max_body_size)){
 					clientSocket->setNewHttpResponse(404);
 					removeSocketFromMap(poll_fd.fd);
 					// response.setBody("Request is too big");
@@ -167,6 +168,9 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 				}else if(_socket_map[poll_fd.fd]->getSocketStatus() == RECEIVE){
 					break;
 				} else {
+					// std::cout << "====================== Received Message ==============" << std::endl;
+					// std::cout << _socket_map[poll_fd.fd]->getClientMessage() << std::endl;
+					// std::cout << "======================================================" << std::endl;
 					std::istringstream iss(_socket_map[poll_fd.fd]->getClientMessage());
 					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
 					LOG_INFO("Received Client Message");
@@ -189,7 +193,6 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
 				const std::string& responseStr = clientSocket-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
-				LOG_DEBUG(responseStr);
 				clientSocket->sendtoClient(&responseStr);
 				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
 				if (clientSocket->getHttpRequest()->isKeepAlive()) {

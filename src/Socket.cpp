@@ -151,33 +151,32 @@ void Socket::resetFlags(void){
 
 bool Socket::isMessageReceived(int& bytes_read){
 	_bytesRead += bytes_read;
-	if(_endBody == 0)
+	if(!_headerComplete){
 		_endBody = _clientMessage.find("\r\n\r\n");
-	if(_endBody == std::string::npos){
-		return false;
-	}
-	_endBody += 2;
-	size_t startContent = _clientMessage.find("Content-Length: ");
-	if(startContent == std::string::npos){
-		_headerComplete = true;
-		return true;
-	} else if(startContent != std::string::npos){
-		size_t endContent = _clientMessage.find("\r\n");
-		_messageLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
-		size_t size = _bytesRead - _endBody;
- 		std::cout << _clientMessage << std::endl;
-		if(size < _messageLength)
+		_endBody += 4;
+		if(_endBody == std::string::npos)
 			return false;
-		else{
-			return true;
-		}
+		_headerComplete = true;
 	}
-	return true;
+	if(_messageLength == 0){
+			size_t startContent = _clientMessage.find("Content-Length: ");
+			if(startContent == std::string::npos){
+				return true;
+			} else if(startContent != std::string::npos){
+				size_t endContent = _clientMessage.find("\r\n");
+				_messageLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
+			}
+	}
+	size_t size = _bytesRead - _endBody;
+	if(size < _messageLength)
+		return false;
+	else
+		return true;
 }
 
 bool Socket::receive(int client_fd, int& bytes_read) {
 	_last_access_time = time(NULL);
-	size_t buffer_size = 1024 * 32;
+	size_t buffer_size = 1024;
 	char buffer[buffer_size];
 	std::memset(buffer, 0, buffer_size);
 	bytes_read = recv(client_fd, buffer, buffer_size, 0);

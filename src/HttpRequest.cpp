@@ -5,6 +5,7 @@
 #include <sstream>			// std::istringstream
 #include <map>				// std::map
 #include <vector>			// std::vector
+#include <fstream>
 
 void printHttpRequest(HttpRequest &httpRequest);
 
@@ -33,10 +34,17 @@ static HttpMethods methodToEnum(const std::string &method) {
 }
 
 HttpRequest::HttpRequest(std::istream &inputRequest) {
+	// Printing part
 	std::ostringstream output;
-	output << inputRequest;
-	std::string request = output.str();
-	std::cout << request << std::endl;
+	output << inputRequest.rdbuf();
+	std::string outputString;
+	outputString = output.str();
+	// std::cout << "=================== This is the parsing message ===================" << std::endl;
+	// std::cout << outputString << std::endl;
+	// std::cout << "===================================================================" << std::endl;
+	inputRequest.clear();
+	inputRequest.seekg(0, std::ios::beg);
+
 	std::string startLine;
 	std::getline(inputRequest, startLine);
 	if (startLine.empty() || startLine[0] == '\r')
@@ -44,8 +52,6 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseStartLine(startLine);
 	parseHeaders(inputRequest);
 	readBody(inputRequest);
-	// if (!isValidContentLength())
-	// 	throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
 	printHttpRequest(*this);
 }
 
