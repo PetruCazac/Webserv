@@ -27,7 +27,7 @@ HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const Ht
 		else if (request.getMethod() == POST)
 			;
 		else if (request.getMethod() == DELETE)
-			;
+			runDeleteMethod(config, request);
 		else
 			makeDefaultErrorResponse(501);
 	}
@@ -49,6 +49,21 @@ std::string HttpResponse::getErrorBody(const int code) {
 		 << StatusCodeMap::getInstance().getStatusCodeDescription(code)
 		 << "</h1></body></html>";
 	return body.str();
+}
+
+// -------------------------------- DELETE Method -------------------------------------
+
+void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
+	ServerDirectives server;
+	chooseServerConfig(config, request, server);
+
+	if (isMethodAllowed(server, "DELETE")) {
+		std::string path;
+		composeLocalUrl(server, request, path);
+		if (isFile(path.c_str())) {
+			std::cout << "file\n";
+		}
+	}
 }
 
 // --------------------------------- POST Method --------------------------------------

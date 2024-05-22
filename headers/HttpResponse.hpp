@@ -44,6 +44,8 @@ private:
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
+	// DELETE Method
+	void	runDeleteMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 
 	// POST Method
 	void 	runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
