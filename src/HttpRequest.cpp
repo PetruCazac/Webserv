@@ -50,8 +50,9 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	if (startLine.empty() || startLine[0] == '\r')
 		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
 	parseStartLine(startLine);
-	findQuery(_uri);
+	findQuery();
 	parseHeaders(inputRequest);
+	findBoundary();
 	readBody(inputRequest);
 	printHttpRequest(*this);
 }
@@ -88,13 +89,26 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 	_body = body;
 }
 
-void HttpRequest::findQuery(const std::string &uri) {
+void HttpRequest::findQuery() {
 	std::string newUri;
-	size_t questionMark = uri.find('?');
+	size_t questionMark = _uri.find('?');
 	if (questionMark != std::string::npos) {
-		newUri = uri.substr(0, questionMark);
-		_query = uri.substr(questionMark + 1);
+		newUri = _uri.substr(0, questionMark);
+		_query = _uri.substr(questionMark + 1);
 		_uri = newUri;
+	}
+}
+
+void HttpRequest::findBoundary() {
+	std::map<std::string, std::string>::iterator it = _headers.find("Content-Type");
+	if (it != _headers.end()) {
+		std::string newValue;
+		size_t bound = it->second.find('=');
+		if (bound != std::string::npos) {
+			newValue = it->second.substr(0, bound);
+			_boundary = it->second.substr(bound + 1);
+			it->second = newValue;
+		}
 	}
 }
 
@@ -138,6 +152,10 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 	return _headers;
 }
 
+const std::string &HttpRequest::getBoundary() const {
+	return _boundary;
+}
+
 const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
 }
@@ -163,8 +181,8 @@ void printMethod(HttpMethods method) {
 
 void printHttpRequest(HttpRequest &httpRequest) {
 	printMethod(httpRequest.getMethod());
-	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
-	std::cout << "[" << httpRequest.getQuery() << "]" << std::endl;
+	std::cout << "[URI: " << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[Query: " << httpRequest.getQuery() << "]" << std::endl;
 	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
 	std::map<std::string, std::string> headers = httpRequest.getHeaders();
 	if (headers.size() == 0)
@@ -172,6 +190,7 @@ void printHttpRequest(HttpRequest &httpRequest) {
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
+	std::cout << "[Boundary: " << httpRequest.getBoundary() << "]" << std::endl;
 	std::vector<uint8_t> body = httpRequest.getBody();
 	if (body.size() == 0)
 		std::cout << "[no body]" << std::endl;

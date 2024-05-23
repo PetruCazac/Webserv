@@ -54,6 +54,7 @@ private:
 	std::string _query;
 	std::string _httpVersion;
 	std::map<std::string, std::string> _headers;
+	std::string _boundary;
 	std::vector<uint8_t> _body;
 
 	HttpRequest();
@@ -61,7 +62,8 @@ private:
 	void parseStartLine(const std::string &line);
 	void parseHeaders(std::istream &inputRequest);
 	void readBody(std::istream &inputRequest);
-	void findQuery(const std::string &uri);
+	void findQuery();
+	void findBoundary();
 
 	bool isValidHttpVersion() const;
 
@@ -74,6 +76,7 @@ public:
 	const std::string &getQuery() const;
 	const std::string &getHttpVersion() const;
 	const std::map<std::string, std::string> &getHeaders() const;
+	const std::string &getBoundary() const;
 	const std::vector<uint8_t> &getBody() const;
 	bool isValidContentLength() const;
 };
