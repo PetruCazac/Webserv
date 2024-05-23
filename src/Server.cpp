@@ -160,7 +160,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (_socket_map[poll_fd.fd]->getClientMessageSize() >= static_cast<size_t>(_client_max_body_size)){
+				}else if (_socket_map[poll_fd.fd]->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
 					clientSocket->setNewHttpResponse(404);
 					removeSocketFromMap(poll_fd.fd);
 					// response.setBody("Request is too big");
@@ -168,10 +168,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 				}else if(_socket_map[poll_fd.fd]->getSocketStatus() == RECEIVE){
 					break;
 				} else {
-					// std::cout << "====================== Received Message ==============" << std::endl;
-					// std::cout << _socket_map[poll_fd.fd]->getClientMessage() << std::endl;
-					// std::cout << "======================================================" << std::endl;
-					std::istringstream iss;
+					std::istringstream iss(std::ios_base::binary);
 					_socket_map[poll_fd.fd]->getClientMessage(iss);
 					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
 					LOG_INFO("Received Client Message");

@@ -3,7 +3,7 @@
 Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)){
 	_socket_type = SERVER;
 	_endBody = 0;
-	_messageLength = 0;
+	_bodyLength = 0;
 	_headerComplete = false;
 	setSocketStatus(LISTEN_STATE);
 	LOG_DEBUG("Constructor for listening Socket called.");
@@ -142,39 +142,43 @@ bool Socket::sendtoClient(const std::string* data) {
 }
 
 void Socket::resetFlags(void){
-	_clientStream.str("");
-	_clientStream.clear();
+	_binaryVector.clear();
 	_endBody = 0;
 	_bytesRead = 0;
-	_messageLength = 0;
+	_bodyLength = 0;
 	_headerComplete = false;
 }
 
 bool Socket::isMessageReceived(int& bytes_read){
 	_bytesRead += bytes_read;
-	std::string _clientMessage = _clientStream.str();
+	std::string _clientMessage(_binaryVector.begin(), _binaryVector.end());
 	if(!_headerComplete){
-		_clientStream >> _clientMessage;
 		_endBody = _clientMessage.find("\r\n\r\n");
 		_endBody += 4;
 		if(_endBody == std::string::npos)
 			return false;
 		_headerComplete = true;
 	}
-	if(_messageLength == 0){
+	if(_bodyLength == 0){
 		size_t startContent = _clientMessage.find("Content-Length: ");
 			if(startContent == std::string::npos){
 				return true;
 			} else if(startContent != std::string::npos){
 				size_t endContent = _clientMessage.find("\r\n");
-				_messageLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
+				_bodyLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
 			}
 	}
 	size_t size = _bytesRead - _endBody;
-	if(size < _messageLength)
+	if(size < _bodyLength)
 		return false;
 	else
 		return true;
+}
+
+void printVector(std::vector<char>& _binaryVector){
+	for(size_t i = 0; i < _binaryVector.size(); i++){
+		std::cout << _binaryVector[i];
+	}
 }
 
 bool Socket::receive(int client_fd, int& bytes_read) {
@@ -191,8 +195,7 @@ bool Socket::receive(int client_fd, int& bytes_read) {
 		LOG_DEBUG("Connection closed by client.");
 		return false;
 	}
-	_clientStream.write(buffer, buffer_size);
-	// std::cout << _clientMessage << std::endl;
+	_binaryVector.insert(_binaryVector.end(), buffer, buffer + bytes_read);
 	if(isMessageReceived(bytes_read)){
 		LOG_DEBUG("Successfully received data.");
 		setSocketStatus(WAIT_FOR_RESPONSE);
@@ -249,14 +252,13 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 }
 
 void Socket::getClientMessage(std::istringstream& iss){
-	std::cout << _clientStream.str() << std::endl;
-	iss.str(_clientStream.str());
+	std::string str(_binaryVector.begin(), _binaryVector.end());
+	iss.str(str);
 }
 
-size_t Socket::getClientMessageSize(void){
-	return _messageLength;
+size_t Socket::getClientBodySize(void){
+	return _bodyLength;
 }
-
 
 void Socket::setNewHttpResponse(size_t errorCode){
 	if (this->getHttpRequest() == NULL) {
@@ -269,11 +271,3 @@ void Socket::setNewHttpResponse(size_t errorCode){
 time_t Socket::getLastAccessTime() const {
 	return _last_access_time;
 }
-
-// bool Socket::isCompleteMessage(void){
-// 	if(_http_request->isValidContentLength()){
-// 		_clientMessage.clear();
-// 		return true;
-// 	}
-// 	return false;
-// }

@@ -62,7 +62,7 @@ class Socket {
 		void setNewHttpResponse(size_t errorCode);
 		time_t getLastAccessTime(void) const;
 		void getClientMessage(std::istringstream& iss);
-		size_t getClientMessageSize(void);
+		size_t getClientBodySize(void);
 		bool isMessageReceived(int& bytes_read);
 		void resetFlags(void);
 
@@ -76,11 +76,10 @@ class Socket {
 		HttpResponse	*_http_response;
 		time_t			_last_access_time;
 	// Message status
-		// std::string		_clientMessage;
-		std::stringstream _clientStream;
+		std::vector<char> _binaryVector;
 		size_t			_endBody;
 		size_t			_bytesRead;
-		size_t			_messageLength;
+		size_t			_bodyLength;
 		bool			_headerComplete;
 };
 
