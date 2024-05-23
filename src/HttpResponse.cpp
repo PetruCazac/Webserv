@@ -87,9 +87,52 @@ void HttpResponse::chooseServerConfig(const std::vector<ServerDirectives>& confi
 		server.locations.push_back(location);
 }
 
+std::string& getContentType(const std::map<std::string, std::string>& requestHeaders){
+	std::string str;
+	std::map<std::string, std::string>::const_iterator it = requestHeaders.find("Content-Type");
+	str = it->second;
+	return str;
+}
+
+
 void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
+	if(isCGI(request.getUri())){
+		handleCGI(server, request); // Needs to be implemented
+		return;
+	}
+	std::string path;
+	if(isMethodAllowed(server, "POST")){
+		composeLocalUrl(server, request, path);
+		if (isFile(path.c_str())){
+			writeFile(path);
+			makeDefaultErrorResponse(200);
+		} else if(isDirectory(path.c_str())){
+			handleAutoindex(path.c_str());
+		} else{
+			makeDefaultErrorResponse(404);
+		}
+		
+		
+		
+		std::string contentType(getContentType(request.getHeaders()));
+		if(contentType.empty()){
+			LOG_ERROR("No Content-Type found.");
+			makeDefaultErrorResponse(400);
+			return;
+		}
+		if(contentType == "multipart/form-data")
+			handleMultipart(request);
+		else if(contentType == "application/x-www-form-urlencoded")
+			handleUriEncoding(request);
+		else
+			makeDefaultErrorResponse(400);
+		// Check the Content Type and handle each case accordingly
+
+		// Decompose the request body
+	}else
+		makeDefaultErrorResponse(405);
 	// storeFormData(request.getBody());
 }
 
@@ -113,10 +156,8 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 		} else{
 			makeDefaultErrorResponse(404);
 		}
-	}
-	else {
+	}else
 		makeDefaultErrorResponse(405);
-	}
 }
 
 void HttpResponse::readFile(std::string &path) {

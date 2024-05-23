@@ -39,9 +39,6 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	output << inputRequest.rdbuf();
 	std::string outputString;
 	outputString = output.str();
-	// std::cout << "=================== This is the parsing message ===================" << std::endl;
-	// std::cout << outputString << std::endl;
-	// std::cout << "===================================================================" << std::endl;
 	inputRequest.clear();
 	inputRequest.seekg(0, std::ios::beg);
 
