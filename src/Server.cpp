@@ -171,7 +171,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					// std::cout << "====================== Received Message ==============" << std::endl;
 					// std::cout << _socket_map[poll_fd.fd]->getClientMessage() << std::endl;
 					// std::cout << "======================================================" << std::endl;
-					std::istringstream iss(_socket_map[poll_fd.fd]->getClientMessage());
+					std::istringstream iss;
+					_socket_map[poll_fd.fd]->getClientMessage(iss);
 					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
 					LOG_INFO("Received Client Message");
 					_socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);

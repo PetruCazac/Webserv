@@ -142,7 +142,8 @@ bool Socket::sendtoClient(const std::string* data) {
 }
 
 void Socket::resetFlags(void){
-	_clientMessage.clear();
+	_clientStream.str("");
+	_clientStream.clear();
 	_endBody = 0;
 	_bytesRead = 0;
 	_messageLength = 0;
@@ -151,7 +152,9 @@ void Socket::resetFlags(void){
 
 bool Socket::isMessageReceived(int& bytes_read){
 	_bytesRead += bytes_read;
+	std::string _clientMessage = _clientStream.str();
 	if(!_headerComplete){
+		_clientStream >> _clientMessage;
 		_endBody = _clientMessage.find("\r\n\r\n");
 		_endBody += 4;
 		if(_endBody == std::string::npos)
@@ -159,7 +162,7 @@ bool Socket::isMessageReceived(int& bytes_read){
 		_headerComplete = true;
 	}
 	if(_messageLength == 0){
-			size_t startContent = _clientMessage.find("Content-Length: ");
+		size_t startContent = _clientMessage.find("Content-Length: ");
 			if(startContent == std::string::npos){
 				return true;
 			} else if(startContent != std::string::npos){
@@ -176,7 +179,7 @@ bool Socket::isMessageReceived(int& bytes_read){
 
 bool Socket::receive(int client_fd, int& bytes_read) {
 	_last_access_time = time(NULL);
-	size_t buffer_size = 1024;
+	size_t buffer_size = 1024 * 32;
 	char buffer[buffer_size];
 	std::memset(buffer, 0, buffer_size);
 	bytes_read = recv(client_fd, buffer, buffer_size, 0);
@@ -188,7 +191,8 @@ bool Socket::receive(int client_fd, int& bytes_read) {
 		LOG_DEBUG("Connection closed by client.");
 		return false;
 	}
-	_clientMessage.append(buffer, bytes_read);
+	_clientStream.write(buffer, buffer_size);
+	// std::cout << _clientMessage << std::endl;
 	if(isMessageReceived(bytes_read)){
 		LOG_DEBUG("Successfully received data.");
 		setSocketStatus(WAIT_FOR_RESPONSE);
@@ -244,17 +248,15 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
-const char* Socket::getClientMessage(void){
-	return (_clientMessage.c_str());
+void Socket::getClientMessage(std::istringstream& iss){
+	std::cout << _clientStream.str() << std::endl;
+	iss.str(_clientStream.str());
 }
 
 size_t Socket::getClientMessageSize(void){
-	return (_clientMessage.size());
+	return _messageLength;
 }
 
-void Socket::addClientMessage(char* buffer){
-	_clientMessage += buffer;
-}
 
 void Socket::setNewHttpResponse(size_t errorCode){
 	if (this->getHttpRequest() == NULL) {

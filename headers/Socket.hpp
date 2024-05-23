@@ -61,8 +61,7 @@ class Socket {
 		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
 		void setNewHttpResponse(size_t errorCode);
 		time_t getLastAccessTime(void) const;
-		void addClientMessage(char* buffer);
-		const char* getClientMessage(void);
+		void getClientMessage(std::istringstream& iss);
 		size_t getClientMessageSize(void);
 		bool isMessageReceived(int& bytes_read);
 		void resetFlags(void);
@@ -70,7 +69,6 @@ class Socket {
 	private:
 		std::string		_listen_port;
 		int				_sockfd;
-		std::string		_clientMessage;
 		addrinfo_t		*_addr_info;
 		SocketType		_socket_type;
 		SocketStatus	_socket_status;
@@ -78,6 +76,8 @@ class Socket {
 		HttpResponse	*_http_response;
 		time_t			_last_access_time;
 	// Message status
+		// std::string		_clientMessage;
+		std::stringstream _clientStream;
 		size_t			_endBody;
 		size_t			_bytesRead;
 		size_t			_messageLength;
