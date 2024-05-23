@@ -50,6 +50,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	if (startLine.empty() || startLine[0] == '\r')
 		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
 	parseStartLine(startLine);
+	findQuery(_uri);
 	parseHeaders(inputRequest);
 	readBody(inputRequest);
 	printHttpRequest(*this);
@@ -85,6 +86,12 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 	inputRequest >> std::noskipws;
 	std::vector<uint8_t> body((std::istream_iterator<uint8_t>(inputRequest)), std::istream_iterator<uint8_t>());
 	_body = body;
+}
+
+void HttpRequest::findQuery(const std::string &uri) {
+	size_t questionMark = uri.find('?');
+	if (questionMark != std::string::npos)
+		_query = uri.substr(questionMark + 1);
 }
 
 bool HttpRequest::isValidHttpVersion() const {
