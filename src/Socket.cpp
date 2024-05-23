@@ -197,6 +197,7 @@ bool Socket::receive(int client_fd, int& bytes_read) {
 	}
 	_binaryVector.insert(_binaryVector.end(), buffer, buffer + bytes_read);
 	if(isMessageReceived(bytes_read)){
+		printVector(_binaryVector);
 		LOG_DEBUG("Successfully received data.");
 		setSocketStatus(WAIT_FOR_RESPONSE);
 		return bytes_read > 0;
