@@ -89,10 +89,12 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 }
 
 void HttpRequest::findQuery(const std::string &uri) {
+	std::string newUri;
 	size_t questionMark = uri.find('?');
 	if (questionMark != std::string::npos) {
-		_uri = uri.substr(0, questionMark);
+		newUri = uri.substr(0, questionMark);
 		_query = uri.substr(questionMark + 1);
+		_uri = newUri;
 	}
 }
 
