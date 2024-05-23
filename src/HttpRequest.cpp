@@ -90,8 +90,10 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 
 void HttpRequest::findQuery(const std::string &uri) {
 	size_t questionMark = uri.find('?');
-	if (questionMark != std::string::npos)
+	if (questionMark != std::string::npos) {
+		_uri = uri.substr(0, questionMark);
 		_query = uri.substr(questionMark + 1);
+	}
 }
 
 bool HttpRequest::isValidHttpVersion() const {
@@ -122,6 +124,10 @@ const std::string &HttpRequest::getUri() const {
 	return _uri;
 }
 
+const std::string &HttpRequest::getQuery() const {
+	return _query;
+}
+
 const std::string &HttpRequest::getHttpVersion() const {
 	return _httpVersion;
 }
@@ -134,10 +140,9 @@ const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
 }
 
+// Print
 
-// To be put in a class ////////////////////////////////////////
-
-void printMethod(HttpMethods method) { // delete
+void printMethod(HttpMethods method) {
 	Methods methods[] = {
 		{"GET", GET},
 		{"HEAD", HEAD},
@@ -154,9 +159,10 @@ void printMethod(HttpMethods method) { // delete
 	}
 }
 
-void printHttpRequest(HttpRequest &httpRequest) { // delete
+void printHttpRequest(HttpRequest &httpRequest) {
 	printMethod(httpRequest.getMethod());
 	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[" << httpRequest.getQuery() << "]" << std::endl;
 	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
 	std::map<std::string, std::string> headers = httpRequest.getHeaders();
 	if (headers.size() == 0)

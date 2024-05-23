@@ -71,6 +71,7 @@ public:
 	HttpMethods getMethod() const;
     bool isKeepAlive() const;
 	const std::string &getUri() const;
+	const std::string &getQuery() const;
 	const std::string &getHttpVersion() const;
 	const std::map<std::string, std::string> &getHeaders() const;
 	const std::vector<uint8_t> &getBody() const;
