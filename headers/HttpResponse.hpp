@@ -63,6 +63,9 @@ private:
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
 	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
+	void	handleMultipart(const HttpRequest& request, std::string& path);
+	void	handleUriEncoding(const HttpRequest& request, std::string& path);
+	std::string	urlDecode(const std::string& bodyString);
 
 public:
 	HttpResponse(const int code);

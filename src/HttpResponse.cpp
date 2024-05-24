@@ -94,6 +94,36 @@ std::string& getContentType(const std::map<std::string, std::string>& requestHea
 	return str;
 }
 
+void HttpResponse::handleMultipart(const HttpRequest& request, std::string& path){
+		std::vector<std::vector<char*> > bodySections;
+		
+		if (isFile(path.c_str())){
+			appendFile(path);
+		} else if(isDirectory(path.c_str())){
+			handleAutoindex(path.c_str());
+		} else{
+			makeDefaultErrorResponse(403);
+		}
+
+}
+
+
+
+void HttpResponse::handleUriEncoding(const HttpRequest& request, std::string& path){
+		const std::vector<uint8_t>& bodyVector = request.getBody();
+		std::string bodyString(bodyVector.begin(), bodyVector.end());
+		bodyString = urlDecode(bodyString);
+
+		if(isFile(path.c_str()) && MimeTypeDetector::getMimeType(path) == "text/plain"){
+			appendToFile(path, bodyString);
+		} else if(isDirectory(path.c_str())){
+			// Create a file with the name and timestamp
+		} else{
+			makeDefaultErrorResponse(403);
+		}
+		
+
+}
 
 void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
 	ServerDirectives server;
@@ -105,17 +135,7 @@ void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, con
 	std::string path;
 	if(isMethodAllowed(server, "POST")){
 		composeLocalUrl(server, request, path);
-		if (isFile(path.c_str())){
-			writeFile(path);
-			makeDefaultErrorResponse(200);
-		} else if(isDirectory(path.c_str())){
-			handleAutoindex(path.c_str());
-		} else{
-			makeDefaultErrorResponse(404);
-		}
-		
-		
-		
+
 		std::string contentType(getContentType(request.getHeaders()));
 		if(contentType.empty()){
 			LOG_ERROR("No Content-Type found.");
@@ -123,17 +143,13 @@ void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, con
 			return;
 		}
 		if(contentType == "multipart/form-data")
-			handleMultipart(request);
+			handleMultipart(request, path);
 		else if(contentType == "application/x-www-form-urlencoded")
-			handleUriEncoding(request);
+			handleUriEncoding(request, path);
 		else
 			makeDefaultErrorResponse(400);
-		// Check the Content Type and handle each case accordingly
-
-		// Decompose the request body
 	}else
 		makeDefaultErrorResponse(405);
-	// storeFormData(request.getBody());
 }
 
 // --------------------------------- GET Method --------------------------------------
@@ -314,6 +330,42 @@ const std::stringstream &HttpResponse::getResponse() const {
 // ------------------------ POST Method ------------------------------
 
 // ------------------------ Helper Functions -------------------------
+
+int hexCharToInt(char c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	} else if (c >= 'A' && c <= 'F') {
+		return c - 'A' + 10;
+	} else if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	} else {
+		// Could throw an exception
+		LOG_ERROR("Body decoding error");
+		return 0;
+	}
+}
+
+std::string HttpResponse::urlDecode(const std::string& bodyString) {
+	std::ostringstream decoded;
+	for (std::size_t i = 0; i < bodyString.length(); ++i) {
+		if (bodyString[i] == '%') {
+			if (i + 2 < bodyString.length()) {
+				char hex1 = bodyString[i + 1];
+				char hex2 = bodyString[i + 2];
+				decoded << static_cast<char>(hexCharToInt(hex1) * 16 + hexCharToInt(hex2));
+				i += 2;
+			} else {
+				// Could throw an exception
+				LOG_ERROR("Body decoding error");
+			}
+		} else if (bodyString[i] == '+') {
+			decoded << ' ';
+		} else {
+			decoded << bodyString[i];
+		}
+	}
+	return decoded.str();
+}
 
 bool HttpResponse::checkAutoindex(ServerDirectives& server){
 	if(!server.locations.empty()){
