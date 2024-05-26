@@ -160,19 +160,20 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (_socket_map[poll_fd.fd]->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
-					clientSocket->setNewHttpResponse(404);
-					removeSocketFromMap(poll_fd.fd);
-					// response.setBody("Request is too big");
+				}else if (clientSocket->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
+					clientSocket->setNewHttpResponse(413);
+					clientSocket->setSocketStatus(SEND_RESPONSE);
+					clientSocket->resetFlags();
+					updatePollFdForWrite(poll_fd.fd);
 					return;
-				}else if(_socket_map[poll_fd.fd]->getSocketStatus() == RECEIVE){
+				}else if(clientSocket->getSocketStatus() == RECEIVE){
 					break;
 				} else {
 					std::istringstream iss(std::ios_base::binary);
-					_socket_map[poll_fd.fd]->getClientMessage(iss);
-					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
+					clientSocket->getClientMessage(iss);
+					clientSocket->setNewHttpRequest(iss);
 					LOG_INFO("Received Client Message");
-					_socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
+					clientSocket->setNewHttpResponse(_server_config);
 					LOG_INFO("Created Server Response");
 					std::ostringstream oss;
 					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
@@ -190,10 +191,10 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			break;
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
-				const std::string& responseStr = clientSocket-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
+				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
 				clientSocket->sendtoClient(&responseStr);
 				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
-				if (clientSocket->getHttpRequest()->isKeepAlive()) {
+				if (clientSocket->hasHttpRequest() && clientSocket->getHttpRequest()->isKeepAlive()) {
 					updatePollFdForRead(poll_fd.fd);
 					clientSocket->setSocketStatus(RECEIVE);
 				} else {

@@ -34,6 +34,7 @@ typedef struct s_location{
 	std::string					index;
 	std::vector<std::string>	allow;
 	std::string					root;
+	std::string					post_dir;
 }	LocationDirectives;
 
 typedef struct s_server{
@@ -46,6 +47,7 @@ typedef struct s_server{
 	std::string					listen_port;
 	std::string					log_file; // Not used NEED TO ADAPT CONFIG.CPP
 	std::string					root;
+	std::string					post_dir;
 	std::vector<LocationDirectives>	locations;
 }	ServerDirectives;
 

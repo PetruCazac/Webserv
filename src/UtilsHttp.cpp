@@ -36,6 +36,15 @@ const std::string &MimeTypeDetector::getMimeType(const std::string &fileName) co
 	return _noneType;
 }
 
+const std::string &MimeTypeDetector::getExtension(const std::string& second) const {
+	for (std::map<std::string, std::string>::const_iterator it = _mimeTypes.begin(); it != _mimeTypes.end(); ++it) {
+		if (it->second == second) {
+			return it->first;
+		}
+	}
+	return NULL;
+}
+
 StatusCodeMap::StatusCodeMap() {
 	statusCodes[200] = "OK"; // +
 	statusCodes[201] = "Created";
@@ -49,6 +58,8 @@ StatusCodeMap::StatusCodeMap() {
 	statusCodes[405] = "Method Not Allowed"; // +
 	statusCodes[409] = "Conflict";
 	statusCodes[410] = "Gone";
+	statusCodes[413] = "Payload too large";
+	statusCodes[415] = "Unsupported Media Type";
 	statusCodes[500] = "Internal Server Error"; // +
 	statusCodes[501] = "Not Implemented"; // +
 	statusCodes[502] = "Bad Gateway";

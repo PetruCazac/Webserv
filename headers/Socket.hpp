@@ -65,6 +65,7 @@ class Socket {
 		size_t getClientBodySize(void);
 		bool isMessageReceived(int& bytes_read);
 		void resetFlags(void);
+		bool hasHttpRequest() const;
 
 	private:
 		std::string		_listen_port;

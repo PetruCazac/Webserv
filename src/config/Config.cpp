@@ -15,6 +15,7 @@
 // root						-- The root directory where the files will be searched.
 // server_name				-- The name of the server.
 // allow					-- Limit the HTTP methods that are allowed to be used in this location.
+// post_dir					-- Directory where the POST requests are stored.
 // fastcgi_param			-- Limit the methods on CGI scripts, that are located in root/cgi_bin/
 
 // // ---------------- Location config ----------------------//
@@ -24,6 +25,7 @@
 // allow				-- Limit the HTTP methods that are allowed to be used in this location.
 // module					-- The directory from the root where the files will be searched.
 // root						-- redefines the root path for the location it is being used.
+// post_dir					-- Directory where the POST requests are stored.
 
 
 Config::Config(){}
@@ -267,6 +269,10 @@ void Config::parseServer(ServerDirectives& server, Block& block){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			server.allow = it->second;
+		}else if(it->first == "post_dir"){
+			if(it->second.empty())
+				throw Config::WrongDirectiveAttributes();
+			server.post_dir = it->second[0];
 		}else if(it->first == "listen"){
 			if(it->second.empty() || !isNumber(it->second[0]) || it->second.size() > 5)
 				throw Config::WrongDirectiveAttributes();
@@ -301,6 +307,10 @@ void Config::parseLocation(LocationDirectives& location, Block& block){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
 			location.index = it->second[0];
+		}else if(it->first == "post_dir"){
+			if(it->second.empty())
+				throw Config::WrongDirectiveAttributes();
+			location.post_dir = it->second[0];
 		}else if(it->first == "root"){
 			if(it->second.empty())
 				throw Config::WrongDirectiveAttributes();
@@ -333,6 +343,7 @@ void Config::getServerStruct(ServerDirectives& server){
 	server.listen_port = DefaultValues::getDefaultValue<int>(LISTEN);
 	server.log_file = DefaultValues::getDefaultValue<std::string>(LOG_FILE);
 	server.root = DefaultValues::getDefaultValue<std::string>(ROOT);
+	server.post_dir = DefaultValues::getDefaultValue<std::string>(POST_DIR);
 }
 
 void Config::getLocationStruct(LocationDirectives& location){
@@ -340,6 +351,7 @@ void Config::getLocationStruct(LocationDirectives& location){
 	location.index = DefaultValues::getDefaultValue<std::string>(INDEX);
 	location.root = DefaultValues::getDefaultValue<std::string>(ROOT);
 	location.allow.push_back(DefaultValues::getDefaultValue<std::string>(ALLOW));
+	location.post_dir = DefaultValues::getDefaultValue<std::string>(POST_DIR);
 }
 
 void Config::checkServerDirectives(ServerDirectives& server){
@@ -374,6 +386,7 @@ void Config::printConfig(){
 		std::cout << "autoindex: " << _serversConfig[i].autoindex << std::endl;
 		std::cout << "index: " << _serversConfig[i].index << std::endl;
 		std::cout << "listen: " << _serversConfig[i].listen_port << std::endl;
+		std::cout << "post_dir: " << _serversConfig[i].post_dir << std::endl;
 		
 		std::cout << "allow:";
 		for(size_t n = 0; n < _serversConfig[i].allow.size(); n++)
@@ -393,6 +406,7 @@ void Config::printConfig(){
 			std::cout << "LOCATION autoindex: " << _serversConfig[i].locations[j].autoindex << std::endl;
 
 			std::cout << "LOCATION index: " << _serversConfig[i].locations[j].index << std::endl;
+			std::cout << "LOCATION post_dir: " << _serversConfig[i].locations[j].post_dir << std::endl;
 			
 			std::cout << "LOCATION allow:";
 			for(size_t n = 0; n < _serversConfig[i].locations[j].allow.size(); n++)
@@ -429,22 +443,3 @@ void Config::printDirective(Block& block, int depth = 0){
 		}
 	}
 }
-
-// ----------------------------- Exceptions ----------------------------
-// Config::ParsingException::ParsingException(const char* firstError, ...){
-// 	errorMessage = firstError;
-// 	va_list args;
-// 	va_start(args, firstError);
-// 	const char* nextError = va_arg(args, const char*);
-// 	while (nextError != NULL) {
-// 		errorMessage += nextError;
-// 		nextError = va_arg(args, const char*);
-// 	}
-// 	va_end(args);
-// }
-
-// const char* Config::ParsingException::what() const throw(){
-// 	std::string message = "Parsing error occured:\n";
-// 	message += errorMessage + "\n";
-// 	return message.c_str();
-// }

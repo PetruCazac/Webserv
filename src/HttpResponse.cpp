@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <ctime>
+#include <fstream>
 
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
@@ -25,7 +26,7 @@ HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const Ht
 			runGetMethod(config, request);
 		}
 		else if (request.getMethod() == POST)
-			;
+			runPostMethod(config, request);
 		else if (request.getMethod() == DELETE)
 			;
 		else
@@ -51,104 +52,255 @@ std::string HttpResponse::getErrorBody(const int code) {
 	return body.str();
 }
 
+void cleanPath(std::string& path, const std::string& serverRoot){
+	std::stringstream ss(path);
+	std::string segment;
+	std::vector<std::string> uriSegments;
+	while(std::getline(ss, segment, '/')){
+		if(!segment.empty())
+			uriSegments.push_back(segment);
+	}
+	if(!uriSegments.empty() && uriSegments[0] == serverRoot){
+		std::string withoutRoot;
+		for(size_t i = 1; i < uriSegments.size(); i++)
+			withoutRoot.append("/" + uriSegments[i]);
+		path = withoutRoot;
+	}
+}
+
 // --------------------------------- POST Method --------------------------------------
 
-void storeFormData(const std::vector<std::string>& formData) {
+bool HttpResponse::storeFormData(const std::string& formData, std::string& path) {
 	std::stringstream time_int;
+	struct stat fileInfo;
 	time_int << time(NULL);
-	std::string filename = "form_submission_" + time_int.str() + ".txt";
-	std::ofstream outFile(filename.c_str());
-	if (!outFile) {
-		std::cerr << "Error opening file for writing: " << filename << std::endl;
-		return;
-	}
-	outFile << formData[0];
-	outFile.close();
-	std::cout << "Form data stored in file: " << filename << std::endl;
-}
-
-void HttpResponse::chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server){
-	std::string header_server_name = request.getHeaders().at("Host").substr(0, request.getHeaders().at("Host").find_first_of(':', 0));
-	bool first = true;
-	for(size_t i = 0; i < config.size(); i++){
-		if(header_server_name == config[i].server_name){
-			server = config[i];
-			break;
+	stat(path.c_str(), &fileInfo);
+	if(S_ISDIR(fileInfo.st_mode)){
+		std::string filename = path + "/" + "form_submission_" + time_int.str() + ".txt";
+		std::ofstream outFile(filename.c_str(), std::ios_base::app);
+		if (!outFile) {
+			LOG_ERROR("Error opening file for writing: " + filename);
+			return false;
 		}
-		else if(first == true){
-			server = config[i];
-			first = false;
+		outFile << formData;
+		outFile.close();
+		return true;
+	} else {
+		std::ofstream file(path.c_str(), std::ios_base::app);
+		if(file.is_open()){
+			file << formData;
+			file.close();
+			return true;
+		} else {
+			LOG_ERROR("POST Request file could not be created for the requested path: " + path);
+			return false;
 		}
 	}
-	LocationDirectives location;
-	findLocationUri(server.locations, request.getUri(), location);
-	server.locations.clear();
-	if(!location.module.empty())
-		server.locations.push_back(location);
+	return false;
 }
 
-std::string& getContentType(const std::map<std::string, std::string>& requestHeaders){
-	std::string str;
-	std::map<std::string, std::string>::const_iterator it = requestHeaders.find("Content-Type");
-	str = it->second;
-	return str;
+void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
+	path = request.getUri();
+	cleanPath(path, server.root);
+	struct stat fileInfo;
+	if(!server.locations.empty()){
+		if(path.find(server.locations[0].module, 0) == 0){
+			path = server.locations[0].root + path;
+			if(stat(path.c_str(), &fileInfo) != -1){
+				LOG_INFO("POST Request will be saved at: " + path);
+				return;
+			}
+		}
+	} else {
+		if(path.find(server.post_dir, 0) == 0){
+			path = server.root + path;
+			int i = stat(path.c_str(), &fileInfo);
+			if(i != -1){
+				LOG_INFO("POST Request will be saved at: " + path);
+				return;
+			}
+		}
+	}
+	size_t start = path.find_last_of('/', path.size());
+	if(start != std::string::npos){
+		std::string lastElement = path.substr(start + 1, path.size() - start - 1);
+		if(MimeTypeDetector::getInstance().getMimeType(lastElement) != "application/octet-stream"){
+			if(stat(path.substr(0, start).c_str(), &fileInfo) != -1){
+				if(S_ISDIR(fileInfo.st_mode)){
+					LOG_INFO("POST Request will be saved at a new file: " + path);
+					return;
+				}
+				LOG_ERROR("The requested path is not valid: " + path);
+			}
+		}
+	}
+	path.clear();
+	return;
+}
+
+std::string HttpResponse::createFilename(std::string& path, std::map<std::string, std::string>& metadata){
+	std::string filePath;
+	std::string fileName = metadata.find("filename")->second;
+	size_t last = path.find_last_of('/');
+	if(last == std::string::npos)
+		return "";
+	if(MimeTypeDetector::getInstance().getMimeType(path.substr(last + 1, path.size() - last - 1)) != "application/octet-stream")
+		filePath = path.substr(0, last);
+	else
+		filePath = path;
+
+	struct stat fileInfo;
+	if(stat(filePath.c_str(), &fileInfo))
+		return "";
+	std::string filetype = MimeTypeDetector::getInstance().getMimeType(fileName);
+	if(filetype == "application/octet-stream")
+		return "";
+	if(filetype != metadata.find("Content-Type:")->second)
+		fileName += MimeTypeDetector::getInstance().getExtension(filetype);
+	if(S_ISDIR(fileInfo.st_mode)){
+		filePath = filePath + '/' + fileName;
+		return filePath;
+	} else
+		return "";
+}
+
+bool HttpResponse::handlePackage(std::string& package, std::string& path){
+	size_t endMetadata = package.find("\r\n\r\n");
+	for(size_t i = 0; i < endMetadata; i++){
+		if (package[i] == '\r' && (i + 1 < endMetadata) && package[i + 1] == '\n') {
+			package[i] = ';';
+			package[i + 1] = ';';
+			++i;
+		}
+	}
+
+	std::stringstream packageStream(package.substr(0, endMetadata));
+	std::string temp;
+	std::map<std::string, std::string> metadata;
+
+
+	while(std::getline(packageStream, temp, ';')){
+		if(temp.empty())
+			continue;
+		if(temp.find("Content-Disposition: ") != std::string::npos){
+			size_t start = temp.find("Content-Disposition: ") + 21;
+			size_t end = temp.find(";");
+			if(end == std::string::npos)
+				end = temp.size();
+			metadata["Content-Disposition:"] = temp.substr(start, end - start);
+		} else if(temp.find("Content-Type: ") != std::string::npos){
+			size_t start = temp.find("Content-Type: ") + 14;
+			size_t end = temp.find(";");
+			if(end == std::string::npos)
+				end = temp.size();
+			metadata["Content-Type:"] = temp.substr(start, end - start);
+		} else {
+			size_t start = 1;
+			size_t end = temp.find("=");
+			std::string first = temp.substr(start, end - start);
+			start = end + 1;
+			end = temp.find(";");
+			if(end == std::string::npos)
+				end = temp.size();
+			std::string second = temp.substr(start, end - start);
+			if(second[0] == '\"' && second[second.size() - 1] == '\"')
+				second = second.substr(1, second.size() - 2);
+			metadata[first] = second;
+		}
+	}
+	if(metadata.find("Content-Disposition:")->second != "form-data"){
+		makeDefaultErrorResponse(415);
+		return false;
+	}
+	if(metadata.find("name")->second == "file"){
+		std::string information = package.substr(endMetadata + 4, package.size() - endMetadata - 4);
+		if(information.empty() || metadata["Content-Type:"] == "application/octet-stream")
+			return true;
+		std::string filename = createFilename(path, metadata);
+		if(filename.empty()){
+			makeDefaultErrorResponse(400);
+			return false;
+		}
+		struct stat fileInfo;
+		if(stat(filename.c_str(), &fileInfo) == 0){
+			LOG_INFO("File already exists, overwriting not allowed at the: " + filename);
+			return true;
+		}
+		std::ofstream newFile(filename.c_str());
+		if(newFile.is_open()){
+			newFile << information;
+			newFile.close();
+		}
+	}else{
+		storeFormData(metadata.find("name")->second + "=" + package.substr(endMetadata + 4, package.size() - endMetadata - 4), path);
+	}
+	return true;
 }
 
 void HttpResponse::handleMultipart(const HttpRequest& request, std::string& path){
-		std::vector<std::vector<char*> > bodySections;
-		
-		if (isFile(path.c_str())){
-			appendFile(path);
-		} else if(isDirectory(path.c_str())){
-			handleAutoindex(path.c_str());
-		} else{
-			makeDefaultErrorResponse(403);
-		}
+	std::string boundary = "--" + request.getBoundary();
+	std::vector<uint8_t> body = request.getBody();
+	std::stringstream ss;
+	for(size_t i = 0; i < body.size(); i++)
+		ss << static_cast<char>(body[i]);
+	std::string package;
+	std::string temp;
+	std::vector<std::string> packages;
+	size_t startPos = 0;
+	startPos = ss.str().find(boundary, startPos) + boundary.size();
+	size_t endPos = ss.str().find(boundary, startPos);
 
+	while(endPos != std::string::npos){
+		std::string package = ss.str().substr(startPos, endPos - startPos);
+		startPos = endPos + boundary.size();
+		if(package.empty())
+			break;
+		packages.push_back(package);
+		endPos = ss.str().find(boundary, startPos);
+	}
+	for(size_t i = 0; i < packages.size(); i++){
+		if(!handlePackage(packages[i], path))
+			return;
+	}
+	makeDefaultErrorResponse(200);
 }
-
-
 
 void HttpResponse::handleUriEncoding(const HttpRequest& request, std::string& path){
-		const std::vector<uint8_t>& bodyVector = request.getBody();
-		std::string bodyString(bodyVector.begin(), bodyVector.end());
-		bodyString = urlDecode(bodyString);
-
-		if(isFile(path.c_str()) && MimeTypeDetector::getMimeType(path) == "text/plain"){
-			appendToFile(path, bodyString);
-		} else if(isDirectory(path.c_str())){
-			// Create a file with the name and timestamp
-		} else{
-			makeDefaultErrorResponse(403);
-		}
-		
-
+	if(!storeFormData(urlDecode(request.getBody()), path))
+		makeDefaultErrorResponse(400);
 }
 
-void HttpResponse::runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
+void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
 	if(isCGI(request.getUri())){
 		handleCGI(server, request); // Needs to be implemented
 		return;
 	}
+	// Check if there is a submit folder where it will be written the file.
 	std::string path;
 	if(isMethodAllowed(server, "POST")){
-		composeLocalUrl(server, request, path);
-
-		std::string contentType(getContentType(request.getHeaders()));
-		if(contentType.empty()){
-			LOG_ERROR("No Content-Type found.");
+		composePostUrl(server, request, path);
+		if(!path.empty()){
+	
+			std::string contentType(request.getHeaders().find("Content-Type")->second);
+			if(contentType.empty()){
+				LOG_ERROR("No Content-Type found.");
+				makeDefaultErrorResponse(400);
+				return;
+			}
+			if(contentType == "multipart/form-data")
+				handleMultipart(request, path);
+			else if(contentType == "application/x-www-form-urlencoded"){
+				if(!storeFormData(urlDecode(request.getBody()), path))
+					makeDefaultErrorResponse(400);
+				else
+					makeDefaultErrorResponse(200);
+			}else
+				makeDefaultErrorResponse(400);
+		} else
 			makeDefaultErrorResponse(400);
-			return;
-		}
-		if(contentType == "multipart/form-data")
-			handleMultipart(request, path);
-		else if(contentType == "application/x-www-form-urlencoded")
-			handleUriEncoding(request, path);
-		else
-			makeDefaultErrorResponse(400);
-	}else
+	} else
 		makeDefaultErrorResponse(405);
 }
 
@@ -202,21 +354,6 @@ void HttpResponse::setResponse() {
 	_response << "\r\n" << _body;
 }
 
-void cleanPath(std::string& path, const std::string& serverRoot){
-	std::stringstream ss(path);
-	std::string segment;
-	std::vector<std::string> uriSegments;
-	while(std::getline(ss, segment, '/')){
-		if(!segment.empty())
-			uriSegments.push_back(segment);
-	}
-	if(!uriSegments.empty() && uriSegments[0] == serverRoot){
-		std::string withoutRoot;
-		for(size_t i = 1; i < uriSegments.size(); i++)
-			withoutRoot.append("/" + uriSegments[i]);
-		path = withoutRoot;
-	}
-}
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
@@ -251,6 +388,26 @@ void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpReq
 		return;
 	}
 	return path.clear();
+}
+
+void HttpResponse::chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server){
+	std::string header_server_name = request.getHeaders().at("Host").substr(0, request.getHeaders().at("Host").find_first_of(':', 0));
+	bool first = true;
+	for(size_t i = 0; i < config.size(); i++){
+		if(header_server_name == config[i].server_name){
+			server = config[i];
+			break;
+		}
+		else if(first == true){
+			server = config[i];
+			first = false;
+		}
+	}
+	LocationDirectives location;
+	findLocationUri(server.locations, request.getUri(), location);
+	server.locations.clear();
+	if(!location.module.empty())
+		server.locations.push_back(location);
 }
 
 void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location){
@@ -327,7 +484,6 @@ const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 
-// ------------------------ POST Method ------------------------------
 
 // ------------------------ Helper Functions -------------------------
 
@@ -345,27 +501,54 @@ int hexCharToInt(char c) {
 	}
 }
 
-std::string HttpResponse::urlDecode(const std::string& bodyString) {
+std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
 	std::ostringstream decoded;
-	for (std::size_t i = 0; i < bodyString.length(); ++i) {
-		if (bodyString[i] == '%') {
-			if (i + 2 < bodyString.length()) {
+	for (size_t i = 0; i < bodyString.size(); ++i) {
+		uint8_t ch = bodyString[i];
+		if (ch == '%') {
+			if (i + 2 < bodyString.size()) {
 				char hex1 = bodyString[i + 1];
 				char hex2 = bodyString[i + 2];
 				decoded << static_cast<char>(hexCharToInt(hex1) * 16 + hexCharToInt(hex2));
 				i += 2;
 			} else {
-				// Could throw an exception
 				LOG_ERROR("Body decoding error");
 			}
-		} else if (bodyString[i] == '+') {
+		} else if (ch == '+') {
 			decoded << ' ';
+		} else if (ch == '&') {
+			decoded << '\n';
 		} else {
-			decoded << bodyString[i];
+			decoded << ch;
 		}
 	}
 	return decoded.str();
 }
+
+// std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
+// 	std::ostringstream decoded;
+// 	for(size_t element = 0; element < bodyString.size(); element++){
+// 		std::string bodyLine(bodyString[element].c_str());
+// 		for (std::size_t i = 0; i < bodyLine.length(); ++i) {
+// 			if (bodyString[i] == '%') {
+// 				if (i + 2 < bodyString.length()) {
+// 					char hex1 = bodyString[i + 1];
+// 					char hex2 = bodyString[i + 2];
+// 					decoded << static_cast<char>(hexCharToInt(hex1) * 16 + hexCharToInt(hex2));
+// 					i += 2;
+// 				} else {
+// 					// Could throw an exception
+// 					LOG_ERROR("Body decoding error");
+// 				}
+// 			} else if (bodyString[i] == '+') {
+// 				decoded << ' ';
+// 			} else {
+// 				decoded << bodyString[i];
+// 			}
+// 		}
+// 	}
+// 	return decoded.str();
+// }
 
 bool HttpResponse::checkAutoindex(ServerDirectives& server){
 	if(!server.locations.empty()){

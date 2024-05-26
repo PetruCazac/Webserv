@@ -232,6 +232,13 @@ HttpRequest* Socket::getHttpRequest() const {
 	return _http_request;
 }
 
+bool Socket::hasHttpRequest() const {
+	if(_http_request != NULL)
+		return true;
+	else
+		return false;
+}
+
 HttpResponse* Socket::getHttpResponse() const {
 	return _http_response;
 }
@@ -262,10 +269,6 @@ size_t Socket::getClientBodySize(void){
 }
 
 void Socket::setNewHttpResponse(size_t errorCode){
-	if (this->getHttpRequest() == NULL) {
-		LOG_ERROR("The request is not available for a response.");
-		return ;
-	}
 	_http_response = new HttpResponse(errorCode);
 }
 

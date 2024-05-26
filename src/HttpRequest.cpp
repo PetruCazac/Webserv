@@ -51,7 +51,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	printHttpRequest(*this);
+	// printHttpRequest(*this);
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
@@ -100,10 +100,11 @@ void HttpRequest::findBoundary() {
 	std::map<std::string, std::string>::iterator it = _headers.find("Content-Type");
 	if (it != _headers.end()) {
 		std::string newValue;
-		size_t bound = it->second.find('=');
+		size_t bound = it->second.find(';');
 		if (bound != std::string::npos) {
 			newValue = it->second.substr(0, bound);
-			_boundary = it->second.substr(bound + 1);
+			size_t boundaryPos = it->second.find("=", bound + 1) + 1;
+			_boundary = it->second.substr(boundaryPos, it->second.size() - boundaryPos);
 			it->second = newValue;
 		}
 	}

@@ -19,6 +19,7 @@ private:
 
 public:
 	static MimeTypeDetector &getInstance();
+	const std::string &getExtension(const std::string& second) const;
 	const std::string &getMimeType(const std::string &fileName) const;
 };
 
