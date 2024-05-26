@@ -447,8 +447,40 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 }
 
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
-	std::cout << config.name << std::endl;
-	std::cout << request.getUri() << std::endl;
+	std::string scriptPath = request.getUri();
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        makeDefaultErrorResponse(500);
+        return;
+    }
+    pid_t pid = fork();
+    if (pid == -1) {
+        makeDefaultErrorResponse(500);
+        return;
+    } else if (pid == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        // if (request.getMethod() == POST) {
+        //     std::ofstream cgiInput("cgi_input.txt");
+        //     cgiInput << request.getBody();
+        //     cgiInput.close();
+        //     int fd = open("cgi_input.txt", O_RDONLY);
+        //     dup2(fd, STDIN_FILENO);
+        //     close(fd);
+        // }
+        setCgiEnvironment(request, scriptPath);
+
+        chdir(getFilePath(scriptPath).c_str());
+        execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
+        exit(1); 
+    } else {
+        close(pipefd[1]); 
+        fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
+        _cgi_pipe_fd = pipefd[0];
+        _cgi_pid = pid;
+        _is_cgi_response = true;
+    }
 }
 
 std::string getPath(const char *path){
@@ -595,4 +627,58 @@ bool HttpResponse::isCGI(const std::string& uri){
 	if(uri.find(cgiBin) == 0)
 		return true;
 	return false;
+}
+
+int HttpResponse::getCgiPipeFd() const {
+    return _cgi_pipe_fd;
+}
+
+pid_t HttpResponse::getCgiPid() const {
+    return _cgi_pid;
+}
+
+void HttpResponse::appendCgiOutput(const std::string &data) {
+    _cgi_output.append(data);
+}
+
+void HttpResponse::finalizeCgiResponse() {
+    _response << "HTTP/1.1 200 OK\r\n";
+    _response << "Content-Type: text/html\r\n";
+    _response << "Content-Length: " << _cgi_output.size() << "\r\n";
+    _response << "\r\n";
+    _response << _cgi_output;
+}
+
+bool HttpResponse::isCgiResponse() const {
+    return _is_cgi_response;
+}
+
+void HttpResponse::setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath) {
+    setenv("REQUEST_METHOD", request.getMethodStr().c_str(), 1);
+    setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
+    setenv("PATH_INFO", scriptPath.c_str(), 1);
+
+    std::string queryString = request.getQueryString();
+    if (!queryString.empty()) {
+        setenv("QUERY_STRING", queryString.c_str(), 1);
+    }
+
+    std::string contentLength = request.getContentLength();
+    if (!contentLength.empty()) {
+        setenv("CONTENT_LENGTH", contentLength.c_str(), 1);
+    }
+}
+
+std::string HttpResponse::getFilePath(const std::string& scriptPath) const {
+    size_t lastSlash = scriptPath.find_last_of('/');
+    if (lastSlash == std::string::npos) {
+        return ".";
+    }
+    return scriptPath.substr(0, lastSlash);
+}
+
+void HttpResponse::setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response) {
+    _cgi_pipe_fd = cgi_pipe_fd;
+    _cgi_pid = cgi_pid;
+    _is_cgi_response = is_cgi_response;
 }

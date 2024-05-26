@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <istream>
+#include <fcntl.h>
 
 struct MethodsException {
 	enum MethodErrors {
@@ -31,10 +32,15 @@ struct MethodsException {
 
 class HttpResponse {
 private:
-	std::stringstream	_response;
-	std::string			_body;
-	std::string			_contentType;
-	std::map<std::string, std::string>	_headers;
+	std::stringstream _response;
+	std::string _body;
+	std::string _contentType;
+	std::map<std::string, std::string> _headers;
+    int _cgi_pipe_fd;
+    bool _is_cgi_response;
+    pid_t _cgi_pid;
+    std::string _cgi_output;
+
 	HttpResponse();
 
 	// GET Method
@@ -63,7 +69,6 @@ private:
 	void	setResponse();
 
 	// Helper Functions
-	bool	isCGI(const std::string &uri);
 	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
 	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
 	bool	isDirectory(const char* path);
@@ -74,6 +79,16 @@ private:
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	bool	isCGI(const std::string &uri);
+	void makeDefaultErrorResponse(const int code);
+    void    setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath);
+    void    setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
+    std::string getFilePath(const std::string& scriptPath) const;
+    int     getCgiPipeFd() const;
+    pid_t   getCgiPid() const;
+    void    appendCgiOutput(const std::string &data);
+    void    finalizeCgiResponse();
+    bool    isCgiResponse() const;
 
 	const std::stringstream &getResponse() const;
 };

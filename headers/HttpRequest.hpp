@@ -71,6 +71,9 @@ public:
 	explicit HttpRequest(std::istream &inputRequest);
 
 	HttpMethods getMethod() const;
+    const std::string getMethodStr() const;
+    const std::string getQueryString() const;
+    const std::string getContentLength() const;
     bool isKeepAlive() const;
 	const std::string &getUri() const;
 	const std::string &getQuery() const;

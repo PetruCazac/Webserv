@@ -210,3 +210,30 @@ bool HttpRequest::isKeepAlive() const {
     }
     return false;
 }
+
+const std::string HttpRequest::getMethodStr() const {
+    static std::string methods[] = {
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "TRACE",
+        "OPTIONS",
+        "DELETE"
+    };
+    return methods[_method];
+}
+
+const std::string HttpRequest::getQueryString() const {
+    size_t pos = _uri.find('?');
+    if (pos == std::string::npos)
+        return "";
+    return _uri.substr(pos + 1);
+}
+
+const std::string HttpRequest::getContentLength() const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
+    if (it != _headers.end())
+        return it->second;
+    return "";
+}
