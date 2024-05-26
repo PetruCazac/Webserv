@@ -137,6 +137,14 @@ void Server::removeSocketFromMap(int fd) {
 	}
 }
 
+void Server::setNonBlocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        flags = 0;
+    }
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     Socket* clientSocket = _socket_map[poll_fd.fd];
     time_t currentTime = time(NULL);
@@ -177,12 +185,39 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					// If you have to wait for CGI
 					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
 					// If you can send a response immediately
-					clientSocket->setSocketStatus(SEND_RESPONSE);
-					updatePollFdForWrite(poll_fd.fd);
+                    if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
+                        clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
+                    } else {
+                        clientSocket->setSocketStatus(SEND_RESPONSE);
+                        updatePollFdForWrite(poll_fd.fd);
+                    }
 				}
 			}
 			break;
 		case WAIT_FOR_RESPONSE:
+            if (poll_fd.revents & POLLIN) {
+            char buffer[1024];
+            std::string cgiOutput;
+            ssize_t bytesRead;
+            int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
+            while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
+                cgiOutput.append(buffer, bytesRead);
+            }
+            if (bytesRead == -1 && errno != EAGAIN) {
+                std::ostringstream oss;
+                oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
+                LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
+                removeSocketFromMap(poll_fd.fd);
+                return;
+            }
+            if (bytesRead == 0) {
+                close(cgiPipeFd);
+                clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
+                clientSocket->getHttpResponse()->finalizeCgiResponse();
+                clientSocket->setSocketStatus(SEND_RESPONSE);
+                updatePollFdForWrite(poll_fd.fd);
+            }
+            }
 			break;
 		case SEND_RESPONSE:
             if (poll_fd.revents & POLLOUT) {
@@ -220,3 +255,45 @@ void Server::checkKeepAlive() {
         ++it;
     }
 }
+
+void Server::executeCgiScript(const std::string& scriptPath, const HttpRequest& request, HttpResponse& response, Socket* clientSocket) {
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        response.makeDefaultErrorResponse(500);
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        response.makeDefaultErrorResponse(500);
+        return;
+    } else if (pid == 0) {
+        // Child process
+        close(pipefd[0]); // Close unused read end
+        dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe
+        close(pipefd[1]);
+
+        // if (request.getMethod() == "POST") {
+        //     std::ofstream cgiInput("cgi_input.txt");
+        //     cgiInput << request.getBody();
+        //     cgiInput.close();
+        //     int fd = open("cgi_input.txt", O_RDONLY);
+        //     dup2(fd, STDIN_FILENO);
+        //     close(fd);
+        // }
+
+        response.setCgiEnvironment(request, scriptPath);
+
+        chdir(response.getFilePath(scriptPath).c_str());
+        execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
+        exit(1); // If exec fails
+    } else {
+        // Parent process
+        close(pipefd[1]); // Close unused write end
+        setNonBlocking(pipefd[0]); // Set the read end of the pipe to non-blocking
+
+        clientSocket->getHttpResponse()->setCgiResponse(pipefd[0], pid, true);
+        clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
+    }
+}
+
