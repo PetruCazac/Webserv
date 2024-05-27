@@ -479,18 +479,18 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
         // }
         // setCgiEnvironment(request, scriptPath);
         // chdir(getFilePath(scriptPath).c_str());
-        char *argv[] = { const_cast<char*>(scriptPath.c_str()), NULL };
-        // if (chdir(getFilePath(scriptPath, getRoot(config)).c_str()) == -1){
+        std::string fullScriptPath = "." + scriptPath;
+        char *argv[] = { const_cast<char*>(fullScriptPath.c_str()), NULL };
         if (chdir(getRoot(config).c_str()) == -1){
             LOG_ERROR("CHDIR_CALL_FAILED");
             exit(2);
         }
-        LOG_DEBUG(scriptPath.c_str());
-        execv(scriptPath.c_str(),argv);
-        perror("execv");
+        if (execve(argv[0],argv, NULL) == -1 ) {
+            LOG_ERROR("EXECVE failed");
+            perror("execve");
+        }
         exit(1); 
     } else {
-        // std::cout << "Script path:" <<scriptPath.c_str() << "FilePath" << getFilePath(scriptPath).c_str();
         close(pipefd[1]); 
         fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
         _cgi_pipe_fd = pipefd[0];
