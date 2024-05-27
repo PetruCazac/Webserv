@@ -16,6 +16,7 @@ MimeTypeDetector::MimeTypeDetector() {
 	_mimeTypes[".png"] = "image/png";
 	_mimeTypes[".gif"] = "image/gif";
 	_mimeTypes[".ico"] = "image/x-icon";
+	_mimeTypes[".pdf"] = "application/pdf";
 	_noneType = "application/octet-stream";
 }
 
@@ -36,13 +37,13 @@ const std::string &MimeTypeDetector::getMimeType(const std::string &fileName) co
 	return _noneType;
 }
 
-const std::string &MimeTypeDetector::getExtension(const std::string& second) const {
+const std::string MimeTypeDetector::getExtension(const std::string& second) const {
 	for (std::map<std::string, std::string>::const_iterator it = _mimeTypes.begin(); it != _mimeTypes.end(); ++it) {
 		if (it->second == second) {
 			return it->first;
 		}
 	}
-	return NULL;
+	return std::string();
 }
 
 StatusCodeMap::StatusCodeMap() {

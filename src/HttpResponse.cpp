@@ -525,31 +525,6 @@ std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
 	return decoded.str();
 }
 
-// std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
-// 	std::ostringstream decoded;
-// 	for(size_t element = 0; element < bodyString.size(); element++){
-// 		std::string bodyLine(bodyString[element].c_str());
-// 		for (std::size_t i = 0; i < bodyLine.length(); ++i) {
-// 			if (bodyString[i] == '%') {
-// 				if (i + 2 < bodyString.length()) {
-// 					char hex1 = bodyString[i + 1];
-// 					char hex2 = bodyString[i + 2];
-// 					decoded << static_cast<char>(hexCharToInt(hex1) * 16 + hexCharToInt(hex2));
-// 					i += 2;
-// 				} else {
-// 					// Could throw an exception
-// 					LOG_ERROR("Body decoding error");
-// 				}
-// 			} else if (bodyString[i] == '+') {
-// 				decoded << ' ';
-// 			} else {
-// 				decoded << bodyString[i];
-// 			}
-// 		}
-// 	}
-// 	return decoded.str();
-// }
-
 bool HttpResponse::checkAutoindex(ServerDirectives& server){
 	if(!server.locations.empty()){
 		if(server.locations[0].autoindex == "on")

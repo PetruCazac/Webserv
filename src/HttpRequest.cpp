@@ -51,7 +51,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	// printHttpRequest(*this);
+	printHttpRequest(*this);
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
