@@ -19,8 +19,8 @@ class Server {
 		void addServerConfig(ServerDirectives& serverConfig);
         void closeServer(void);
         void checkKeepAlive(void);
-        void executeCgiScript(const std::string& scriptPath, const HttpRequest& request, HttpResponse& response, Socket* clientSocket);
-        void setNonBlocking(int fd);
+        // void executeCgiScript(const std::string& scriptPath, const HttpRequest& request, HttpResponse& response, Socket* clientSocket);
+        // void setNonBlocking(int fd);
     private:
         void removeSocketFromMap(int fd);
 		const int _client_max_body_size;
