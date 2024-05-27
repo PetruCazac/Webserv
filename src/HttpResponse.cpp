@@ -446,6 +446,13 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 	}
 }
 
+const std::string getRoot(const ServerDirectives& config){
+    if(!config.locations.empty()){
+        return config.locations[0].root;
+    } else
+        return config.root;
+}
+
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
 	std::string scriptPath = request.getUri();
     int pipefd[2];
@@ -470,11 +477,20 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
         //     dup2(fd, STDIN_FILENO);
         //     close(fd);
         // }
-        setCgiEnvironment(request, scriptPath);
-        chdir(getFilePath(scriptPath).c_str());
-        execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
+        // setCgiEnvironment(request, scriptPath);
+        // chdir(getFilePath(scriptPath).c_str());
+        char *argv[] = { const_cast<char*>(scriptPath.c_str()), NULL };
+        // if (chdir(getFilePath(scriptPath, getRoot(config)).c_str()) == -1){
+        if (chdir(getRoot(config).c_str()) == -1){
+            LOG_ERROR("CHDIR_CALL_FAILED");
+            exit(2);
+        }
+        LOG_DEBUG(scriptPath.c_str());
+        execv(scriptPath.c_str(),argv);
+        perror("execv");
         exit(1); 
     } else {
+        // std::cout << "Script path:" <<scriptPath.c_str() << "FilePath" << getFilePath(scriptPath).c_str();
         close(pipefd[1]); 
         fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
         _cgi_pipe_fd = pipefd[0];
@@ -669,12 +685,12 @@ void HttpResponse::setCgiEnvironment(const HttpRequest& request, const std::stri
     }
 }
 
-std::string HttpResponse::getFilePath(const std::string& scriptPath) const {
+std::string HttpResponse::getFilePath(const std::string& scriptPath, std::string root) const {
     size_t lastSlash = scriptPath.find_last_of('/');
     if (lastSlash == std::string::npos) {
-        return ".";
+        return root + '/' + ".";
     }
-    return scriptPath.substr(0, lastSlash);
+    return  root + scriptPath.substr(0, lastSlash);
 }
 
 void HttpResponse::setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response) {

@@ -84,7 +84,7 @@ public:
 	bool	isCGI(const std::string &uri);
     void    setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath);
     void    setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
-    std::string getFilePath(const std::string& scriptPath) const;
+    std::string getFilePath(const std::string& scriptPath, std::string root) const;
     int     getCgiPipeFd() const;
     pid_t   getCgiPid() const;
     void    appendCgiOutput(const std::string &data);

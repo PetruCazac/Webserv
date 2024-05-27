@@ -58,7 +58,7 @@ const std::vector<pollfd_t>& Server::getPollFdVector() const {
 void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 	 for (size_t i = 0; i < active_fds.size(); ++i) {
 			for (size_t j = 0; j < _poll_fd_vector.size(); ++j) {
-				if (_poll_fd_vector[j].fd == active_fds[i].fd) {
+				if (_poll_fd_vector[j].fd == active_fds[i].fd || _socket_map[_poll_fd_vector[j].fd]->getSocketStatus() == WAIT_FOR_RESPONSE) {
 					switch (_socket_map[_poll_fd_vector[j].fd]->getSocketType()){
 						case SERVER:
 							handleServerSocketEvents(active_fds[i]);
@@ -109,6 +109,7 @@ void Server::updatePollFdForWrite(int fd) {
 	for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
 		if (_poll_fd_vector[i].fd == fd) {
 			_poll_fd_vector[i].events = POLLOUT;
+            _poll_fd_vector[i].revents = 0;
 			break;
 		}
 	}
@@ -147,6 +148,9 @@ void Server::removeSocketFromMap(int fd) {
 
 
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
+    pid_t cgi_pid;
+    int status;
+    pid_t result_pid;
 	Socket* clientSocket = _socket_map[poll_fd.fd];
 	time_t currentTime = time(NULL);
 	double secondsElapsed = difftime(currentTime, clientSocket->getLastAccessTime());
@@ -194,11 +198,16 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					std::ostringstream oss;
 					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
-					// If you have to wait for CGI
-					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
-					// If you can send a response immediately
                     if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
-
+                        // pollfd_t new_poll_fd;
+                        // new_poll_fd.fd = clientSocket->getHttpResponse()->getCgiPipeFd();
+                        // new_poll_fd.events = POLLIN;
+                        // new_poll_fd.revents = 0;
+                        // fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
+                        // _poll_fd_vector.push_back(new_poll_fd);
+                        // _socket_map[new_poll_fd.fd] = clientSocket;
+					    // _socket_map[new_poll_fd.fd]->resetFlags();
+                        updatePollFdForWrite(poll_fd.fd);
                         clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
                     } else {
                         clientSocket->setSocketStatus(SEND_RESPONSE);
@@ -209,56 +218,36 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			}
 			break;
 		case WAIT_FOR_RESPONSE:
-            if (poll_fd.revents & POLLIN) {
-            char buffer[1024];
-            std::string cgiOutput;
-            ssize_t bytesRead;
-            int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
-            while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
-                cgiOutput.append(buffer, bytesRead);
-            }
-            if (bytesRead == -1) {
-                std::ostringstream oss;
-                oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
-                LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
-                removeSocketFromMap(poll_fd.fd);
-                return;
-            }
-            if (bytesRead == 0) {
-                close(cgiPipeFd);
-                clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
-                clientSocket->getHttpResponse()->finalizeCgiResponse();
-                clientSocket->setSocketStatus(SEND_RESPONSE);
-                updatePollFdForWrite(poll_fd.fd);
-            }
-            }
-            if (poll_fd.revents & POLLIN) {
-            char buffer[1024];
-            std::string cgiOutput;
-            ssize_t bytesRead;
-            int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
-            while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
-                cgiOutput.append(buffer, bytesRead);
-            }
-            if (bytesRead == -1 && errno != EAGAIN) {
-                std::ostringstream oss;
-                oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
-                LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
-                removeSocketFromMap(poll_fd.fd);
-                return;
-            }
-            if (bytesRead == 0) {
-                close(cgiPipeFd);
-                clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
-                clientSocket->getHttpResponse()->finalizeCgiResponse();
-                clientSocket->setSocketStatus(SEND_RESPONSE);
-                updatePollFdForWrite(poll_fd.fd);
-            }
+            cgi_pid = clientSocket->getHttpResponse()->getCgiPid();
+            result_pid = waitpid(cgi_pid, &status, WNOHANG);
+            if (result_pid != -1 && result_pid != 0) {
+                LOG_DEBUG_NAME("Wait for response", _server_config[0].server_name);
+                char buffer[1024];
+                std::string cgiOutput;
+                ssize_t bytesRead;
+                int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
+                while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
+                    cgiOutput.append(buffer, bytesRead);
+                }
+                if (bytesRead == -1) {
+                    std::ostringstream oss;
+                    oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
+                    LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
+                    removeSocketFromMap(poll_fd.fd);
+                    return;
+                }
+                if (bytesRead == 0) {
+                    close(cgiPipeFd);
+                    clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
+                    clientSocket->getHttpResponse()->finalizeCgiResponse();
+                    clientSocket->setSocketStatus(SEND_RESPONSE);
+                    updatePollFdForWrite(poll_fd.fd);
+                }
             }
 			break;
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
-				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
+				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); 
 				clientSocket->sendtoClient(&responseStr);
 				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
 				if (clientSocket->hasHttpRequest() && clientSocket->getHttpRequest()->isKeepAlive()) {
