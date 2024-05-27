@@ -73,11 +73,10 @@ void cleanPath(std::string& path, const std::string& serverRoot){
 void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
 	cleanPath(path, server.root);
-	struct stat fileInfo;
 	if(!server.locations.empty()){
 		if(path.find(server.locations[0].module, 0) == 0){
 			path = server.locations[0].root + path;
-			if(stat(path.c_str(), &fileInfo) != -1 && S_ISREG(fileInfo.st_mode)){
+			if(isFile(path.c_str())){
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
@@ -87,7 +86,7 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 	} else {
 		if(path.find(server.post_dir, 0) == 0){
 			path = server.root + path;
-			if(stat(path.c_str(), &fileInfo) != -1 && S_ISREG(fileInfo.st_mode)){
+			if(isFile(path.c_str())){
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
@@ -102,26 +101,28 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
+	// Not supporting Delete Method
 	if(isCGI(request.getUri())){
-		handleCGI(server, request); // Needs to be implemented
+		makeDefaultErrorResponse(405);
 		return;
 	}
-	// Check if there is a submit folder where it will be written the file.
 	std::string path;
-	if(isMethodAllowed(server, "DELETE")){
-		composeDeleteUrl(server, request, path);
-		if(!path.empty()){
-			if(std::remove(path.c_str()) == 0){
-				LOG_INFO("FILE Deleted successfuly.");
-				makeDefaultErrorResponse(200);
-			}else
-				LOG_INFO("FILE could not be deleted.");
-				makeDefaultErrorResponse(500);
-		} else
-			LOG_INFO("Delete encountered a problem.");
-	} else {
+	if(!isMethodAllowed(server, "DELETE")){
 		LOG_INFO("DELETE Method not allowed.");
 		makeDefaultErrorResponse(405);
+		return;
+	}
+	composeDeleteUrl(server, request, path);
+	if(path.empty()){
+		LOG_INFO("Delete encountered a problem.");
+		return;
+	}
+	if(std::remove(path.c_str()) == 0){
+		LOG_INFO("FILE Deleted successfuly.");
+		makeDefaultErrorResponse(200);
+	}else{
+		LOG_INFO("FILE could not be deleted.");
+		makeDefaultErrorResponse(500);
 	}
 }
 
@@ -129,10 +130,8 @@ void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, 
 
 bool HttpResponse::storeFormData(const std::string& formData, std::string& path) {
 	std::stringstream time_int;
-	struct stat fileInfo;
 	time_int << time(NULL);
-	stat(path.c_str(), &fileInfo);
-	if(S_ISDIR(fileInfo.st_mode)){
+	if(isDirectory(path.c_str())){
 		std::string filename = path + "/" + "form_submission_" + time_int.str() + ".txt";
 		std::ofstream outFile(filename.c_str(), std::ios_base::app);
 		if (!outFile) {
@@ -158,12 +157,15 @@ bool HttpResponse::storeFormData(const std::string& formData, std::string& path)
 
 void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
+	if(path.empty() || path[0] != '/'){
+		path.clear();
+		return;
+	}
 	cleanPath(path, server.root);
-	struct stat fileInfo;
 	if(!server.locations.empty()){
 		if(path.find(server.locations[0].module, 0) == 0){
 			path = server.locations[0].root + path;
-			if(stat(path.c_str(), &fileInfo) != -1 && S_ISDIR(fileInfo.st_mode)){
+			if(isDirectory(path.c_str())){
 				LOG_INFO("POST Request will be saved at: " + path);
 				return;
 			}
@@ -171,10 +173,21 @@ void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequ
 	} else {
 		if(path.find(server.post_dir, 0) == 0){
 			path = server.root + path;
-			if(stat(path.c_str(), &fileInfo) != -1 && S_ISDIR(fileInfo.st_mode)){
+			if(isDirectory(path.c_str())){
 				LOG_INFO("POST Request will be saved at: " + path);
 				return;
 			}
+		}
+	}
+	size_t start = path.find_last_of('/', path.size());
+	if(start != std::string::npos){
+		std::string lastElement = path.substr(start + 1, path.size() - start - 1);
+		if(MimeTypeDetector::getInstance().getMimeType(lastElement) != "application/octet-stream"){
+			if(isDirectory(path.substr(0, start).c_str())){
+					LOG_INFO("POST Request will be saved at a new file: " + path);
+					return;
+			} else
+				LOG_ERROR("The requested path is not valid: " + path);
 		}
 	}
 	path.clear();
@@ -249,8 +262,7 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 			makeDefaultErrorResponse(400);
 			return false;
 		}
-		struct stat fileInfo;
-		if(stat(filename.c_str(), &fileInfo) == 0){
+		if(isFile(filename.c_str())){
 			LOG_INFO("File already exists, overwriting not allowed at the: " + filename);
 			return true;
 		}
@@ -302,29 +314,27 @@ void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, co
 	}
 	// Check if there is a submit folder where it will be written the file.
 	std::string path;
-	if(isMethodAllowed(server, "POST")){
-		composePostUrl(server, request, path);
-		if(!path.empty()){
-	
-			std::string contentType(request.getHeaders().find("Content-Type")->second);
-			if(contentType.empty()){
-				LOG_ERROR("No Content-Type found.");
-				makeDefaultErrorResponse(400);
-				return;
-			}
-			if(contentType == "multipart/form-data")
-				handleMultipart(request, path);
-			else if(contentType == "application/x-www-form-urlencoded"){
-				if(!storeFormData(urlDecode(request.getBody()), path))
-					makeDefaultErrorResponse(400);
-				else
-					makeDefaultErrorResponse(200);
-			}else
-				makeDefaultErrorResponse(400);
-		} else
-			makeDefaultErrorResponse(400);
-	} else
+	if(!isMethodAllowed(server, "POST"))
 		makeDefaultErrorResponse(405);
+	
+	composePostUrl(server, request, path);
+	if(path.empty())
+		makeDefaultErrorResponse(400);
+	std::string contentType(request.getHeaders().find("Content-Type")->second);
+	if(contentType.empty()){
+		LOG_ERROR("No Content-Type found.");
+		makeDefaultErrorResponse(400);
+		return;
+	}
+	if(contentType == "multipart/form-data")
+		handleMultipart(request, path);
+	else if(contentType == "application/x-www-form-urlencoded"){
+		if(!storeFormData(urlDecode(request.getBody()), path))
+			makeDefaultErrorResponse(400);
+		else
+			makeDefaultErrorResponse(200);
+	}else
+		makeDefaultErrorResponse(400);
 }
 
 // --------------------------------- GET Method --------------------------------------
@@ -381,7 +391,6 @@ void HttpResponse::setResponse() {
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
 	cleanPath(path, server.root);
-	struct stat fileInfo;
 	if(!server.locations.empty()){
 		if(!server.locations[0].root.empty()){
 			size_t pos;
@@ -391,7 +400,7 @@ void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpReq
 		} else{
 			path = server.root + path;
 		}
-		if(stat(path.c_str(), &fileInfo) == -1){
+		if(!isValidPath(path.c_str())){
 			if(!server.locations[0].index.empty()){
 				path = server.locations[0].root + '/' + server.locations[0].index;
 				return;
@@ -401,7 +410,7 @@ void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpReq
 		return;
 	}else{
 		path = server.root + path;
-		if(stat(path.c_str(), &fileInfo) == -1){
+		if(!isValidPath(path.c_str())){
 			if(!server.index.empty()){
 				path = server.root + '/' + server.index;
 				return;
@@ -558,6 +567,14 @@ bool HttpResponse::checkAutoindex(ServerDirectives& server){
 	else if(server.autoindex == "on")
 		return true;
 	return false;
+}
+
+bool HttpResponse::isValidPath(const char* path){
+	struct stat fileInfo;
+	if (stat(path, &fileInfo) == -1) {
+		return false;
+	}
+	return S_ISREG(fileInfo.st_mode) || S_ISDIR(fileInfo.st_mode);
 }
 
 bool HttpResponse::isDirectory(const char* path){

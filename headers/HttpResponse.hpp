@@ -72,6 +72,7 @@ private:
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
 	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
+	bool	isValidPath(const char* path);
 
 public:
 	HttpResponse(const int code);
