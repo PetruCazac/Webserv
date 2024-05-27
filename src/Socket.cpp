@@ -19,6 +19,9 @@ Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1
 
 Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)) {
 	_socket_type = CLIENT;
+	_endBody = 0;
+	_bodyLength = 0;
+	_headerComplete = false;
 	setSocketStatus(RECEIVE);
 }
 
