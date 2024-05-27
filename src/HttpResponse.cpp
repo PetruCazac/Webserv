@@ -81,7 +81,7 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
-				makeDefaultErrorResponse(400);
+				makeDefaultErrorResponse(404);
 		} else
 			makeDefaultErrorResponse(405);
 	} else {
@@ -91,7 +91,7 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
-				makeDefaultErrorResponse(400);
+				makeDefaultErrorResponse(404);
 		} else
 			makeDefaultErrorResponse(405);
 	}
@@ -111,14 +111,17 @@ void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, 
 	if(isMethodAllowed(server, "DELETE")){
 		composeDeleteUrl(server, request, path);
 		if(!path.empty()){
-			if(std::remove(path.c_str()) == 0)
+			if(std::remove(path.c_str()) == 0){
 				LOG_INFO("FILE Deleted successfuly.");
-			else
+				makeDefaultErrorResponse(200);
+			}else
 				LOG_INFO("FILE could not be deleted.");
 				makeDefaultErrorResponse(500);
-		} else{
+		} else
 			LOG_INFO("Delete encountered a problem.");
-		}
+	} else {
+		LOG_INFO("DELETE Method not allowed.");
+		makeDefaultErrorResponse(405);
 	}
 }
 
@@ -160,7 +163,7 @@ void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequ
 	if(!server.locations.empty()){
 		if(path.find(server.locations[0].module, 0) == 0){
 			path = server.locations[0].root + path;
-			if(stat(path.c_str(), &fileInfo) != -1){
+			if(stat(path.c_str(), &fileInfo) != -1 && S_ISDIR(fileInfo.st_mode)){
 				LOG_INFO("POST Request will be saved at: " + path);
 				return;
 			}
@@ -168,23 +171,9 @@ void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequ
 	} else {
 		if(path.find(server.post_dir, 0) == 0){
 			path = server.root + path;
-			int i = stat(path.c_str(), &fileInfo);
-			if(i != -1){
+			if(stat(path.c_str(), &fileInfo) != -1 && S_ISDIR(fileInfo.st_mode)){
 				LOG_INFO("POST Request will be saved at: " + path);
 				return;
-			}
-		}
-	}
-	size_t start = path.find_last_of('/', path.size());
-	if(start != std::string::npos){
-		std::string lastElement = path.substr(start + 1, path.size() - start - 1);
-		if(MimeTypeDetector::getInstance().getMimeType(lastElement) != "application/octet-stream"){
-			if(stat(path.substr(0, start).c_str(), &fileInfo) != -1){
-				if(S_ISDIR(fileInfo.st_mode)){
-					LOG_INFO("POST Request will be saved at a new file: " + path);
-					return;
-				}
-				LOG_ERROR("The requested path is not valid: " + path);
 			}
 		}
 	}
@@ -193,29 +182,14 @@ void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequ
 }
 
 std::string HttpResponse::createFilename(std::string& path, std::map<std::string, std::string>& metadata){
-	std::string filePath;
 	std::string fileName = metadata.find("filename")->second;
-	size_t last = path.find_last_of('/');
-	if(last == std::string::npos)
-		return "";
-	if(MimeTypeDetector::getInstance().getMimeType(path.substr(last + 1, path.size() - last - 1)) != "application/octet-stream")
-		filePath = path.substr(0, last);
-	else
-		filePath = path;
-
-	struct stat fileInfo;
-	if(stat(filePath.c_str(), &fileInfo))
-		return "";
-	std::string filetype = MimeTypeDetector::getInstance().getMimeType(fileName);
-	if(filetype == "application/octet-stream")
-		return "";
-	if(filetype != metadata.find("Content-Type:")->second)
-		fileName += MimeTypeDetector::getInstance().getExtension(filetype);
-	if(S_ISDIR(fileInfo.st_mode)){
-		filePath = filePath + '/' + fileName;
-		return filePath;
-	} else
-		return "";
+	if(MimeTypeDetector::getInstance().getMimeType(fileName) != _contentType){
+		fileName += MimeTypeDetector::getInstance().getExtension(_contentType);
+		path = path + '/' + fileName;
+	} else {
+		path = path + '/' + fileName;
+	}
+	return path;
 }
 
 bool HttpResponse::handlePackage(std::string& package, std::string& path){
@@ -317,11 +291,6 @@ void HttpResponse::handleMultipart(const HttpRequest& request, std::string& path
 			return;
 	}
 	makeDefaultErrorResponse(200);
-}
-
-void HttpResponse::handleUriEncoding(const HttpRequest& request, std::string& path){
-	if(!storeFormData(urlDecode(request.getBody()), path))
-		makeDefaultErrorResponse(400);
 }
 
 void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){

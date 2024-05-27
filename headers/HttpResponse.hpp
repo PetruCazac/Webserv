@@ -52,7 +52,6 @@ private:
 	void	runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	void	handleMultipart(const HttpRequest& request, std::string& path);
-	void	handleUriEncoding(const HttpRequest& request, std::string& path);
 	bool	storeFormData(const std::string& formData, std::string& path);
 	std::string	urlDecode(const std::vector<uint8_t>& bodyString);
 	bool	handlePackage(std::string& package, std::string& path);
