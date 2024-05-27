@@ -227,7 +227,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
         //     close(fd);
         // }
         setCgiEnvironment(request, scriptPath);
-
         chdir(getFilePath(scriptPath).c_str());
         execl(scriptPath.c_str(), scriptPath.c_str(), NULL);
         exit(1); 
