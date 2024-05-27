@@ -458,6 +458,7 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
         makeDefaultErrorResponse(500);
         return;
     } else if (pid == 0) {
+        std::cout << "Entering child process: \n\n";
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
@@ -622,7 +623,7 @@ bool	HttpResponse::isMethodAllowed(const ServerDirectives& server, const std::st
 }
 
 bool HttpResponse::isCGI(const std::string& uri){
-	std::string cgiBin = "/cgi_bin";
+	std::string cgiBin = "/cgi_bin/";
 	if(uri.find(cgiBin) == 0)
 		return true;
 	return false;

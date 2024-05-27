@@ -198,6 +198,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
 					// If you can send a response immediately
                     if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
+
                         clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
                     } else {
                         clientSocket->setSocketStatus(SEND_RESPONSE);
@@ -216,7 +217,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
             while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
                 cgiOutput.append(buffer, bytesRead);
             }
-            if (bytesRead == -1 && errno != EAGAIN) {
+            if (bytesRead == -1) {
                 std::ostringstream oss;
                 oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
                 LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
