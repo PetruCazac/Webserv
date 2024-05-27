@@ -161,7 +161,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					removeSocketFromMap(poll_fd.fd);
 					return ;
 				}else if (clientSocket->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
-					clientSocket->setNewHttpResponse(413);
+                    clientSocket->setNewHttpResponse(413);
 					clientSocket->setSocketStatus(SEND_RESPONSE);
 					clientSocket->resetFlags();
 					updatePollFdForWrite(poll_fd.fd);
@@ -171,15 +171,15 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 				} else {
 					std::istringstream iss(std::ios_base::binary);
 					clientSocket->getClientMessage(iss);
-					try {
-						clientSocket->setNewHttpRequest(iss);
-					} catch (const HttpRequestParserException &e) {
-						clientSocket->setNewHttpResponse(400);
-						clientSocket->setSocketStatus(SEND_RESPONSE);
-						_socket_map[poll_fd.fd]->resetFlags();
-						updatePollFdForWrite(poll_fd.fd);
-						return;
-					}
+                    try {
+					    clientSocket->setNewHttpRequest(iss);
+                    } catch (const HttpRequestParserException &e) {
+                        clientSocket->setNewHttpResponse(400);
+                        clientSocket->setSocketStatus(SEND_RESPONSE);
+                        _socket_map[poll_fd.fd]->resetFlags();
+                        updatePollFdForWrite(poll_fd.fd);
+                        return ;
+                    }
 					LOG_INFO("Received Client Message");
 					clientSocket->setNewHttpResponse(_server_config);
 					LOG_INFO("Created Server Response");
