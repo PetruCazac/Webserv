@@ -42,10 +42,6 @@ private:
     pid_t _cgi_pid;
     std::string _cgi_output;
 
-    int _cgi_pipe_fd;
-    bool _is_cgi_response;
-    pid_t _cgi_pid;
-    std::string _cgi_output;
 
 	HttpResponse();
 
@@ -70,7 +66,6 @@ private:
 	// Response Constituting Functions
 	void	readFile(std::string &path);
 	void	makeDefaultErrorResponse(const int code);
-	void readFile(std::string &path);
 	std::string getErrorBody(const int code);
 	void	setHeader(const std::string &header, const std::string &value);
 	void	setResponse();
@@ -87,17 +82,6 @@ public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	bool	isCGI(const std::string &uri);
-	void makeDefaultErrorResponse(const int code);
-    void    setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath);
-    void    setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
-    std::string getFilePath(const std::string& scriptPath) const;
-    int     getCgiPipeFd() const;
-    pid_t   getCgiPid() const;
-    void    appendCgiOutput(const std::string &data);
-    void    finalizeCgiResponse();
-    bool    isCgiResponse() const;
-	bool	isCGI(const std::string &uri);
-	void makeDefaultErrorResponse(const int code);
     void    setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath);
     void    setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
     std::string getFilePath(const std::string& scriptPath) const;
