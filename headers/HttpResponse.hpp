@@ -46,16 +46,24 @@ private:
 
 	// DELETE Method
 	void	runDeleteMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void	composeDeleteUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 
 	// POST Method
-	void 	runPutMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void	runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void	composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
+	void	handleMultipart(const HttpRequest& request, std::string& path);
+	void	handleUriEncoding(const HttpRequest& request, std::string& path);
+	bool	storeFormData(const std::string& formData, std::string& path);
+	std::string	urlDecode(const std::vector<uint8_t>& bodyString);
+	bool	handlePackage(std::string& package, std::string& path);
+	std::string	createFilename(std::string& path, std::map<std::string, std::string>& metadata);
 
 	// Response Constituting Functions
-	void 	readFile(std::string &path);
-	void 	makeDefaultErrorResponse(const int code);
+	void	readFile(std::string &path);
+	void	makeDefaultErrorResponse(const int code);
 	std::string getErrorBody(const int code);
-	void 	setHeader(const std::string &header, const std::string &value);
-	void 	setResponse();
+	void	setHeader(const std::string &header, const std::string &value);
+	void	setResponse();
 
 	// Helper Functions
 	bool	isCGI(const std::string &uri);

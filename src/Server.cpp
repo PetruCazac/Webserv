@@ -137,6 +137,7 @@ void Server::removeSocketFromMap(int fd) {
 	}
 }
 
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 	Socket* clientSocket = _socket_map[poll_fd.fd];
 	time_t currentTime = time(NULL);
@@ -149,10 +150,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 	switch (clientSocket->getSocketStatus()) {
 		case RECEIVE:
 			if (poll_fd.revents & POLLIN) {
-				char buffer[_client_max_body_size];
-				std::memset(buffer, 0, _client_max_body_size);
 				int bytes_read = 0;
-				if (!clientSocket->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
+				if (!clientSocket->receive(poll_fd.fd, bytes_read)) {
 					std::ostringstream oss;
 					oss << "Failed to receive data from client: " << poll_fd.fd;
 					LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
@@ -161,30 +160,37 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
-					clientSocket->setNewHttpResponse(404);
-					removeSocketFromMap(poll_fd.fd);
-					// response.setBody("Request is too big");
+				}else if (clientSocket->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
+					clientSocket->setNewHttpResponse(413);
+					clientSocket->setSocketStatus(SEND_RESPONSE);
+					clientSocket->resetFlags();
+					updatePollFdForWrite(poll_fd.fd);
 					return;
+				}else if(clientSocket->getSocketStatus() == RECEIVE){
+					break;
 				} else {
-					_socket_map[poll_fd.fd]->addClientMessage(buffer);
-					std::istringstream iss(_socket_map[poll_fd.fd]->getClientMessage());
-					_socket_map[poll_fd.fd]->setNewHttpRequest(iss);
-					if(!_socket_map[poll_fd.fd]->isCompleteMessage()){
-						clientSocket->setSocketStatus(RECEIVE);
-						updatePollFdForRead(poll_fd.fd);
+					std::istringstream iss(std::ios_base::binary);
+					clientSocket->getClientMessage(iss);
+					try {
+						clientSocket->setNewHttpRequest(iss);
+					} catch (const HttpRequestParserException &e) {
+						clientSocket->setNewHttpResponse(400);
+						clientSocket->setSocketStatus(SEND_RESPONSE);
+						_socket_map[poll_fd.fd]->resetFlags();
+						updatePollFdForWrite(poll_fd.fd);
 						return;
 					}
 					LOG_INFO("Received Client Message");
-					_socket_map[poll_fd.fd]->setNewHttpResponse(_server_config);
+					clientSocket->setNewHttpResponse(_server_config);
 					LOG_INFO("Created Server Response");
 					std::ostringstream oss;
-					oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
+					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
 					// If you have to wait for CGI
 					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
 					// If you can send a response immediately
 					clientSocket->setSocketStatus(SEND_RESPONSE);
+					_socket_map[poll_fd.fd]->resetFlags();
 					updatePollFdForWrite(poll_fd.fd);
 				}
 			}
@@ -193,11 +199,10 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			break;
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
-				const std::string& responseStr = clientSocket-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
-				LOG_DEBUG(responseStr);
+				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
 				clientSocket->sendtoClient(&responseStr);
 				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
-				if (clientSocket->getHttpRequest()->isKeepAlive()) {
+				if (clientSocket->hasHttpRequest() && clientSocket->getHttpRequest()->isKeepAlive()) {
 					updatePollFdForRead(poll_fd.fd);
 					clientSocket->setSocketStatus(RECEIVE);
 				} else {

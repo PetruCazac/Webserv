@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Request</title>
+</head>
+<body>
+    <h1>Delete Resource</h1>
+    <form id="deleteForm">
+        <label for="url">Enter URL to delete:</label>
+        <input type="text" id="url" name="url" required>
+        <button type="submit">Delete</button>
+    </form>
+
+    <script>
+        document.getElementById('deleteForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting the default way
+
+            const url = document.getElementById('url').value;
+
+            fetch(url, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Resource deleted successfully.');
+                } else {
+                    alert('Error deleting resource. Status: ' + response.status);
+                }
+            })
+            .catch(error => {
+                alert('Error deleting resource: ' + error);
+            });
+        });
+    </script>
+</body>
+</html>
