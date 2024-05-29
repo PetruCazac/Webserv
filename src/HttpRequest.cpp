@@ -7,8 +7,6 @@
 #include <vector>			// std::vector
 #include <fstream>
 
-void printHttpRequest(HttpRequest &httpRequest);
-
 struct Methods {
 	std::string name;
 	HttpMethods method;
@@ -51,7 +49,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	printHttpRequest(*this);
+	printHttpRequest();
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
@@ -158,8 +156,7 @@ const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
 }
 
-// Print
-
+// Print HTTP request //
 void printMethod(HttpMethods method) {
 	Methods methods[] = {
 		{"GET", GET},
@@ -173,33 +170,26 @@ void printMethod(HttpMethods method) {
 	const int size = sizeof(methods) / sizeof(methods[0]);
 	for (int i = 0; i != size; i++) {
 		if (method == methods[i].method)
-			std::cout << "[" << methods[i].name << "]" << std::endl;
+			std::cout << "Method: [" << methods[i].name << "]" << std::endl;
 	}
 }
 
-void printHttpRequest(HttpRequest &httpRequest) {
-	printMethod(httpRequest.getMethod());
-	std::cout << "[URI: " << httpRequest.getUri() << "]" << std::endl;
-	std::cout << "[Query: " << httpRequest.getQuery() << "]" << std::endl;
-	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
-	std::map<std::string, std::string> headers = httpRequest.getHeaders();
-	if (headers.size() == 0)
-		std::cout << "[no headers]" << std::endl;
-	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+void HttpRequest::printHttpRequest() const {
+	printMethod(this->getMethod());
+	std::cout << "URI: [" << _uri << "]" << std::endl;
+	std::cout << "Query: [" << _query << "]" << std::endl;
+	std::cout << "HTTP version: [" << _httpVersion << "]" << std::endl;
+	std::cout << "Headers:" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); it++) {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
-	std::cout << "[Boundary: " << httpRequest.getBoundary() << "]" << std::endl;
-	std::vector<uint8_t> body = httpRequest.getBody();
-	if (body.size() == 0)
-		std::cout << "[no body]" << std::endl;
-	else {
-		std::cout << "[";
-		for (std::vector<uint8_t>::iterator it = body.begin(); it != body.end(); it++) {
-			std::cout << *it;
-		}
-		std::cout << "]";
-		std::cout << std::endl;
+	std::cout << "Boundary: [" << _boundary << "]" << std::endl;
+	std::cout << "Body: [";
+	for (std::vector<uint8_t>::const_iterator it = _body.begin(); it != _body.end(); it++) {
+		std::cout << *it;
 	}
+	std::cout << "]";
+	std::cout << std::endl;
 }
 
 bool HttpRequest::isKeepAlive() const {
