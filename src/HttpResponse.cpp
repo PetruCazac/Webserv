@@ -5,6 +5,8 @@
 #include <vector>
 #include <unistd.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <ctime>
 #include <fstream>
@@ -447,56 +449,22 @@ void HttpResponse::findLocationUri(const std::vector<LocationDirectives>& locati
 }
 
 const std::string getRoot(const ServerDirectives& config){
-    if(!config.locations.empty()){
-        return config.locations[0].root;
-    } else
-        return config.root;
+	if(!config.locations.empty()){
+		return config.locations[0].root;
+	} else
+		return config.root;
 }
 
-void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
-	std::string scriptPath = request.getUri();
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        makeDefaultErrorResponse(500);
-        return;
-    }
-    pid_t pid = fork();
-    if (pid == -1) {
-        makeDefaultErrorResponse(500);
-        return;
-    } else if (pid == 0) {
-        std::cout << "Entering child process: \n\n";
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
-        // if (request.getMethod() == POST) {
-        //     std::ofstream cgiInput("cgi_input.txt");
-        //     cgiInput << request.getBody();
-        //     cgiInput.close();
-        //     int fd = open("cgi_input.txt", O_RDONLY);
-        //     dup2(fd, STDIN_FILENO);
-        //     close(fd);
-        // }
-        // setCgiEnvironment(request, scriptPath);
-        // chdir(getFilePath(scriptPath).c_str());
-        std::string fullScriptPath = "." + scriptPath;
-        char *argv[] = { const_cast<char*>(fullScriptPath.c_str()), NULL };
-        if (chdir(getRoot(config).c_str()) == -1){
-            LOG_ERROR("CHDIR_CALL_FAILED");
-            exit(2);
-        }
-        if (execve(argv[0],argv, NULL) == -1 ) {
-            LOG_ERROR("EXECVE failed");
-            perror("execve");
-        }
-        exit(1); 
-    } else {
-        close(pipefd[1]); 
-        fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
-        _cgi_pipe_fd = pipefd[0];
-        _cgi_pid = pid;
-        _is_cgi_response = true;
-    }
+std::string HttpResponse::parseArguments(const HttpRequest& request){
+	if(request.getMethod() == POST){
+		std::vector<uint8_t> body = request.getBody();
+		std::stringstream ss;
+		for(size_t i = 0; i < body.size(); i++)
+			ss << static_cast<char>(body[i]);
+		std::string arg = ss.str();
+		return arg;
+	} else
+		return std::string();
 }
 
 std::string getPath(const char *path){
@@ -573,31 +541,6 @@ std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
 	return decoded.str();
 }
 
-// std::string HttpResponse::urlDecode(const std::vector<uint8_t>& bodyString) {
-// 	std::ostringstream decoded;
-// 	for(size_t element = 0; element < bodyString.size(); element++){
-// 		std::string bodyLine(bodyString[element].c_str());
-// 		for (std::size_t i = 0; i < bodyLine.length(); ++i) {
-// 			if (bodyString[i] == '%') {
-// 				if (i + 2 < bodyString.length()) {
-// 					char hex1 = bodyString[i + 1];
-// 					char hex2 = bodyString[i + 2];
-// 					decoded << static_cast<char>(hexCharToInt(hex1) * 16 + hexCharToInt(hex2));
-// 					i += 2;
-// 				} else {
-// 					// Could throw an exception
-// 					LOG_ERROR("Body decoding error");
-// 				}
-// 			} else if (bodyString[i] == '+') {
-// 				decoded << ' ';
-// 			} else {
-// 				decoded << bodyString[i];
-// 			}
-// 		}
-// 	}
-// 	return decoded.str();
-// }
-
 bool HttpResponse::checkAutoindex(ServerDirectives& server){
 	if(!server.locations.empty()){
 		if(server.locations[0].autoindex == "on")
@@ -645,56 +588,138 @@ bool HttpResponse::isCGI(const std::string& uri){
 	return false;
 }
 
+
+void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
+	std::string scriptPath = request.getUri();
+	std::string arg = parseArguments(request);
+	std::cout << arg << std::endl;
+	std::vector<const char*> env;
+
+	std::string requestMethod("REQUEST_METHOD=" + request.getMethodStr());
+	env.push_back(requestMethod.c_str());
+	std::string scriptName("SCRIPT_NAME=" + scriptPath);
+	env.push_back(scriptName.c_str());
+	std::string pathInfo("PATH_INFO=" + scriptPath);
+	env.push_back(pathInfo.c_str());
+
+	std::string queryString = request.getQuery();
+	if (!queryString.empty()) {
+		queryString = "QUERY_STRING=" + queryString;
+		env.push_back(queryString.c_str());
+	}
+
+	std::string contentLength = request.getContentLength();
+	if (!contentLength.empty()) {
+		std::string contentLength("CONTENT_LENGTH=" + contentLength);
+		env.push_back(contentLength.c_str());
+	}
+	env.push_back(NULL);
+
+	for(size_t i = 0; i < env.size(); i++){
+		if(env[i] != NULL)
+			std::cout << env[i] << std::endl;
+	}
+	std::string fullScriptPath = "." + scriptPath;
+	std::string compiler = findCgiType(scriptPath);
+	std::vector <const char*> argv;
+	argv.push_back(compiler.c_str());
+	argv.push_back(fullScriptPath.c_str());
+	argv.push_back(NULL);
+
+	std::cout << "Arguments ##" << std::endl;
+	std::cout << "Arg 1: " << argv[0] << "##" << std::endl;
+	std::cout << "Arg 2: " << argv[1] << "##" << std::endl;
+
+	int pipefd[2];
+	if (pipe(pipefd) == -1) {
+		makeDefaultErrorResponse(500);
+		return;
+	}
+	// if(request.getMethod() == GET)
+	// 	setCgiEnvironment(request, scriptPath, env);
+
+	pid_t pid = fork();
+	if (pid == -1) {
+		makeDefaultErrorResponse(500);
+		return;
+	} else if (pid == 0) {
+		std::cout << "Entering child process: \n\n";
+		close(pipefd[0]);
+		dup2(pipefd[1], STDOUT_FILENO);
+		close(pipefd[1]);
+		if (chdir(getRoot(config).c_str()) == -1){
+			LOG_ERROR("CHDIR_CALL_FAILED");
+			exit(2);
+		}
+		LOG_DEBUG(argv[0]);
+		LOG_DEBUG(argv[1]);
+		if (execve(argv[0], const_cast<char* const*>(argv.data()), const_cast<char* const*>(env.data())) == -1 ) {
+			LOG_ERROR("EXECVE failed");
+			perror("execve");
+		}
+		exit(1);
+	} else {
+		if(request.getMethod() == POST)
+			write(pipefd[1], arg.c_str(), arg.size());
+		close(pipefd[1]); 
+		fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
+		_cgi_pipe_fd = pipefd[0];
+		_cgi_pid = pid;
+		_is_cgi_response = true;
+	}
+}
+
+// void HttpResponse::setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath, std::vector<const char*>& env) {
+// }
+
 int HttpResponse::getCgiPipeFd() const {
-    return _cgi_pipe_fd;
+	return _cgi_pipe_fd;
 }
 
 pid_t HttpResponse::getCgiPid() const {
-    return _cgi_pid;
+	return _cgi_pid;
 }
 
 void HttpResponse::appendCgiOutput(const std::string &data) {
-    _cgi_output.append(data);
+	_cgi_output.append(data);
 }
 
 void HttpResponse::finalizeCgiResponse() {
-    _response << "HTTP/1.1 200 OK\r\n";
-    _response << "Content-Type: text/html\r\n";
-    _response << "Content-Length: " << _cgi_output.size() << "\r\n";
-    _response << "\r\n";
-    _response << _cgi_output;
+	_response << "HTTP/1.1 200 OK\r\n";
+	_response << "Content-Type: text/html\r\n";
+	_response << "Content-Length: " << _cgi_output.size() << "\r\n";
+	_response << "\r\n";
+	_response << _cgi_output;
 }
 
 bool HttpResponse::isCgiResponse() const {
-    return _is_cgi_response;
+	return _is_cgi_response;
 }
 
-void HttpResponse::setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath) {
-    setenv("REQUEST_METHOD", request.getMethodStr().c_str(), 1);
-    setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
-    setenv("PATH_INFO", scriptPath.c_str(), 1);
-
-    std::string queryString = request.getQueryString();
-    if (!queryString.empty()) {
-        setenv("QUERY_STRING", queryString.c_str(), 1);
-    }
-
-    std::string contentLength = request.getContentLength();
-    if (!contentLength.empty()) {
-        setenv("CONTENT_LENGTH", contentLength.c_str(), 1);
-    }
+std::string HttpResponse::findCgiType(std::string& uri){
+	size_t extensionPos = uri.find_last_of('.', uri.size());
+	std::string extension = uri.substr(extensionPos, uri.size() - extensionPos);
+	if(extension == ".py"){
+		return std::string("python3");
+	} else if(extension == ".sh"){
+		return std::string("");
+	} else if(extension == ".php"){
+		return std::string("php");
+	}
+	return std::string("");
 }
+
 
 std::string HttpResponse::getFilePath(const std::string& scriptPath, std::string root) const {
-    size_t lastSlash = scriptPath.find_last_of('/');
-    if (lastSlash == std::string::npos) {
-        return root + '/' + ".";
-    }
-    return  root + scriptPath.substr(0, lastSlash);
+	size_t lastSlash = scriptPath.find_last_of('/');
+	if (lastSlash == std::string::npos) {
+		return root + '/' + ".";
+	}
+	return  root + scriptPath.substr(0, lastSlash);
 }
 
 void HttpResponse::setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response) {
-    _cgi_pipe_fd = cgi_pipe_fd;
-    _cgi_pid = cgi_pid;
-    _is_cgi_response = is_cgi_response;
+	_cgi_pipe_fd = cgi_pipe_fd;
+	_cgi_pid = cgi_pid;
+	_is_cgi_response = is_cgi_response;
 }

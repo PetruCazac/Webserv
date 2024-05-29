@@ -5,18 +5,22 @@
 </head>
 <body>
     <h1>Test GET Request</h1>
-    <form action="/cgi-bin/get.cgi" method="get">
+    <form action="/cgi_bin/pythonTest.py" method="get">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name">
-        <label for="name">Password:</label>
-        <input type="text" id="password" name="password">
+        <label for="name">Surname:</label>
+        <input type="text" id="surname" name="surname">
         <input type="submit" value="Submit">
     </form>
 
     <h1>Test POST Request</h1>
-    <form action="/cgi-bin/post.cgi" method="post">
+    <form action="/cgi_bin/post.cgi" method="post">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name">
+        <label for="age">Age:</label>
+        <input type="text" id="age" name="age">
+        <label for="colout">Favourite colour:</label>
+        <input type="text" id="colour" name="colour">
         <input type="submit" value="Submit">
     </form>
 </body>

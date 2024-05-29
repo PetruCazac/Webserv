@@ -51,7 +51,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	// printHttpRequest(*this);
+	printHttpRequest(*this);
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
@@ -222,13 +222,6 @@ const std::string HttpRequest::getMethodStr() const {
         "DELETE"
     };
     return methods[_method];
-}
-
-const std::string HttpRequest::getQueryString() const {
-    size_t pos = _uri.find('?');
-    if (pos == std::string::npos)
-        return "";
-    return _uri.substr(pos + 1);
 }
 
 const std::string HttpRequest::getContentLength() const {

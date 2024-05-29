@@ -74,7 +74,7 @@ void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 }
 
 void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
-	LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
+	// LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
 	switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
 		case LISTEN_STATE:
 			if (poll_fd.revents & POLLIN) {

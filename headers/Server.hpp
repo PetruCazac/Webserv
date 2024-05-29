@@ -1,6 +1,8 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include <sys/wait.h>
+
 #include "Socket.hpp"
 #include "Config.hpp"
 
