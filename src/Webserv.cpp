@@ -14,10 +14,10 @@ Webserv::Webserv(char* str){
 	}
 }
 Webserv::~Webserv(){
-    LOG_DEBUG("Webserv Destructor called.");
-    for (size_t i = 0; i < _servers.size(); ++i){
-        _servers[i].closeServer();
-    }
+	LOG_DEBUG("Webserv Destructor called.");
+	for (size_t i = 0; i < _servers.size(); ++i){
+		_servers[i].closeServer();
+	}
 }
 
 void Webserv::init_servers() {
@@ -40,26 +40,26 @@ void Webserv::init_servers() {
 }
 
 void Webserv::run_servers(void){
-    int timesincelastcheck = 0;
+	int timesincelastcheck = 0;
 	while(true){
 		if(signalFlag == SIGINT){
 			this->~Webserv();
 			exit(EXIT_SUCCESS);
 		}
 		updatePollFds();
-        int result = poll(&_master_poll_fds[0], _master_poll_fds.size(), 100) > 0;
+		int result = poll(&_master_poll_fds[0], _master_poll_fds.size(), 100) > 0;
 		if (result > 0){
 			for (size_t i = 0; i < _servers.size(); ++i){
 				_servers[i].handleEvents(_master_poll_fds);
 			}
 		}
-        timesincelastcheck += 100;
-        if (timesincelastcheck > _webserv_config._httpConfig.keepalive_timeout * 1000){
-            for (size_t i = 0; i < _servers.size(); ++i){
-                _servers[i].checkKeepAlive();
-            }
-            timesincelastcheck = 0;
-        }
+		timesincelastcheck += 100;
+		if (timesincelastcheck > _webserv_config._httpConfig.keepalive_timeout * 1000){
+			for (size_t i = 0; i < _servers.size(); ++i){
+				_servers[i].checkKeepAlive();
+			}
+			timesincelastcheck = 0;
+		}
 	}
 }
 

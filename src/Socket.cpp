@@ -2,6 +2,9 @@
 
 Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)){
 	_socket_type = SERVER;
+	_endBody = 0;
+	_bodyLength = 0;
+	_headerComplete = false;
 	setSocketStatus(LISTEN_STATE);
 	LOG_DEBUG("Constructor for listening Socket called.");
 	if (!setupAddrInfo()) {
@@ -16,6 +19,9 @@ Socket::Socket(std::string& listen_port) : _listen_port(listen_port), _sockfd(-1
 
 Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _http_request(NULL), _http_response(NULL), _last_access_time(time(NULL)) {
 	_socket_type = CLIENT;
+	_endBody = 0;
+	_bodyLength = 0;
+	_headerComplete = false;
 	setSocketStatus(RECEIVE);
 }
 
@@ -26,14 +32,14 @@ Socket::~Socket() {
 		freeaddrinfo(_addr_info);
 		LOG_DEBUG("Address info freed.");
 	}
-    if (_http_request != NULL) {
-        delete _http_request;
-        LOG_DEBUG("HTTP Request freed.");
-    }
-    if (_http_response != NULL) {
-        delete _http_response;
-        LOG_DEBUG("HTTP Response freed.");
-    }
+	if (_http_request != NULL) {
+		delete _http_request;
+		LOG_DEBUG("HTTP Request freed.");
+	}
+	if (_http_response != NULL) {
+		delete _http_response;
+		LOG_DEBUG("HTTP Response freed.");
+	}
 }
 
 bool Socket::setupAddrInfo() {
@@ -125,7 +131,7 @@ bool Socket::sendtoClient(const std::string* data) {
 	size_t len_sent = 0;
 	int bytes_sent = 0;
 	size_t len = data->length();
-    _last_access_time = time(NULL);
+	_last_access_time = time(NULL);
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
 		if (bytes_sent < 0) {
@@ -138,9 +144,51 @@ bool Socket::sendtoClient(const std::string* data) {
 	return true;
 }
 
+void Socket::resetFlags(void){
+	_binaryVector.clear();
+	_endBody = 0;
+	_bytesRead = 0;
+	_bodyLength = 0;
+	_headerComplete = false;
+}
 
-bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read) {
-    _last_access_time = time(NULL);
+bool Socket::isMessageReceived(int& bytes_read){
+	_bytesRead += bytes_read;
+	std::string _clientMessage(_binaryVector.begin(), _binaryVector.end());
+	if(!_headerComplete){
+		_endBody = _clientMessage.find("\r\n\r\n");
+		_endBody += 4;
+		if(_endBody == std::string::npos)
+			return false;
+		_headerComplete = true;
+	}
+	if(_bodyLength == 0){
+		size_t startContent = _clientMessage.find("Content-Length: ");
+			if(startContent == std::string::npos){
+				return true;
+			} else if(startContent != std::string::npos){
+				size_t endContent = _clientMessage.find("\r\n");
+				_bodyLength = static_cast<size_t>(std::atol(_clientMessage.substr(startContent + 16, (endContent - startContent - 16)).c_str()));
+			}
+	}
+	size_t size = _bytesRead - _endBody;
+	if(size < _bodyLength)
+		return false;
+	else
+		return true;
+}
+
+void printVector(std::vector<char>& _binaryVector){
+	for(size_t i = 0; i < _binaryVector.size(); i++){
+		std::cout << _binaryVector[i];
+	}
+}
+
+bool Socket::receive(int client_fd, int& bytes_read) {
+	_last_access_time = time(NULL);
+	size_t buffer_size = 1024 * 32;
+	char buffer[buffer_size];
+	std::memset(buffer, 0, buffer_size);
 	bytes_read = recv(client_fd, buffer, buffer_size, 0);
 	if (bytes_read == -1) {
 		LOG_ERROR("Failed to receive data.");
@@ -150,9 +198,14 @@ bool Socket::receive(int client_fd, void* buffer, size_t buffer_size, int& bytes
 		LOG_DEBUG("Connection closed by client.");
 		return false;
 	}
-	LOG_DEBUG("Successfully received data.");
-	setSocketStatus(WAIT_FOR_RESPONSE);
-	return bytes_read > 0;
+	_binaryVector.insert(_binaryVector.end(), buffer, buffer + bytes_read);
+	if(isMessageReceived(bytes_read)){
+		// printVector(_binaryVector);
+		LOG_DEBUG("Successfully received data.");
+		setSocketStatus(WAIT_FOR_RESPONSE);
+		return bytes_read > 0;
+	}
+	return true;
 }
 
 void* Socket::get_in_addr(struct sockaddr *sa) {
@@ -182,6 +235,16 @@ HttpRequest* Socket::getHttpRequest() const {
 	return _http_request;
 }
 
+bool Socket::hasHttpRequest() const {
+	if(_http_request != NULL)
+		return true;
+	else
+		return false;
+}
+void Socket::removeRequest(){
+	delete _http_request;
+}
+
 HttpResponse* Socket::getHttpResponse() const {
 	return _http_response;
 }
@@ -202,14 +265,20 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
+void Socket::getClientMessage(std::istringstream& iss){
+	std::string str(_binaryVector.begin(), _binaryVector.end());
+	iss.str(str);
+	_binaryVector.clear();
+}
+
+size_t Socket::getClientBodySize(void){
+	return _bodyLength;
+}
+
 void Socket::setNewHttpResponse(size_t errorCode){
-	if (this->getHttpRequest() == NULL) {
-		LOG_ERROR("The request is not available for a response.");
-		return ;
-	}
 	_http_response = new HttpResponse(errorCode);
 }
 
 time_t Socket::getLastAccessTime() const {
-    return _last_access_time;
+	return _last_access_time;
 }

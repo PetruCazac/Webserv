@@ -16,7 +16,8 @@ enum ValuesEnum {
 	LOG_FILE,
 	ROOT,
 	SEND_TIMEOUT,
-	SERVER_NAME
+	SERVER_NAME,
+	POST_DIR
 };
 
 class DefaultValues{
@@ -33,6 +34,7 @@ class DefaultValues{
 		static const std::string	_ROOT;
 		static const int			_SEND_TIMEOUT;  // For CGI Timeout.
 		static const std::string	_SERVER_NAME;  // MANDATORY
+		static const std::string	_POST_DIR;
 	public:
 		template<typename T>
 		static T getDefaultValue(ValuesEnum directive);

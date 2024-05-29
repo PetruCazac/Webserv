@@ -12,6 +12,7 @@ const std::string	DefaultValues::_LISTEN = "";  // MANDATORY
 const std::string	DefaultValues::_ROOT = "";  // MANDATORY
 const int		DefaultValues::_SEND_TIMEOUT = 10;
 const std::string	DefaultValues::_SERVER_NAME = "";  // MANDATORY
+const std::string	DefaultValues::_POST_DIR = "/submit";
 
 template< >
 std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
@@ -34,6 +35,8 @@ std::string DefaultValues::getDefaultValue(enum ValuesEnum directive){
 			return _ROOT;
 		case SERVER_NAME:
 			return _SERVER_NAME;
+		case POST_DIR:
+			return _POST_DIR;
 		default:
 			return "Unknown directive";
 	}

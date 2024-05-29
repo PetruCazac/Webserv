@@ -8,6 +8,8 @@
 #include <map>
 #include <string>
 #include <istream>
+#include <fcntl.h>
+#include <fcntl.h>
 
 struct MethodsException {
 	enum MethodErrors {
@@ -32,35 +34,64 @@ struct MethodsException {
 class HttpResponse {
 private:
 	std::stringstream _response;
-	std::string _body;
-	std::string _contentType;
+	std::string	_body;
+	std::string	_contentType;
 	std::map<std::string, std::string> _headers;
+	int			_cgi_pipe_fd;
+	bool		_is_cgi_response;
+	pid_t		_cgi_pid;
+	std::string _cgi_output;
+
+
 	HttpResponse();
 
-	ServerDirectives& findServer(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	// GET Method
 	void	runGetMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	findLocationUri(const std::vector<LocationDirectives>& locations, const std::string& uri, LocationDirectives& location);
 	void	composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
-	void readFile(std::string &path);
-	void makeDefaultErrorResponse(const int code);
+
+	// POST Method
+	void	runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void	composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
+	void	handleMultipart(const HttpRequest& request, std::string& path);
+	void	handleUriEncoding(const HttpRequest& request, std::string& path);
+	bool	storeFormData(const std::string& formData, std::string& path);
+	std::string	urlDecode(const std::vector<uint8_t>& bodyString);
+	bool	handlePackage(std::string& package, std::string& path);
+	std::string	createFilename(std::string& path, std::map<std::string, std::string>& metadata);
+
+	// Response Constituting Functions
+	void	readFile(std::string &path);
+	void	makeDefaultErrorResponse(const int code);
 	std::string getErrorBody(const int code);
-	void setHeader(const std::string &header, const std::string &value);
-	void setResponse();
+	void	setHeader(const std::string &header, const std::string &value);
+	void	setResponse();
 
 	// Helper Functions
-	bool	isCGI(const std::string &uri);
 	bool	isMethodAllowed(const ServerDirectives& server, const std::string method);
 	bool	isMethodAllowed(const LocationDirectives& location, const std::string method);
 	bool	isDirectory(const char* path);
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
+	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
+	std::string findCgiType(std::string& request);
 
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	bool	isCGI(const std::string &uri);
+	void setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath, std::vector<const char*>& env);
+	void	setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
+	std::string getFilePath(const std::string& scriptPath, std::string root) const;
+	int		getCgiPipeFd() const;
+	pid_t	getCgiPid() const;
+	void	appendCgiOutput(const std::string &data);
+	void	finalizeCgiResponse();
+	bool	isCgiResponse() const;
+	std::string	parseArguments(const HttpRequest& request);
 
 	const std::stringstream &getResponse() const;
 };

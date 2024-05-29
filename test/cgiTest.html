@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CGI Test</title>
+</head>
+<body>
+    <h1>Test GET Request</h1>
+    <form action="/cgi_bin/pythonTest.py" method="get">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name">
+        <label for="name">Surname:</label>
+        <input type="text" id="surname" name="surname">
+        <input type="submit" value="Submit">
+    </form>
+
+    <h1>Test POST Request</h1>
+    <form action="/cgi_bin/post.cgi" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name">
+        <label for="age">Age:</label>
+        <input type="text" id="age" name="age">
+        <label for="colout">Favourite colour:</label>
+        <input type="text" id="colour" name="colour">
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

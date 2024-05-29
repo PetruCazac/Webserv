@@ -1,6 +1,8 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include <sys/wait.h>
+
 #include "Socket.hpp"
 #include "Config.hpp"
 
@@ -19,7 +21,7 @@ class Server {
 		void addServerConfig(ServerDirectives& serverConfig);
         void closeServer(void);
         void checkKeepAlive(void);
-	private:
+    private:
         void removeSocketFromMap(int fd);
 		const int _client_max_body_size;
         const size_t _keepalive_timeout;

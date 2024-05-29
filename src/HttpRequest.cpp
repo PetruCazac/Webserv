@@ -5,6 +5,7 @@
 #include <sstream>			// std::istringstream
 #include <map>				// std::map
 #include <vector>			// std::vector
+#include <fstream>
 
 void printHttpRequest(HttpRequest &httpRequest);
 
@@ -28,19 +29,28 @@ static HttpMethods methodToEnum(const std::string &method) {
 		if (method == validMethods[i].name)
 			return validMethods[i].method;
 	}
+	// return validMethods[2].method;
 	throw HttpRequestParserException(HttpRequestParserException::METHOD_ERR);
 }
 
 HttpRequest::HttpRequest(std::istream &inputRequest) {
+	// Printing part
+	std::ostringstream output;
+	output << inputRequest.rdbuf();
+	std::string outputString;
+	outputString = output.str();
+	inputRequest.clear();
+	inputRequest.seekg(0, std::ios::beg);
+
 	std::string startLine;
 	std::getline(inputRequest, startLine);
 	if (startLine.empty() || startLine[0] == '\r')
 		throw HttpRequestParserException(HttpRequestParserException::START_LINE_ERR);
 	parseStartLine(startLine);
+	findQuery();
 	parseHeaders(inputRequest);
+	findBoundary();
 	readBody(inputRequest);
-	if (!isValidContentLength())
-		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
 	printHttpRequest(*this);
 }
 
@@ -76,6 +86,30 @@ void HttpRequest::readBody(std::istream &inputRequest) {
 	_body = body;
 }
 
+void HttpRequest::findQuery() {
+	std::string newUri;
+	size_t questionMark = _uri.find('?');
+	if (questionMark != std::string::npos) {
+		newUri = _uri.substr(0, questionMark);
+		_query = _uri.substr(questionMark + 1);
+		_uri = newUri;
+	}
+}
+
+void HttpRequest::findBoundary() {
+	std::map<std::string, std::string>::iterator it = _headers.find("Content-Type");
+	if (it != _headers.end()) {
+		std::string newValue;
+		size_t bound = it->second.find(';');
+		if (bound != std::string::npos) {
+			newValue = it->second.substr(0, bound);
+			size_t boundaryPos = it->second.find("=", bound + 1) + 1;
+			_boundary = it->second.substr(boundaryPos, it->second.size() - boundaryPos);
+			it->second = newValue;
+		}
+	}
+}
+
 bool HttpRequest::isValidHttpVersion() const {
 	static std::string validHttpVersions[5] = {"HTTP/0.9", "HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/3"};
 	for (int i = 0; i != 5; i++) {
@@ -88,7 +122,9 @@ bool HttpRequest::isValidHttpVersion() const {
 bool HttpRequest::isValidContentLength() const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
 	if (it != _headers.end()) {
-		if (_body.size() != static_cast<size_t>(std::atol(it->second.c_str())))
+		size_t bodySize = _body.size();
+		size_t messageSize = static_cast<size_t>(std::atol(it->second.c_str()));
+		if (bodySize != messageSize)
 			return false;
 	}
 	return true;
@@ -102,6 +138,10 @@ const std::string &HttpRequest::getUri() const {
 	return _uri;
 }
 
+const std::string &HttpRequest::getQuery() const {
+	return _query;
+}
+
 const std::string &HttpRequest::getHttpVersion() const {
 	return _httpVersion;
 }
@@ -110,14 +150,17 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 	return _headers;
 }
 
+const std::string &HttpRequest::getBoundary() const {
+	return _boundary;
+}
+
 const std::vector<uint8_t> &HttpRequest::getBody() const {
 	return _body;
 }
 
+// Print
 
-// To be put in a class ////////////////////////////////////////
-
-void printMethod(HttpMethods method) { // delete
+void printMethod(HttpMethods method) {
 	Methods methods[] = {
 		{"GET", GET},
 		{"HEAD", HEAD},
@@ -134,9 +177,10 @@ void printMethod(HttpMethods method) { // delete
 	}
 }
 
-void printHttpRequest(HttpRequest &httpRequest) { // delete
+void printHttpRequest(HttpRequest &httpRequest) {
 	printMethod(httpRequest.getMethod());
-	std::cout << "[" << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[URI: " << httpRequest.getUri() << "]" << std::endl;
+	std::cout << "[Query: " << httpRequest.getQuery() << "]" << std::endl;
 	std::cout << "[" << httpRequest.getHttpVersion() << "]" << std::endl;
 	std::map<std::string, std::string> headers = httpRequest.getHeaders();
 	if (headers.size() == 0)
@@ -144,6 +188,7 @@ void printHttpRequest(HttpRequest &httpRequest) { // delete
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
+	std::cout << "[Boundary: " << httpRequest.getBoundary() << "]" << std::endl;
 	std::vector<uint8_t> body = httpRequest.getBody();
 	if (body.size() == 0)
 		std::cout << "[no body]" << std::endl;
@@ -164,4 +209,24 @@ bool HttpRequest::isKeepAlive() const {
             return true;
     }
     return false;
+}
+
+const std::string HttpRequest::getMethodStr() const {
+    static std::string methods[] = {
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "TRACE",
+        "OPTIONS",
+        "DELETE"
+    };
+    return methods[_method];
+}
+
+const std::string HttpRequest::getContentLength() const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find("Content-Length");
+    if (it != _headers.end())
+        return it->second;
+    return "";
 }

@@ -2,6 +2,9 @@
 #define SOCKET_HPP
 
 #include <vector>
+#include <iostream>
+#include <sstream>
+
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Configuration.hpp"
@@ -45,7 +48,7 @@ class Socket {
 		bool bindAndListen(void);
 		int acceptIncoming(void);
 		bool sendtoClient(const std::string* data);
-		bool receive(int client_fd, void* buffer, size_t buffer_size, int& bytes_read);
+		bool receive(int client_fd, int& bytes_read);
 		int getSockFd(void) const;
 		void* get_in_addr(struct sockaddr *sa);
 		bool setupAddrInfo(void);
@@ -57,17 +60,29 @@ class Socket {
 		void setNewHttpRequest(std::istream &inputRequest);
 		void setNewHttpResponse(std::vector<ServerDirectives> &serverConfig);
 		void setNewHttpResponse(size_t errorCode);
-        time_t getLastAccessTime(void) const;
+		time_t getLastAccessTime(void) const;
+		void getClientMessage(std::istringstream& iss);
+		size_t getClientBodySize(void);
+		bool isMessageReceived(int& bytes_read);
+		void resetFlags(void);
+		bool hasHttpRequest() const;
+		void removeRequest();
 
 	private:
-		std::string     _listen_port;
-		int             _sockfd;
-		addrinfo_t      *_addr_info;
-		SocketType      _socket_type;
-		SocketStatus    _socket_status;
-		HttpRequest     *_http_request;
+		std::string		_listen_port;
+		int				_sockfd;
+		addrinfo_t		*_addr_info;
+		SocketType		_socket_type;
+		SocketStatus	_socket_status;
+		HttpRequest		*_http_request;
 		HttpResponse	*_http_response;
-        time_t          _last_access_time;
+		time_t			_last_access_time;
+	// Message status
+		std::vector<char> _binaryVector;
+		size_t			_endBody;
+		size_t			_bytesRead;
+		size_t			_bodyLength;
+		bool			_headerComplete;
 };
 
 #endif

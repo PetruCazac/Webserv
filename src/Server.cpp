@@ -58,23 +58,23 @@ const std::vector<pollfd_t>& Server::getPollFdVector() const {
 void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 	 for (size_t i = 0; i < active_fds.size(); ++i) {
 			for (size_t j = 0; j < _poll_fd_vector.size(); ++j) {
-				if (_poll_fd_vector[j].fd == active_fds[i].fd) {
+				if (_poll_fd_vector[j].fd == active_fds[i].fd || _socket_map[_poll_fd_vector[j].fd]->getSocketStatus() == WAIT_FOR_RESPONSE) {
 					switch (_socket_map[_poll_fd_vector[j].fd]->getSocketType()){
 						case SERVER:
 							handleServerSocketEvents(active_fds[i]);
 							break;
 						case CLIENT:
 							handleClientSocketEvents(active_fds[i]);
-                            _poll_fd_vector[j].revents = 0;
+							_poll_fd_vector[j].revents = 0;
 							break;
 					}
 			}
 		}
-	 }
+	}
 }
 
 void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
-    LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
+	// LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
 	switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
 		case LISTEN_STATE:
 			if (poll_fd.revents & POLLIN) {
@@ -91,8 +91,8 @@ void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
 				fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
 				_poll_fd_vector.push_back(new_poll_fd);
 				_socket_map[new_poll_fd.fd] = new Socket(connection_fd);
-                std::ostringstream oss;
-                oss << "Accepted new incoming connection: " << connection_fd;
+				std::ostringstream oss;
+				oss << "Accepted new incoming connection: " << connection_fd;
 				LOG_INFO_NAME(oss.str(), _server_config[0].server_name);
 			}
 			break;
@@ -109,6 +109,7 @@ void Server::updatePollFdForWrite(int fd) {
 	for (size_t i = 0; i < _poll_fd_vector.size(); ++i) {
 		if (_poll_fd_vector[i].fd == fd) {
 			_poll_fd_vector[i].events = POLLOUT;
+            _poll_fd_vector[i].revents = 0;
 			break;
 		}
 	}
@@ -137,66 +138,125 @@ void Server::removeSocketFromMap(int fd) {
 	}
 }
 
+// void Server::setNonBlocking(int fd) {
+//     int flags = fcntl(fd, F_GETFL, 0);
+//     if (flags == -1) {
+//         flags = 0;
+//     }
+//     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+// }
+
+
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
-    Socket* clientSocket = _socket_map[poll_fd.fd];
-    time_t currentTime = time(NULL);
-    double secondsElapsed = difftime(currentTime, clientSocket->getLastAccessTime());
-    if (secondsElapsed > _keepalive_timeout) {
-        LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
-        removeSocketFromMap(poll_fd.fd);
-        return;
-    }
+    pid_t cgi_pid;
+    int status;
+    pid_t result_pid;
+	Socket* clientSocket = _socket_map[poll_fd.fd];
+	time_t currentTime = time(NULL);
+	double secondsElapsed = difftime(currentTime, clientSocket->getLastAccessTime());
+	if (secondsElapsed > _keepalive_timeout) {
+		LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
+		removeSocketFromMap(poll_fd.fd);
+		return;
+	}
 	switch (clientSocket->getSocketStatus()) {
 		case RECEIVE:
 			if (poll_fd.revents & POLLIN) {
-				char buffer[_client_max_body_size];
-				std::memset(buffer, 0, _client_max_body_size);
 				int bytes_read = 0;
-				if (!clientSocket->receive(poll_fd.fd, &buffer, _client_max_body_size, bytes_read)) {
-                    std::ostringstream oss;
-                    oss << "Failed to receive data from client: " << poll_fd.fd;
+				if (!clientSocket->receive(poll_fd.fd, bytes_read)) {
+					std::ostringstream oss;
+					oss << "Failed to receive data from client: " << poll_fd.fd;
 					LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
 				}
 				if (bytes_read == 0) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
-				}else if (bytes_read == _client_max_body_size && buffer[bytes_read - 1] != '\0'){
-					clientSocket->setNewHttpResponse(404);
-					removeSocketFromMap(poll_fd.fd);
-					// response.setBody("Requst is too big");
-					return;
-				} else {
-					std::istringstream iss(buffer);
-					clientSocket->setNewHttpRequest(iss);
-					clientSocket->setNewHttpResponse(_server_config);
-					
-					std::ostringstream oss;
-					oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
-					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
-					// If you have to wait for CGI
-					// clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
-					// If you can send a response immediately
+				}else if (clientSocket->getClientBodySize() >= static_cast<size_t>(_client_max_body_size)){
+                    clientSocket->setNewHttpResponse(413);
 					clientSocket->setSocketStatus(SEND_RESPONSE);
+					clientSocket->resetFlags();
 					updatePollFdForWrite(poll_fd.fd);
+					return;
+				}else if(clientSocket->getSocketStatus() == RECEIVE){
+					break;
+				} else {
+					std::istringstream iss(std::ios_base::binary);
+					clientSocket->getClientMessage(iss);
+                    try {
+					    clientSocket->setNewHttpRequest(iss);
+                    } catch (const HttpRequestParserException &e) {
+                        clientSocket->setNewHttpResponse(400);
+                        clientSocket->setSocketStatus(SEND_RESPONSE);
+                        _socket_map[poll_fd.fd]->resetFlags();
+                        updatePollFdForWrite(poll_fd.fd);
+                        return ;
+                    }
+					LOG_INFO("Received Client Message");
+					clientSocket->setNewHttpResponse(_server_config);
+					LOG_INFO("Created Server Response");
+					std::ostringstream oss;
+					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
+					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
+                    if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
+                        // pollfd_t new_poll_fd;
+                        // new_poll_fd.fd = clientSocket->getHttpResponse()->getCgiPipeFd();
+                        // new_poll_fd.events = POLLIN;
+                        // new_poll_fd.revents = 0;
+                        // fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
+                        // _poll_fd_vector.push_back(new_poll_fd);
+                        // _socket_map[new_poll_fd.fd] = clientSocket;
+					    // _socket_map[new_poll_fd.fd]->resetFlags();
+                        updatePollFdForWrite(poll_fd.fd);
+                        clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
+                    } else {
+                        clientSocket->setSocketStatus(SEND_RESPONSE);
+					    _socket_map[poll_fd.fd]->resetFlags();
+                        updatePollFdForWrite(poll_fd.fd);
+                    }
 				}
 			}
 			break;
 		case WAIT_FOR_RESPONSE:
-			break;
-		case SEND_RESPONSE:
-            if (poll_fd.revents & POLLOUT) {
-                const std::string& responseStr = clientSocket-> getHttpResponse()->getResponse().str(); // Obtain the formatted response as a string
-                LOG_DEBUG(responseStr);
-                clientSocket->sendtoClient(&responseStr);
-                LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
-                if (clientSocket->getHttpRequest()->isKeepAlive()) {
-                    updatePollFdForRead(poll_fd.fd);
-                    clientSocket->setSocketStatus(RECEIVE);
-                } else {
+            cgi_pid = clientSocket->getHttpResponse()->getCgiPid();
+            result_pid = waitpid(cgi_pid, &status, WNOHANG);
+            if (result_pid != -1 && result_pid != 0) {
+                LOG_DEBUG_NAME("Wait for response", _server_config[0].server_name);
+                char buffer[1024];
+                std::string cgiOutput;
+                ssize_t bytesRead;
+                int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
+                while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
+                    cgiOutput.append(buffer, bytesRead);
+                }
+                if (bytesRead == -1) {
+                    std::ostringstream oss;
+                    oss << "Failed to read CGI output from pipe: " << cgiPipeFd;
+                    LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
                     removeSocketFromMap(poll_fd.fd);
+                    return;
+                }
+                if (bytesRead == 0) {
+                    close(cgiPipeFd);
+                    clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
+                    clientSocket->getHttpResponse()->finalizeCgiResponse();
+                    clientSocket->setSocketStatus(SEND_RESPONSE);
+                    updatePollFdForWrite(poll_fd.fd);
                 }
             }
+			break;
+		case SEND_RESPONSE:
+			if (poll_fd.revents & POLLOUT) {
+				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); 
+				clientSocket->sendtoClient(&responseStr);
+				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
+				if (clientSocket->hasHttpRequest() && clientSocket->getHttpRequest()->isKeepAlive()) {
+					updatePollFdForRead(poll_fd.fd);
+					clientSocket->setSocketStatus(RECEIVE);
+				} else {
+					removeSocketFromMap(poll_fd.fd);
+				}
+			}
 			break;
 		case LISTEN_STATE:
 			break;
@@ -204,19 +264,19 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 }
 
 void Server::checkKeepAlive() {
-    time_t currentTime = time(NULL);
+	time_t currentTime = time(NULL);
 
-    for (std::map<int, Socket*>::iterator it = _socket_map.begin(); it != _socket_map.end(); ) {
-        if (it->second->getSocketType() == CLIENT) {
-            double secondsElapsed = difftime(currentTime, it->second->getLastAccessTime());
-            if (secondsElapsed > _keepalive_timeout) {
-                LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
-                int fd = it->first;
-                ++it;
-                removeSocketFromMap(fd);
-                continue;
-            }
-        }
-        ++it;
-    }
+	for (std::map<int, Socket*>::iterator it = _socket_map.begin(); it != _socket_map.end(); ) {
+		if (it->second->getSocketType() == CLIENT) {
+			double secondsElapsed = difftime(currentTime, it->second->getLastAccessTime());
+			if (secondsElapsed > _keepalive_timeout) {
+				LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
+				int fd = it->first;
+				++it;
+				removeSocketFromMap(fd);
+				continue;
+			}
+		}
+		++it;
+	}
 }
