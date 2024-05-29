@@ -12,7 +12,6 @@ def main():
 	name = form.getvalue('name', 'Stranger')
 	surname = form.getvalue('surname', '')
 	# Print the HTTP headers
-	print("Content-Type: text/html")
 	print()  # End of headers
 	
 	# Print the HTML content

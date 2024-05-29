@@ -592,68 +592,58 @@ bool HttpResponse::isCGI(const std::string& uri){
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
 	std::string scriptPath = request.getUri();
 	std::string arg = parseArguments(request);
-	std::cout << arg << std::endl;
-	std::vector<const char*> env;
 
-	std::string requestMethod("REQUEST_METHOD=" + request.getMethodStr());
-	env.push_back(requestMethod.c_str());
-	std::string scriptName("SCRIPT_NAME=" + scriptPath);
-	env.push_back(scriptName.c_str());
-	std::string pathInfo("PATH_INFO=" + scriptPath);
-	env.push_back(pathInfo.c_str());
-
-	std::string queryString = request.getQuery();
-	if (!queryString.empty()) {
-		queryString = "QUERY_STRING=" + queryString;
-		env.push_back(queryString.c_str());
-	}
-
-	std::string contentLength = request.getContentLength();
-	if (!contentLength.empty()) {
-		std::string contentLength("CONTENT_LENGTH=" + contentLength);
-		env.push_back(contentLength.c_str());
-	}
-	env.push_back(NULL);
-
-	for(size_t i = 0; i < env.size(); i++){
-		if(env[i] != NULL)
-			std::cout << env[i] << std::endl;
-	}
-	std::string fullScriptPath = "." + scriptPath;
-	std::string compiler = findCgiType(scriptPath);
-	std::vector <const char*> argv;
-	argv.push_back(compiler.c_str());
-	argv.push_back(fullScriptPath.c_str());
-	argv.push_back(NULL);
-
-	std::cout << "Arguments ##" << std::endl;
-	std::cout << "Arg 1: " << argv[0] << "##" << std::endl;
-	std::cout << "Arg 2: " << argv[1] << "##" << std::endl;
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1) {
 		makeDefaultErrorResponse(500);
 		return;
 	}
-	// if(request.getMethod() == GET)
-	// 	setCgiEnvironment(request, scriptPath, env);
-
 	pid_t pid = fork();
 	if (pid == -1) {
 		makeDefaultErrorResponse(500);
 		return;
 	} else if (pid == 0) {
+		// -------------------- Setting arguments and env for execve ------------------
+		std::vector<const char*> env;
+		std::string requestMethod("REQUEST_METHOD=" + request.getMethodStr());
+		env.push_back(requestMethod.c_str());
+		std::string scriptName("SCRIPT_NAME=" + scriptPath);
+		env.push_back(scriptName.c_str());
+		std::string pathInfo("PATH_INFO=" + scriptPath);
+		env.push_back(pathInfo.c_str());
+
+		std::string queryString = request.getQuery();
+		if (!queryString.empty()) {
+			queryString = "QUERY_STRING=" + queryString;
+			env.push_back(queryString.c_str());
+		}
+
+		std::string contentLength = request.getContentLength();
+		if (!contentLength.empty()) {
+			std::string contentLength("CONTENT_LENGTH=" + contentLength);
+			env.push_back(contentLength.c_str());
+		}
+		env.push_back(NULL);
+
+		std::string fullScriptPath = "." + scriptPath;
+		std::string compiler = findCgiType(scriptPath);
+		std::vector <const char*> argv;
+		argv.push_back(compiler.c_str());
+		argv.push_back(fullScriptPath.c_str());
+		argv.push_back(NULL);
+		// ------------------------------------------------------------------------------
+
 		std::cout << "Entering child process: \n\n";
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
+
 		if (chdir(getRoot(config).c_str()) == -1){
 			LOG_ERROR("CHDIR_CALL_FAILED");
 			exit(2);
 		}
-		LOG_DEBUG(argv[0]);
-		LOG_DEBUG(argv[1]);
-		if (execve(argv[0], const_cast<char* const*>(argv.data()), const_cast<char* const*>(env.data())) == -1 ) {
+		if (execve(argv[0], const_cast<char**>(argv.data()), const_cast<char**>(env.data())) == -1 ) {
 			LOG_ERROR("EXECVE failed");
 			perror("execve");
 		}
@@ -700,11 +690,11 @@ std::string HttpResponse::findCgiType(std::string& uri){
 	size_t extensionPos = uri.find_last_of('.', uri.size());
 	std::string extension = uri.substr(extensionPos, uri.size() - extensionPos);
 	if(extension == ".py"){
-		return std::string("python3");
+		return std::string("/usr/bin/python3");
 	} else if(extension == ".sh"){
-		return std::string("");
+		return std::string("/usr/bin/bash");
 	} else if(extension == ".php"){
-		return std::string("php");
+		return std::string("/usr/bin/php");
 	}
 	return std::string("");
 }

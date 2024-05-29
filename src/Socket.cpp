@@ -241,6 +241,9 @@ bool Socket::hasHttpRequest() const {
 	else
 		return false;
 }
+void Socket::removeRequest(){
+	delete _http_request;
+}
 
 HttpResponse* Socket::getHttpResponse() const {
 	return _http_response;
@@ -265,6 +268,7 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 void Socket::getClientMessage(std::istringstream& iss){
 	std::string str(_binaryVector.begin(), _binaryVector.end());
 	iss.str(str);
+	_binaryVector.clear();
 }
 
 size_t Socket::getClientBodySize(void){
