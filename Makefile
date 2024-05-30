@@ -1,8 +1,7 @@
 NAME = webserv
 
 CXX= c++
-CXXFLAGS= -Wall -Wextra  -std=c++98 -Iheaders -Iheaders/config -g
-# -Werror
+CXXFLAGS= -Wall -Wextra  -std=c++98 -Iheaders -Iheaders/config -g -Werror
 SRC= Webserv.cpp HttpRequest.cpp HttpResponse.cpp
 SRC+= main.cpp Logger.cpp Socket.cpp Server.cpp
 # Parsing files

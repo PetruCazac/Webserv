@@ -168,7 +168,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					oss << "Failed to receive data from client: " << poll_fd.fd;
 					LOG_ERROR_NAME(oss.str(), _server_config[0].server_name);
 				}
-				if (bytes_read == 0) {
+				if (bytes_read == 0 || bytes_read == -1) {
 					LOG_DEBUG_NAME("Connection closed.", _server_config[0].server_name);
 					removeSocketFromMap(poll_fd.fd);
 					return ;
