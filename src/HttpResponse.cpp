@@ -737,6 +737,8 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 		// ------------------------------------------------------------------------------
 
 		std::cout << "Entering child process: \n\n";
+		if(request.getMethod() == POST)
+		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
