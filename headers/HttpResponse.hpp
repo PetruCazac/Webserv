@@ -81,13 +81,14 @@ private:
 	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
 	bool	isValidPath(const char* path);
 	std::string findCgiType(std::string& request);
+	bool isIndex(std::string &path, ServerDirectives& config);
 
 
 public:
 	HttpResponse(const int code);
 	HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	bool	isCGI(const std::string &uri);
-	void setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath, std::vector<const char*>& env);
+	void 	setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath, std::vector<const char*>& env);
 	void	setCgiResponse(const int cgi_pipe_fd, pid_t cgi_pid, const bool is_cgi_response);
 	std::string getFilePath(const std::string& scriptPath, std::string root) const;
 	int		getCgiPipeFd() const;
