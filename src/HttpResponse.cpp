@@ -621,7 +621,7 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 
 		std::string contentLength = request.getContentLength();
 		if (!contentLength.empty()) {
-			std::string contentLength("CONTENT_LENGTH=" + contentLength);
+			contentLength = "CONTENT_LENGTH=" + contentLength;
 			env.push_back(contentLength.c_str());
 		}
 		env.push_back(NULL);
