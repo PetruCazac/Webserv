@@ -262,6 +262,10 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 		LOG_ERROR("The request is not available for a response.");
 		return ;
 	}
+    if (this->getHttpResponse() != NULL) {
+        delete _http_response;
+        _http_response = NULL;
+    }
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
@@ -276,6 +280,10 @@ size_t Socket::getClientBodySize(void){
 }
 
 void Socket::setNewHttpResponse(size_t errorCode){
+    if (this->getHttpResponse() != NULL) {
+        delete _http_response;
+        _http_response = NULL;
+    }
 	_http_response = new HttpResponse(errorCode);
 }
 
