@@ -761,9 +761,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 	}
 }
 
-// void HttpResponse::setCgiEnvironment(const HttpRequest& request, const std::string& scriptPath, std::vector<const char*>& env) {
-// }
-
 int HttpResponse::getCgiPipeFd() const {
 	return _cgi_pipe_fd;
 }
@@ -794,7 +791,7 @@ std::string HttpResponse::findCgiType(std::string& uri){
 	if(extension == ".py"){
 		return std::string("/usr/bin/python3");
 	} else if(extension == ".sh"){
-		return std::string("/usr/bin/bash");
+		return std::string("/bin/bash");
 	} else if(extension == ".php"){
 		return std::string("/usr/bin/php");
 	}
