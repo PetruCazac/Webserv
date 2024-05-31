@@ -6,6 +6,7 @@
 #include "UtilsHttp.hpp"
 #include "Config.hpp"
 #include <map>
+#include <vector>
 #include <string>
 #include <istream>
 #include <fcntl.h>
@@ -34,7 +35,7 @@ struct MethodsException {
 class HttpResponse {
 private:
 	std::stringstream _response;
-	std::string	_body;
+	std::vector<uint8_t> _body;
 	std::string	_contentType;
 	std::map<std::string, std::string> _headers;
 	int			_cgi_pipe_fd;
@@ -98,6 +99,7 @@ public:
 	std::string	parseArguments(const HttpRequest& request);
 
 	const std::stringstream &getResponse() const;
+	void printResponse() const;
 };
 
 #endif // HTTPRESPONSE_HPP

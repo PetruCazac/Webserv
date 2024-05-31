@@ -364,15 +364,26 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 }
 
 void HttpResponse::readFile(std::string &path) {
-	std::ifstream file(path.c_str());
+	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file.is_open())
 		makeDefaultErrorResponse(500);
 	else {
 		_contentType = MimeTypeDetector::getInstance().getMimeType(path);
-		std::stringstream body;
-		body << file.rdbuf();
-		_body = body.str();
+		file >> std::noskipws;
+		char c;
+		while (file.get(c)) {
+			_body.push_back(static_cast<uint8_t>(c));
+		}
+		// std::vector<uint8_t> _body((std::istream_iterator<uint8_t>(file)), std::istream_iterator<uint8_t>());
+		// std::stringstream body;
+		// _body << file.rdbuf();
+		// _body = body.str();
 	}
+}
+
+void HttpResponse::printResponse() const {
+	std::cout << "Response content type: " << _contentType << std::endl;
+	std::cout << "Response body size: " << _body.size() << " bytes" << std::endl;
 }
 
 void HttpResponse::setHeader(const std::string &header, const std::string &value) {
@@ -382,13 +393,17 @@ void HttpResponse::setHeader(const std::string &header, const std::string &value
 void HttpResponse::setResponse() {
 	_response << "HTTP/1.1 200 OK\r\n";
 	_response << "Content-Type: " << _contentType << "\r\n";
-	_response << "Content-Length: " <<_body.length() << "\r\n";
+	_response << "Content-Length: " << _body.size() << "\r\n";
 	for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++) {
 		_response << it->first << ": " << it->second << "\r\n";
 	}
-	_response << "\r\n" << _body;
+	_response << "\r\n";
+    // for (std::vector<uint8_t>::iterator it = _body.begin(); it != _body.end(); ++it) {
+    //     _response << *it;
+    // }
+	_response.write(reinterpret_cast<const char*>(_body.data()), _body.size());
+	printResponse();
 }
-
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();

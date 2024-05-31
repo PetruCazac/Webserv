@@ -184,11 +184,11 @@ void HttpRequest::printHttpRequest() const {
 		std::cout << "[" << it->first << ", " << it->second << "]" << std::endl;
 	}
 	std::cout << "Boundary: [" << _boundary << "]" << std::endl;
-	std::cout << "Body: [";
-	for (std::vector<uint8_t>::const_iterator it = _body.begin(); it != _body.end(); it++) {
-		std::cout << *it;
-	}
-	std::cout << "]";
+	// std::cout << "Body: [";
+	// for (std::vector<uint8_t>::const_iterator it = _body.begin(); it != _body.end(); it++) {
+	// 	std::cout << *it;
+	// }
+	// std::cout << "]";
 	std::cout << std::endl;
 }
 
