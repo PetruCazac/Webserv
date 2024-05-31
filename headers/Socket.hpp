@@ -66,6 +66,7 @@ class Socket {
 		bool isMessageReceived(int& bytes_read);
 		void resetFlags(void);
 		bool hasHttpRequest() const;
+		void removeRequest();
 
 	private:
 		std::string		_listen_port;

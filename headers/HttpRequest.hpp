@@ -66,11 +66,14 @@ private:
 	void findBoundary();
 
 	bool isValidHttpVersion() const;
+	bool isValidContentLength() const;
 
 public:
 	explicit HttpRequest(std::istream &inputRequest);
 
 	HttpMethods getMethod() const;
+    const std::string getMethodStr() const;
+    const std::string getContentLength() const;
     bool isKeepAlive() const;
 	const std::string &getUri() const;
 	const std::string &getQuery() const;
@@ -78,7 +81,7 @@ public:
 	const std::map<std::string, std::string> &getHeaders() const;
 	const std::string &getBoundary() const;
 	const std::vector<uint8_t> &getBody() const;
-	bool isValidContentLength() const;
+	void printHttpRequest() const;
 };
 
 #endif // HTTPREQUEST_HPP

@@ -241,6 +241,9 @@ bool Socket::hasHttpRequest() const {
 	else
 		return false;
 }
+void Socket::removeRequest(){
+	delete _http_request;
+}
 
 HttpResponse* Socket::getHttpResponse() const {
 	return _http_response;
@@ -259,12 +262,17 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 		LOG_ERROR("The request is not available for a response.");
 		return ;
 	}
+    if (this->getHttpResponse() != NULL) {
+        delete _http_response;
+        _http_response = NULL;
+    }
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
 void Socket::getClientMessage(std::istringstream& iss){
 	std::string str(_binaryVector.begin(), _binaryVector.end());
 	iss.str(str);
+	_binaryVector.clear();
 }
 
 size_t Socket::getClientBodySize(void){
@@ -272,6 +280,10 @@ size_t Socket::getClientBodySize(void){
 }
 
 void Socket::setNewHttpResponse(size_t errorCode){
+    if (this->getHttpResponse() != NULL) {
+        delete _http_response;
+        _http_response = NULL;
+    }
 	_http_response = new HttpResponse(errorCode);
 }
 
