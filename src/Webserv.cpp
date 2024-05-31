@@ -40,7 +40,6 @@ void Webserv::init_servers() {
 }
 
 void Webserv::run_servers(void){
-	int timesincelastcheck = 0;
 	while(true){
 		if(signalFlag == SIGINT){
 			this->~Webserv();
@@ -53,13 +52,9 @@ void Webserv::run_servers(void){
 				_servers[i].handleEvents(_master_poll_fds);
 			}
 		}
-		timesincelastcheck += 100;
-		if (timesincelastcheck > _webserv_config._httpConfig.keepalive_timeout * 1000){
-			for (size_t i = 0; i < _servers.size(); ++i){
-				_servers[i].checkKeepAlive();
-			}
-			timesincelastcheck = 0;
-		}
+        for (size_t i = 0; i < _servers.size(); ++i){
+            _servers[i].checkKeepAlive();
+        }
 	}
 }
 

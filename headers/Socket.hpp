@@ -70,6 +70,7 @@ class Socket {
         void setResponseStatus();
         bool sendtoClient();
         bool isResponseSent();
+        void setAccessTime();
 
 	private:
 		std::string		_listen_port;
