@@ -16,6 +16,7 @@ MimeTypeDetector::MimeTypeDetector() {
 	_mimeTypes[".png"] = "image/png";
 	_mimeTypes[".gif"] = "image/gif";
 	_mimeTypes[".ico"] = "image/x-icon";
+	_mimeTypes[".pdf"] = "application/pdf";
 	_noneType = "application/octet-stream";
 }
 
@@ -51,8 +52,8 @@ StatusCodeMap::StatusCodeMap() {
 	statusCodes[202] = "Accepted";
 	statusCodes[204] = "No Content";
 	statusCodes[304] = "Not Modified";
-	statusCodes[400] = "Bad Request";
-	statusCodes[401] = "Unauthorized";
+	statusCodes[400] = "Bad Request"; // +
+	statusCodes[401] = "Unauthorized"; // +
 	statusCodes[403] = "Forbidden";
 	statusCodes[404] = "Not Found"; // +
 	statusCodes[405] = "Method Not Allowed"; // +

@@ -1,12 +1,12 @@
 #include "DefaultValues.hpp"
 
 const std::string	DefaultValues::_AUTOINDEX = "on";
-const size_t		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000;
+const size_t		DefaultValues::_CLIENT_MAX_BODY_SIZE = 1000000;
 const std::string	DefaultValues::_ERROR_PAGE = "404.html";
 const std::string	DefaultValues::_FASTCGI_PARAM = "";
 const std::string	DefaultValues::_LOG_FILE = "log_file.log";
 const std::string	DefaultValues::_INDEX = "";
-const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 10;
+const int			DefaultValues::_KEEP_ALIVE_TIMEOUT = 1000;
 const std::string	DefaultValues::_ALLOW = "";
 const std::string	DefaultValues::_LISTEN = "";  // MANDATORY
 const std::string	DefaultValues::_ROOT = "";  // MANDATORY

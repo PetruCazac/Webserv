@@ -52,12 +52,14 @@ private:
 	void	handleAutoindex(const char* path);
 	void	handleCGI(const ServerDirectives& server, const HttpRequest& request);
 
+	// DELETE Method
+	void	runDeleteMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
+	void	composeDeleteUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 
 	// POST Method
 	void	runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request);
 	void	composePostUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path);
 	void	handleMultipart(const HttpRequest& request, std::string& path);
-	void	handleUriEncoding(const HttpRequest& request, std::string& path);
 	bool	storeFormData(const std::string& formData, std::string& path);
 	std::string	urlDecode(const std::vector<uint8_t>& bodyString);
 	bool	handlePackage(std::string& package, std::string& path);
@@ -77,7 +79,9 @@ private:
 	bool	isFile(const char* path);
 	bool	checkAutoindex(ServerDirectives& server);
 	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
+	bool	isValidPath(const char* path);
 	std::string findCgiType(std::string& request);
+
 
 public:
 	HttpResponse(const int code);
