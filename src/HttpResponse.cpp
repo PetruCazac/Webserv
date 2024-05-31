@@ -45,12 +45,60 @@ void HttpResponse::makeDefaultErrorResponse(const int code) {
 }
 
 std::string HttpResponse::getErrorBody(const int code) {
+		std::string responseImage;
+		std::string responseMessage;
+	if(code == 201  || code == 200){
+		responseImage = "        <img src=\"/default_ressources/58b.jpeg\" alt=\"Error Image\">";
+		responseMessage = "        <p>All good!</p>";
+	}else {
+		responseImage = "        <img src=\"/default_ressources/bonk-doge.gif\" alt=\"Error GIF\">";
+		responseMessage = "        <p>Something went wrong. Please try again later.</p>";
+	}
+		
 	std::stringstream body;
-	body << "<html><body><h1>"
-		 << code
-		 << ' '
-		 << StatusCodeMap::getInstance().getStatusCodeDescription(code)
-		 << "</h1></body></html>";
+	body << "<!DOCTYPE html>"
+		 << "<html lang=\"en\">"
+		 << "<head>"
+		 << "    <meta charset=\"UTF-8\">"
+		 << "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+		 << "    <title>Error Page</title>"
+		 << "    <style>"
+		 << "        body {"
+		 << "            display: flex;"
+		 << "            justify-content: center;"
+		 << "            align-items: center;"
+		 << "            height: 100vh;"
+		 << "            margin: 0;"
+		 << "            font-family: Arial, sans-serif;"
+		 << "            background-color: #f0f0f0;"
+		 << "        }"
+		 << "        .container {"
+		 << "            text-align: center;"
+		 << "        }"
+		 << "        .container img {"
+		 << "            max-width: 100%;"
+		 << "            height: auto;"
+		 << "        }"
+		 << "        h1 {"
+		 << "            margin: 20px 0 10px;"
+		 << "            font-size: 2.5em;"
+		 << "            color: #333;"
+		 << "        }"
+		 << "        p {"
+		 << "            margin: 0;"
+		 << "            font-size: 1.2em;"
+		 << "            color: #666;"
+		 << "        }"
+		 << "    </style>"
+		 << "</head>"
+		 << "<body>"
+		 << "    <div class=\"container\">"
+		 << responseImage
+		 << "        <h1>" << code << " " << StatusCodeMap::getInstance().getStatusCodeDescription(code) << "</h1>"
+		 << responseMessage
+		 << "    </div>"
+		 << "</body>"
+		 << "</html>";
 	return body.str();
 }
 
@@ -304,7 +352,7 @@ void HttpResponse::handleMultipart(const HttpRequest& request, std::string& path
 		if(!handlePackage(packages[i], path))
 			return;
 	}
-	makeDefaultErrorResponse(200);
+	makeDefaultErrorResponse(201);
 }
 
 void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
@@ -356,11 +404,28 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			setResponse();
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str());
+		} else if(isIndex(path, server)){
+			readFile(path);
+			setResponse();
 		} else{
 			makeDefaultErrorResponse(404);
 		}
 	}else
 		makeDefaultErrorResponse(405);
+}
+
+
+bool HttpResponse::isIndex(std::string &path, ServerDirectives& config) {
+	if(!config.locations.empty()){
+		if(!config.locations[0].index.empty()){
+			path = config.locations[0].root + '/' + config.locations[0].index;
+			return true;
+		}
+	} else if(!config.index.empty()){
+		path = config.root + '/' + config.index;
+		return true;
+	}
+	return false;
 }
 
 void HttpResponse::readFile(std::string &path) {
@@ -397,23 +462,17 @@ void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpReq
 		if(!server.locations[0].root.empty()){
 			size_t pos;
 			pos = path.find(server.locations[0].module);
+			pos += server.locations[0].module.size();
 			if(pos != std::string::npos)
 				path = server.locations[0].root + path.substr(pos, path.size());
 		} else{
 			path = server.root + path;
 		}
-		if(!isValidPath(path.c_str())){
-			if(!server.locations[0].index.empty()){
-				path = server.locations[0].root + '/' + server.locations[0].index;
-				return;
-			}
-			return path.clear();;
-		}
 		return;
 	}else{
 		path = server.root + path;
 		if(!isValidPath(path.c_str())){
-			if(!server.index.empty()){
+			if(server.index.empty()){
 				path = server.root + '/' + server.index;
 				return;
 			}
@@ -502,7 +561,11 @@ std::string HttpResponse::parseArguments(const HttpRequest& request){
 std::string getPath(const char *path){
 	std::string str(path);
 	size_t start = str.find("/", 0);
-	std::string withoutRoot(str, start, str.size());
+	std::string withoutRoot;
+	if(start != std::string::npos)
+		withoutRoot = std::string(str, start, str.size());
+	else
+		withoutRoot = str;
 	if(*(withoutRoot.end() - 1) != '/')
 		withoutRoot.append("/");
 	return withoutRoot.c_str();
@@ -627,7 +690,6 @@ bool HttpResponse::isCGI(const std::string& uri){
 		return true;
 	return false;
 }
-
 
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
 	std::string scriptPath = request.getUri();
