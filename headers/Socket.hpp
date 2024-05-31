@@ -67,6 +67,9 @@ class Socket {
 		void resetFlags(void);
 		bool hasHttpRequest() const;
 		void removeRequest();
+        void setResponseStatus();
+        bool sendtoClient();
+        bool isResponseSent();
 
 	private:
 		std::string		_listen_port;
@@ -83,6 +86,12 @@ class Socket {
 		size_t			_bytesRead;
 		size_t			_bodyLength;
 		bool			_headerComplete;
+        //Response status
+        bool			_responseSent;
+        bool			_responseReady;
+        std::string    _responseString;
+        size_t         _responseLength;
+        size_t         _responseSentLength;
 };
 
 #endif
