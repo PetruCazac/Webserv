@@ -45,12 +45,60 @@ void HttpResponse::makeDefaultErrorResponse(const int code) {
 }
 
 std::string HttpResponse::getErrorBody(const int code) {
+		std::string responseImage;
+		std::string responseMessage;
+	if(code == 201  || code == 200){
+		responseImage = "        <img src=\"/default_ressources/58b.jpeg\" alt=\"Error Image\">";
+		responseMessage = "        <p>All good!</p>";
+	}else {
+		responseImage = "        <img src=\"/default_ressources/bonk-doge.gif\" alt=\"Error GIF\">";
+		responseMessage = "        <p>Something went wrong. Please try again later.</p>";
+	}
+		
 	std::stringstream body;
-	body << "<html><body><h1>"
-		 << code
-		 << ' '
-		 << StatusCodeMap::getInstance().getStatusCodeDescription(code)
-		 << "</h1></body></html>";
+	body << "<!DOCTYPE html>"
+		 << "<html lang=\"en\">"
+		 << "<head>"
+		 << "    <meta charset=\"UTF-8\">"
+		 << "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+		 << "    <title>Error Page</title>"
+		 << "    <style>"
+		 << "        body {"
+		 << "            display: flex;"
+		 << "            justify-content: center;"
+		 << "            align-items: center;"
+		 << "            height: 100vh;"
+		 << "            margin: 0;"
+		 << "            font-family: Arial, sans-serif;"
+		 << "            background-color: #f0f0f0;"
+		 << "        }"
+		 << "        .container {"
+		 << "            text-align: center;"
+		 << "        }"
+		 << "        .container img {"
+		 << "            max-width: 100%;"
+		 << "            height: auto;"
+		 << "        }"
+		 << "        h1 {"
+		 << "            margin: 20px 0 10px;"
+		 << "            font-size: 2.5em;"
+		 << "            color: #333;"
+		 << "        }"
+		 << "        p {"
+		 << "            margin: 0;"
+		 << "            font-size: 1.2em;"
+		 << "            color: #666;"
+		 << "        }"
+		 << "    </style>"
+		 << "</head>"
+		 << "<body>"
+		 << "    <div class=\"container\">"
+		 << responseImage
+		 << "        <h1>" << code << " " << StatusCodeMap::getInstance().getStatusCodeDescription(code) << "</h1>"
+		 << responseMessage
+		 << "    </div>"
+		 << "</body>"
+		 << "</html>";
 	return body.str();
 }
 
@@ -420,18 +468,11 @@ void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpReq
 		} else{
 			path = server.root + path;
 		}
-		// if(!isValidPath(path.c_str())){
-		// 	if(!server.locations[0].index.empty()){
-		// 		path = server.locations[0].root + '/' + server.locations[0].index;
-		// 		return;
-		// 	}
-		// 	return path.clear();;
-		// }
 		return;
 	}else{
 		path = server.root + path;
 		if(!isValidPath(path.c_str())){
-			if(!server.index.empty()){
+			if(server.index.empty()){
 				path = server.root + '/' + server.index;
 				return;
 			}
@@ -649,7 +690,6 @@ bool HttpResponse::isCGI(const std::string& uri){
 		return true;
 	return false;
 }
-
 
 void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &request){
 	std::string scriptPath = request.getUri();
