@@ -247,11 +247,16 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 			break;
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
-				const std::string& responseStr = clientSocket->getHttpResponse()->getResponse().str(); 
-				if (!clientSocket->sendtoClient(&responseStr)) {
+                clientSocket->setResponseStatus();
+                if (!clientSocket->sendtoClient()) {
                     LOG_ERROR_NAME("Failed to send response to client.", _server_config[0].server_name);
                     removeSocketFromMap(poll_fd.fd);
                     return;
+                }
+                if (!clientSocket->isResponseSent()) {
+                    clientSocket->setSocketStatus(SEND_RESPONSE);
+                    updatePollFdForWrite(poll_fd.fd);
+                    return ;
                 }
 				LOG_INFO_NAME("Sent response to client.", _server_config[0].server_name);
 				if (clientSocket->hasHttpRequest() && clientSocket->getHttpRequest()->isKeepAlive()) {

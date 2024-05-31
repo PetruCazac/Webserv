@@ -22,6 +22,8 @@ Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _h
 	_endBody = 0;
 	_bodyLength = 0;
 	_headerComplete = false;
+    _responseSent = false;
+    _responseReady = false;
 	setSocketStatus(RECEIVE);
 }
 
@@ -125,6 +127,39 @@ int Socket::acceptIncoming() {
 		return -1;
 	}
 	return client_fd;
+}
+
+void Socket::setResponseStatus(){
+    if (_responseReady == false){
+        _responseReady = true;
+        _responseSent = false;
+        _responseString = _http_response->getResponse().str();
+        _responseSentLength = 0;
+        _responseLength = _responseString.length();
+    }
+}
+
+bool Socket::sendtoClient() {
+    _last_access_time = time(NULL);
+    int bytes_sent = 0;
+    bytes_sent = send(_sockfd, _responseString.c_str() + _responseSentLength, _responseLength - _responseSentLength, 0);
+    if (bytes_sent < 0) {
+        LOG_ERROR("Failed to send data. Send return value < 0");
+        return false;
+    }
+    _responseSentLength += bytes_sent;
+    if (_responseSentLength == _responseLength){
+        _responseSent = true;
+        _responseReady = false;
+        _responseString.clear();
+        _responseLength = 0;
+        _responseSentLength = 0;
+    }
+    return true;
+}
+
+bool Socket::isResponseSent(){
+    return _responseSent;
 }
 
 bool Socket::sendtoClient(const std::string* data) {
