@@ -66,11 +66,13 @@ bool Socket::setupAddrInfo() {
 }
 
 void Socket::removeSocket() {
+	std::stringstream oss;
+    oss << "Closing socket: " << this->getSocketType() << "File descriptor: "<< _sockfd;
+    LOG_DEBUG(oss.str());
 	if (_sockfd != -1) {
 		close(_sockfd);
 		_sockfd = -1;
 	}
-	LOG_DEBUG("Socket closed.");
 }
 
 bool Socket::bindAndListen() {
@@ -324,4 +326,8 @@ void Socket::setNewHttpResponse(size_t errorCode){
 
 time_t Socket::getLastAccessTime() const {
 	return _last_access_time;
+}
+
+void Socket::setAccessTime(){
+    _last_access_time = time(NULL);
 }

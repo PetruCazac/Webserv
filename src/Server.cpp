@@ -138,15 +138,6 @@ void Server::removeSocketFromMap(int fd) {
 	}
 }
 
-// void Server::setNonBlocking(int fd) {
-//     int flags = fcntl(fd, F_GETFL, 0);
-//     if (flags == -1) {
-//         flags = 0;
-//     }
-//     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-// }
-
-
 void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
     pid_t cgi_pid;
     int status;
@@ -154,9 +145,25 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 	Socket* clientSocket = _socket_map[poll_fd.fd];
 	time_t currentTime = time(NULL);
 	double secondsElapsed = difftime(currentTime, clientSocket->getLastAccessTime());
-	if (secondsElapsed > _keepalive_timeout) {
+	if (secondsElapsed > _keepalive_timeout && clientSocket->getSocketType() == CLIENT) {
 		LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
-		removeSocketFromMap(poll_fd.fd);
+        if (clientSocket->getSocketStatus() == WAIT_FOR_RESPONSE) {
+            cgi_pid = clientSocket->getHttpResponse()->getCgiPid();
+            if (cgi_pid > 0) {
+                std::stringstream oss;
+                oss << "Killing CGI process due to timeout: " << cgi_pid;
+                LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
+                kill(cgi_pid, SIGKILL);
+                waitpid(cgi_pid, NULL, 0);
+            }
+            clientSocket->setAccessTime();
+            clientSocket->setNewHttpResponse(408);
+            clientSocket->setSocketStatus(SEND_RESPONSE);
+            clientSocket->resetFlags();
+            updatePollFdForWrite(poll_fd.fd);
+            return;
+        }
+        removeSocketFromMap(poll_fd.fd);
 		return;
 	}
 	switch (clientSocket->getSocketStatus()) {
@@ -199,14 +206,6 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
                     if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
-                        // pollfd_t new_poll_fd;
-                        // new_poll_fd.fd = clientSocket->getHttpResponse()->getCgiPipeFd();
-                        // new_poll_fd.events = POLLIN;
-                        // new_poll_fd.revents = 0;
-                        // fcntl(new_poll_fd.fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
-                        // _poll_fd_vector.push_back(new_poll_fd);
-                        // _socket_map[new_poll_fd.fd] = clientSocket;
-					    // _socket_map[new_poll_fd.fd]->resetFlags();
                         updatePollFdForWrite(poll_fd.fd);
                         clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
                     } else {
@@ -281,6 +280,18 @@ void Server::checkKeepAlive() {
 			if (secondsElapsed > _keepalive_timeout) {
 				LOG_DEBUG_NAME("Client connection timed out.", _server_config[0].server_name);
 				int fd = it->first;
+                if (it->second->getSocketStatus() == WAIT_FOR_RESPONSE) {
+                    pid_t cgi_pid = it->second->getHttpResponse()->getCgiPid();
+                    if (cgi_pid > 0) {
+                        std::stringstream oss;
+                        oss << "Killing CGI process due to timeout: " << cgi_pid;
+                        LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
+                        kill(cgi_pid, SIGKILL);
+                        waitpid(cgi_pid, NULL, 0);
+                    }
+                    ++it;
+                    continue;
+                }
 				++it;
 				removeSocketFromMap(fd);
 				continue;
@@ -289,3 +300,4 @@ void Server::checkKeepAlive() {
 		++it;
 	}
 }
+

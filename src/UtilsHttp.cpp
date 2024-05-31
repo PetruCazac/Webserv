@@ -57,6 +57,7 @@ StatusCodeMap::StatusCodeMap() {
 	statusCodes[403] = "Forbidden";
 	statusCodes[404] = "Not Found"; // +
 	statusCodes[405] = "Method Not Allowed"; // +
+    statusCodes[408] = "Request Timeout";
 	statusCodes[409] = "Conflict";
 	statusCodes[410] = "Gone";
 	statusCodes[413] = "Payload too large";
