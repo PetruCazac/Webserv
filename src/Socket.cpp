@@ -145,8 +145,12 @@ bool Socket::sendtoClient() {
     _last_access_time = time(NULL);
     int bytes_sent = 0;
     bytes_sent = send(_sockfd, _responseString.c_str() + _responseSentLength, _responseLength - _responseSentLength, 0);
-    if (bytes_sent < 0) {
-        LOG_ERROR("Failed to send data. Send return value < 0");
+    if (bytes_sent == -1) {
+        LOG_ERROR("Failed to send data. Send return value -1");
+        return false;
+    }
+    if (bytes_sent == 0) {
+        LOG_ERROR("No data was send. Send return value 0");
         return false;
     }
     _responseSentLength += bytes_sent;
@@ -171,8 +175,12 @@ bool Socket::sendtoClient(const std::string* data) {
 	_last_access_time = time(NULL);
 	while (len_sent < len) {
 		bytes_sent = send(_sockfd, data->c_str() + len_sent, len - len_sent, 0);
-		if (bytes_sent < 0) {
-			LOG_ERROR("Failed to send data.");
+		if (bytes_sent == -1) {
+			LOG_ERROR("Failed to send data. Send return value -1");
+			return false;
+		}
+		if (bytes_sent == 0) {
+			LOG_ERROR("No data was send. Send return value 0");
 			return false;
 		}
 		len_sent += bytes_sent;

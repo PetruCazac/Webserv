@@ -1,3 +1,0 @@
-name=bla
-email=bla@bla.com
-message=mla
