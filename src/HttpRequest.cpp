@@ -49,7 +49,7 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	printHttpRequest();
+	// printHttpRequest();
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {

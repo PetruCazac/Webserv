@@ -2,6 +2,7 @@
 #define SERVER_HPP
 
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "Socket.hpp"
 #include "Config.hpp"
