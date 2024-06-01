@@ -12,7 +12,7 @@ void signal_handler(int signal){
 
 int main(int argc, char** argv){
     Logger::setLogFilename("");
-    Logger::setLogLevel(SILENT);
+    Logger::setLogLevel(DEBUG);
     if(argc != 2)
 		return 1;
 	if (!argv)

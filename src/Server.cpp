@@ -203,9 +203,10 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 					clientSocket->setNewHttpResponse(_server_config);
 					LOG_INFO("Created Server Response");
 					std::ostringstream oss;
-					// oss << "Received data: \033[33m\n" << buffer << "\033[0m\n";
 					LOG_DEBUG_NAME(oss.str(), _server_config[0].server_name);
                     if (clientSocket->getHttpResponse()->isCGI(clientSocket->getHttpRequest()->getUri())) {
+                        clientSocket->_cgi_store = "";
+                        clientSocket->_ready_send_cgi = false;
                         updatePollFdForWrite(poll_fd.fd);
                         clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
                     } else {
@@ -219,14 +220,19 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 		case WAIT_FOR_RESPONSE:
             cgi_pid = clientSocket->getHttpResponse()->getCgiPid();
             result_pid = waitpid(cgi_pid, &status, WNOHANG);
-            if (result_pid != -1 && result_pid != 0) {
+            if ((result_pid != -1 && result_pid != 0) || clientSocket->_ready_send_cgi) {
+                clientSocket->_ready_send_cgi = true;
                 LOG_DEBUG_NAME("Wait for response", _server_config[0].server_name);
                 char buffer[1024];
                 std::string cgiOutput;
                 ssize_t bytesRead;
                 int cgiPipeFd = clientSocket->getHttpResponse()->getCgiPipeFd();
-                while ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
+                if ((bytesRead = read(cgiPipeFd, buffer, sizeof(buffer))) > 0) {
                     cgiOutput.append(buffer, bytesRead);
+                    clientSocket->_cgi_store.append(buffer, bytesRead);
+                    updatePollFdForWrite(poll_fd.fd);
+                    clientSocket->setSocketStatus(WAIT_FOR_RESPONSE);
+                    return ;
                 }
                 if (bytesRead == -1) {
                     std::ostringstream oss;
@@ -237,7 +243,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 }
                 if (bytesRead == 0) {
                     close(cgiPipeFd);
-                    clientSocket->getHttpResponse()->appendCgiOutput(cgiOutput);
+                    clientSocket->getHttpResponse()->appendCgiOutput(clientSocket->_cgi_store);
                     clientSocket->getHttpResponse()->finalizeCgiResponse();
                     clientSocket->setSocketStatus(SEND_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);

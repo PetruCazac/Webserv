@@ -71,6 +71,8 @@ class Socket {
         bool sendtoClient();
         bool isResponseSent();
         void setAccessTime();
+        std::string _cgi_store;
+        bool _ready_send_cgi;
 
 	private:
 		std::string		_listen_port;
@@ -81,7 +83,7 @@ class Socket {
 		HttpRequest		*_http_request;
 		HttpResponse	*_http_response;
 		time_t			_last_access_time;
-	// Message status
+	    // Message status
 		std::vector<char> _binaryVector;
 		size_t			_endBody;
 		size_t			_bytesRead;
