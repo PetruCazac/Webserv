@@ -67,7 +67,6 @@ private:
 
 	// Response Constituting Functions
 	void	readFile(std::string &path);
-	void	makeDefaultResponse(const int code);
 	std::string getErrorBody(const int code);
 	void	setHeader(const std::string &header, const std::string &value);
 	void	setResponse();
@@ -97,6 +96,7 @@ public:
 	void	finalizeCgiResponse();
 	bool	isCgiResponse() const;
 	std::string	parseArguments(const HttpRequest& request);
+	void	makeDefaultResponse(const int code);
 
 	const std::stringstream &getResponse() const;
 };

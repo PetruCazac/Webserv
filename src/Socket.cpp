@@ -142,6 +142,7 @@ void Socket::setResponseStatus(){
 }
 
 bool Socket::sendtoClient() {
+    // std::cout << _responseString;
     _last_access_time = time(NULL);
     int bytes_sent = 0;
     bytes_sent = send(_sockfd, _responseString.c_str() + _responseSentLength, _responseLength - _responseSentLength, 0);

@@ -215,10 +215,36 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
 				}
 			}
 			break;
-		case WAIT_FOR_RESPONSE:
+        case WAIT_FOR_RESPONSE:
             cgi_pid = clientSocket->getHttpResponse()->getCgiPid();
             result_pid = waitpid(cgi_pid, &status, WNOHANG);
-            if ((result_pid != -1 && result_pid != 0) || clientSocket->_ready_send_cgi) {
+            if (result_pid == -1 && !clientSocket->_ready_send_cgi) {
+                LOG_ERROR("waitpid failed");
+                clientSocket->getHttpResponse()->makeDefaultResponse(500);
+                clientSocket->setSocketStatus(SEND_RESPONSE);
+                updatePollFdForWrite(poll_fd.fd);
+                return;
+            } else if (result_pid > 0 && !clientSocket->_ready_send_cgi) {
+                if (WIFEXITED(status)) {
+                    int exit_status = WEXITSTATUS(status);
+                    if (exit_status != 0) {
+                        LOG_ERROR("Child process exited with error status: " + std::to_string(exit_status));
+                        clientSocket->getHttpResponse()->makeDefaultResponse(500);
+                        clientSocket->setSocketStatus(SEND_RESPONSE);
+                        updatePollFdForWrite(poll_fd.fd);
+                        return;
+                    }
+                } else if (WIFSIGNALED(status)) {
+                    int signal_number = WTERMSIG(status);
+                    LOG_ERROR("Child process was terminated by signal: " + std::to_string(signal_number));
+                    clientSocket->getHttpResponse()->makeDefaultResponse(500);
+                    clientSocket->setSocketStatus(SEND_RESPONSE);
+                    updatePollFdForWrite(poll_fd.fd);
+                    return;
+                }
+            }
+
+            if (clientSocket->_ready_send_cgi || result_pid > 0) {
                 clientSocket->_ready_send_cgi = true;
                 LOG_DEBUG_NAME("Wait for response", _server_config[0].server_name);
                 char buffer[1024];
@@ -247,7 +273,8 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     updatePollFdForWrite(poll_fd.fd);
                 }
             }
-			break;
+            break;
+
 		case SEND_RESPONSE:
 			if (poll_fd.revents & POLLOUT) {
                 clientSocket->setResponseStatus();

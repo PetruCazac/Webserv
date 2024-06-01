@@ -732,7 +732,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 		makeDefaultResponse(500);
 		return;
 	} else if (pid == 0) {
-		// -------------------- Setting arguments and env for execve ------------------
 		std::vector<const char*> env;
 		std::string requestMethod("REQUEST_METHOD=" + request.getMethodStr());
 		env.push_back(requestMethod.c_str());
@@ -760,7 +759,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 		argv.push_back(compiler.c_str());
 		argv.push_back(fullScriptPath.c_str());
 		argv.push_back(NULL);
-		// ------------------------------------------------------------------------------
 
 		if(request.getMethod() == POST)
 		dup2(pipefd[0], STDIN_FILENO);
@@ -770,13 +768,14 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 
 		if (chdir(getRoot(config).c_str()) == -1){
 			LOG_ERROR("CHDIR_CALL_FAILED");
-			exit(2);
+			exit(1);
 		}
 		if (execve(argv[0], const_cast<char**>(argv.data()), const_cast<char**>(env.data())) == -1 ) {
 			LOG_ERROR("EXECVE failed");
 			perror("execve");
+            exit(1);
 		}
-		exit(1);
+		exit(0);
 	} else {
 		if(request.getMethod() == POST) {
 			int result = write(pipefd[1], arg.c_str(), arg.size());
