@@ -228,7 +228,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                 if (WIFEXITED(status)) {
                     int exit_status = WEXITSTATUS(status);
                     if (exit_status != 0) {
-                        LOG_ERROR("Child process exited with error status: " + std::to_string(exit_status));
+                        LOG_ERROR("Child process exited with error status: ");
                         clientSocket->getHttpResponse()->makeDefaultResponse(500);
                         clientSocket->setSocketStatus(SEND_RESPONSE);
                         updatePollFdForWrite(poll_fd.fd);
@@ -236,7 +236,7 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                     }
                 } else if (WIFSIGNALED(status)) {
                     int signal_number = WTERMSIG(status);
-                    LOG_ERROR("Child process was terminated by signal: " + std::to_string(signal_number));
+                    LOG_ERROR("Child process was terminated by signal: ");
                     clientSocket->getHttpResponse()->makeDefaultResponse(500);
                     clientSocket->setSocketStatus(SEND_RESPONSE);
                     updatePollFdForWrite(poll_fd.fd);
