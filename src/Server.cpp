@@ -235,7 +235,6 @@ void Server::handleClientSocketEvents(const pollfd_t& poll_fd) {
                         return;
                     }
                 } else if (WIFSIGNALED(status)) {
-                    int signal_number = WTERMSIG(status);
                     LOG_ERROR("Child process was terminated by signal: ");
                     clientSocket->getHttpResponse()->makeDefaultResponse(500);
                     clientSocket->setSocketStatus(SEND_RESPONSE);
