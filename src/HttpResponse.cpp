@@ -375,10 +375,9 @@ void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, co
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
 	if(isCGI(request.getUri())){
-		handleCGI(server, request); // Needs to be implemented
+		handleCGI(server, request);
 		return;
 	}
-	// Check if there is a submit folder where it will be written the file.
 	std::string path;
 	if(!isMethodAllowed(server, "POST"))
 		makeDefaultResponse(405);
@@ -407,7 +406,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 	ServerDirectives server;
 	chooseServerConfig(config, request, server);
 	if(isCGI(request.getUri())){
-		handleCGI(server, request); // Needs to be implemented
+		handleCGI(server, request);
 		return;
 	}
 	std::string path;
