@@ -79,7 +79,7 @@ std::string &Logger::getLogFilename() {
 void Logger::setLogFilename(const std::string &file_name) {
     getLogFilename() = file_name;
     if (!file_name.empty()) {
-        getLogStream().open(file_name.c_str(), std::ios::out);// | std::ios::app);
+        getLogStream().open(file_name.c_str(), std::ios::out);
         if (!getLogStream().is_open()) {
             std::cerr << "Failed to open log file." << std::endl;
         }

@@ -355,8 +355,6 @@ void Config::getLocationStruct(LocationDirectives& location){
 }
 
 void Config::checkServerDirectives(ServerDirectives& server){
-	// if(server.listen_port.size() == 0 || server.server_name.size() == 0 || server.root.size() == 0)
-	// 	throw MissingDirective();
 	if(server.listen_port[0] == '\0')
 		throw MissingDirective();
 	if(server.server_name[0] == '\0')

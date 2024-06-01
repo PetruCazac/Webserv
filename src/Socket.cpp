@@ -22,8 +22,8 @@ Socket::Socket(int connection_fd) : _sockfd(connection_fd), _addr_info(NULL), _h
 	_endBody = 0;
 	_bodyLength = 0;
 	_headerComplete = false;
-    _responseSent = false;
-    _responseReady = false;
+	_responseSent = false;
+	_responseReady = false;
 	setSocketStatus(RECEIVE);
 }
 
@@ -67,8 +67,8 @@ bool Socket::setupAddrInfo() {
 
 void Socket::removeSocket() {
 	std::stringstream oss;
-    oss << "Closing socket: " << this->getSocketType() << "File descriptor: "<< _sockfd;
-    LOG_DEBUG(oss.str());
+	oss << "Closing socket: " << this->getSocketType() << "File descriptor: "<< _sockfd;
+	LOG_DEBUG(oss.str());
 	if (_sockfd != -1) {
 		close(_sockfd);
 		_sockfd = -1;
@@ -132,41 +132,40 @@ int Socket::acceptIncoming() {
 }
 
 void Socket::setResponseStatus(){
-    if (_responseReady == false){
-        _responseReady = true;
-        _responseSent = false;
-        _responseString = _http_response->getResponse().str();
-        _responseSentLength = 0;
-        _responseLength = _responseString.length();
-    }
+	if (_responseReady == false){
+		_responseReady = true;
+		_responseSent = false;
+		_responseString = _http_response->getResponse().str();
+		_responseSentLength = 0;
+		_responseLength = _responseString.length();
+	}
 }
 
 bool Socket::sendtoClient() {
-    // std::cout << _responseString;
-    _last_access_time = time(NULL);
-    int bytes_sent = 0;
-    bytes_sent = send(_sockfd, _responseString.c_str() + _responseSentLength, _responseLength - _responseSentLength, 0);
-    if (bytes_sent == -1) {
-        LOG_ERROR("Failed to send data. Send return value -1");
-        return false;
-    }
-    if (bytes_sent == 0) {
-        LOG_ERROR("No data was send. Send return value 0");
-        return false;
-    }
-    _responseSentLength += bytes_sent;
-    if (_responseSentLength == _responseLength){
-        _responseSent = true;
-        _responseReady = false;
-        _responseString.clear();
-        _responseLength = 0;
-        _responseSentLength = 0;
-    }
-    return true;
+	_last_access_time = time(NULL);
+	int bytes_sent = 0;
+	bytes_sent = send(_sockfd, _responseString.c_str() + _responseSentLength, _responseLength - _responseSentLength, 0);
+	if (bytes_sent == -1) {
+		LOG_ERROR("Failed to send data. Send return value -1");
+		return false;
+	}
+	if (bytes_sent == 0) {
+		LOG_ERROR("No data was send. Send return value 0");
+		return false;
+	}
+	_responseSentLength += bytes_sent;
+	if (_responseSentLength == _responseLength){
+		_responseSent = true;
+		_responseReady = false;
+		_responseString.clear();
+		_responseLength = 0;
+		_responseSentLength = 0;
+	}
+	return true;
 }
 
 bool Socket::isResponseSent(){
-    return _responseSent;
+	return _responseSent;
 }
 
 bool Socket::sendtoClient(const std::string* data) {
@@ -307,10 +306,10 @@ void Socket::setNewHttpResponse(std::vector<ServerDirectives> &serverConfig){
 		LOG_ERROR("The request is not available for a response.");
 		return ;
 	}
-    if (this->getHttpResponse() != NULL) {
-        delete _http_response;
-        _http_response = NULL;
-    }
+	if (this->getHttpResponse() != NULL) {
+		delete _http_response;
+		_http_response = NULL;
+	}
 	_http_response = new HttpResponse(serverConfig, *_http_request);
 }
 
@@ -325,10 +324,10 @@ size_t Socket::getClientBodySize(void){
 }
 
 void Socket::setNewHttpResponse(size_t errorCode){
-    if (this->getHttpResponse() != NULL) {
-        delete _http_response;
-        _http_response = NULL;
-    }
+	if (this->getHttpResponse() != NULL) {
+		delete _http_response;
+		_http_response = NULL;
+	}
 	_http_response = new HttpResponse(errorCode);
 }
 
@@ -337,5 +336,5 @@ time_t Socket::getLastAccessTime() const {
 }
 
 void Socket::setAccessTime(){
-    _last_access_time = time(NULL);
+	_last_access_time = time(NULL);
 }
