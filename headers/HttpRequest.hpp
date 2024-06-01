@@ -25,8 +25,7 @@ struct HttpRequestParserException {
 		METHOD_ERR,
 		URI_ERR,
 		HTTP_VERSION_ERR,
-		HEADER_ERR,
-		CONTENT_LENGTH_ERR
+		HEADER_ERR
 	};
 
 	ErrorsHttpRequest err;
@@ -41,7 +40,6 @@ struct HttpRequestParserException {
 			case URI_ERR: return "bad URI"; break;
 			case HTTP_VERSION_ERR: return "bad HTTP version"; break;
 			case HEADER_ERR: return "bad header"; break;
-			case CONTENT_LENGTH_ERR: return "content-length mismatch"; break;
 			default: return "unknown error"; break;
 		}
 	}
@@ -64,9 +62,7 @@ private:
 	void readBody(std::istream &inputRequest);
 	void findQuery();
 	void findBoundary();
-
 	bool isValidHttpVersion() const;
-	bool isValidContentLength() const;
 
 public:
 	explicit HttpRequest(std::istream &inputRequest);
