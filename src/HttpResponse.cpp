@@ -199,12 +199,14 @@ bool HttpResponse::storeFormData(const std::string& formData, std::string& path)
 		}
 		outFile << formData;
 		outFile.close();
+		makeDefaultResponse(201);
 		return true;
 	} else {
 		std::ofstream file(path.c_str(), std::ios_base::app);
 		if(file.is_open()){
 			file << formData;
 			file.close();
+			makeDefaultResponse(201);
 			return true;
 		} else {
 			LOG_ERROR("POST Request file could not be created for the requested path: " + path);
