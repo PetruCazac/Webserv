@@ -17,12 +17,12 @@
 #include "Config.hpp"
 
 HttpResponse::HttpResponse(const int code) {
-	makeDefaultErrorResponse(code);
+	makeDefaultResponse(code);
 }
 
 HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const HttpRequest &request) {
 	if (request.getHttpVersion() != "HTTP/1.1")
-		makeDefaultErrorResponse(505);
+		makeDefaultResponse(505);
 	else {
 		if (request.getMethod() == GET) {
 			runGetMethod(config, request);
@@ -32,11 +32,11 @@ HttpResponse::HttpResponse(const std::vector<ServerDirectives> &config, const Ht
 		else if (request.getMethod() == DELETE)
 			runDeleteMethod(config, request);
 		else
-			makeDefaultErrorResponse(501);
+			makeDefaultResponse(501);
 	}
 }
 
-void HttpResponse::makeDefaultErrorResponse(const int code) {
+void HttpResponse::makeDefaultResponse(const int code) {
 	std::string errorBody = getErrorBody(code);
 	_response << "HTTP/1.1 " << code << ' ' << StatusCodeMap::getInstance().getStatusCodeDescription(code)
 			  << "\r\n" << "Content-Type: text/html" << "\r\n"
@@ -139,9 +139,9 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
-				makeDefaultErrorResponse(404);
+				makeDefaultResponse(404);
 		} else
-			makeDefaultErrorResponse(405);
+			makeDefaultResponse(405);
 	} else {
 		if(path.find(server.post_dir, 0) == 0){
 			path = server.root + path;
@@ -149,9 +149,9 @@ void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRe
 				LOG_INFO("File will be deleted at the path" + path);
 				return;
 			} else
-				makeDefaultErrorResponse(404);
+				makeDefaultResponse(404);
 		} else
-			makeDefaultErrorResponse(405);
+			makeDefaultResponse(405);
 	}
 	path.clear();
 	return;
@@ -162,13 +162,13 @@ void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, 
 	chooseServerConfig(config, request, server);
 	// Not supporting Delete Method
 	if(isCGI(request.getUri())){
-		makeDefaultErrorResponse(405);
+		makeDefaultResponse(405);
 		return;
 	}
 	std::string path;
 	if(!isMethodAllowed(server, "DELETE")){
 		LOG_INFO("DELETE Method not allowed.");
-		makeDefaultErrorResponse(405);
+		makeDefaultResponse(405);
 		return;
 	}
 	composeDeleteUrl(server, request, path);
@@ -178,10 +178,10 @@ void HttpResponse::runDeleteMethod(const std::vector<ServerDirectives> &config, 
 	}
 	if(std::remove(path.c_str()) == 0){
 		LOG_INFO("FILE Deleted successfuly.");
-		makeDefaultErrorResponse(200);
+		makeDefaultResponse(200);
 	}else{
 		LOG_INFO("FILE could not be deleted.");
-		makeDefaultErrorResponse(500);
+		makeDefaultResponse(500);
 	}
 }
 
@@ -314,7 +314,7 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 		}
 	}
 	if(metadata.find("Content-Disposition:")->second != "form-data"){
-		makeDefaultErrorResponse(415);
+		makeDefaultResponse(415);
 		return false;
 	}
 	if(metadata.find("name")->second == "file"){
@@ -323,12 +323,12 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 			return true;
 		std::string filename = createFilename(path, metadata);
 		if(filename.empty()){
-			makeDefaultErrorResponse(400);
+			makeDefaultResponse(400);
 			return false;
 		}
 		if(isFile(filename.c_str())){
 			LOG_INFO("File already exists, overwriting not allowed at the: " + filename);
-			makeDefaultErrorResponse(200);
+			makeDefaultResponse(200);
 			return true;
 		}
 		std::ofstream newFile(filename.c_str());
@@ -339,7 +339,7 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 	}else{
 		storeFormData(metadata.find("name")->second + "=" + package.substr(endMetadata + 4, package.size() - endMetadata - 4), path);
 	}
-	makeDefaultErrorResponse(201);
+	makeDefaultResponse(201);
 	return true;
 }
 
@@ -368,7 +368,7 @@ void HttpResponse::handleMultipart(const HttpRequest& request, std::string& path
 		if(!handlePackage(packages[i], path))
 			return;
 	}
-	makeDefaultErrorResponse(201);
+	makeDefaultResponse(200);
 }
 
 void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, const HttpRequest &request){
@@ -381,24 +381,24 @@ void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, co
 	// Check if there is a submit folder where it will be written the file.
 	std::string path;
 	if(!isMethodAllowed(server, "POST"))
-		makeDefaultErrorResponse(405);
+		makeDefaultResponse(405);
 	
 	composePostUrl(server, request, path);
 	if(path.empty())
-		makeDefaultErrorResponse(400);
+		makeDefaultResponse(400);
 	std::string contentType(request.getHeaders().find("Content-Type")->second);
 	if(contentType.empty()){
 		LOG_ERROR("No Content-Type found.");
-		makeDefaultErrorResponse(400);
+		makeDefaultResponse(400);
 		return;
 	}
 	if(contentType == "multipart/form-data")
 		handleMultipart(request, path);
 	else if(contentType == "application/x-www-form-urlencoded"){
 		if(!storeFormData(urlDecode(request.getBody()), path))
-			makeDefaultErrorResponse(400);
+			makeDefaultResponse(400);
 	}else
-		makeDefaultErrorResponse(400);
+		makeDefaultResponse(400);
 }
 
 // --------------------------------- GET Method --------------------------------------
@@ -422,10 +422,10 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			readFile(path);
 			setResponse();
 		} else{
-			makeDefaultErrorResponse(404);
+			makeDefaultResponse(404);
 		}
 	}else
-		makeDefaultErrorResponse(405);
+		makeDefaultResponse(405);
 }
 
 
@@ -445,7 +445,7 @@ bool HttpResponse::isIndex(std::string &path, ServerDirectives& config) {
 void HttpResponse::readFile(std::string &path) {
 	std::ifstream file(path.c_str());
 	if (!file.is_open())
-		makeDefaultErrorResponse(500);
+		makeDefaultResponse(500);
 	else {
 		_contentType = MimeTypeDetector::getInstance().getMimeType(path);
 		std::stringstream body;
@@ -467,7 +467,6 @@ void HttpResponse::setResponse() {
 	}
 	_response << "\r\n" << _body;
 }
-
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
@@ -614,7 +613,6 @@ const std::stringstream &HttpResponse::getResponse() const {
 	return _response;
 }
 
-
 // ------------------------ Helper Functions -------------------------
 
 int hexCharToInt(char c) {
@@ -717,12 +715,12 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1) {
-		makeDefaultErrorResponse(500);
+		makeDefaultResponse(500);
 		return;
 	}
 	pid_t pid = fork();
 	if (pid == -1) {
-		makeDefaultErrorResponse(500);
+		makeDefaultResponse(500);
 		return;
 	} else if (pid == 0) {
 		// -------------------- Setting arguments and env for execve ------------------
@@ -818,7 +816,6 @@ std::string HttpResponse::findCgiType(std::string& uri){
 	}
 	return std::string("");
 }
-
 
 std::string HttpResponse::getFilePath(const std::string& scriptPath, std::string root) const {
 	size_t lastSlash = scriptPath.find_last_of('/');

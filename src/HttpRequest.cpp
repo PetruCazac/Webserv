@@ -49,7 +49,9 @@ HttpRequest::HttpRequest(std::istream &inputRequest) {
 	parseHeaders(inputRequest);
 	findBoundary();
 	readBody(inputRequest);
-	// printHttpRequest();
+	if (!isValidContentLength())
+		throw HttpRequestParserException(HttpRequestParserException::CONTENT_LENGTH_ERR);
+	printHttpRequest();
 }
 
 void HttpRequest::parseStartLine(const std::string &line) {
@@ -122,6 +124,8 @@ bool HttpRequest::isValidContentLength() const {
 	if (it != _headers.end()) {
 		size_t bodySize = _body.size();
 		size_t messageSize = static_cast<size_t>(std::atol(it->second.c_str()));
+		std::cout << "Actual body size: " << bodySize << std::endl;
+		std::cout << "Size should be: " << messageSize << std::endl;
 		if (bodySize != messageSize)
 			return false;
 	}

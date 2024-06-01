@@ -67,7 +67,7 @@ private:
 
 	// Response Constituting Functions
 	void	readFile(std::string &path);
-	void	makeDefaultErrorResponse(const int code);
+	void	makeDefaultResponse(const int code);
 	std::string getErrorBody(const int code);
 	void	setHeader(const std::string &header, const std::string &value);
 	void	setResponse();

@@ -47,26 +47,19 @@ const std::string MimeTypeDetector::getExtension(const std::string& second) cons
 }
 
 StatusCodeMap::StatusCodeMap() {
-	statusCodes[200] = "OK"; // +
+	statusCodes[200] = "OK";
 	statusCodes[201] = "Created";
-	statusCodes[202] = "Accepted";
-	statusCodes[204] = "No Content";
-	statusCodes[304] = "Not Modified";
-	statusCodes[400] = "Bad Request"; // +
-	statusCodes[401] = "Unauthorized"; // +
-	statusCodes[403] = "Forbidden";
-	statusCodes[404] = "Not Found"; // +
-	statusCodes[405] = "Method Not Allowed"; // +
-    statusCodes[408] = "Request Timeout";
-	statusCodes[409] = "Conflict";
-	statusCodes[410] = "Gone";
+	statusCodes[400] = "Bad Request";
+	statusCodes[401] = "Unauthorized";
+	statusCodes[404] = "Not Found";
+	statusCodes[405] = "Method Not Allowed";
 	statusCodes[413] = "Payload too large";
 	statusCodes[415] = "Unsupported Media Type";
-	statusCodes[500] = "Internal Server Error"; // +
-	statusCodes[501] = "Not Implemented"; // +
+	statusCodes[500] = "Internal Server Error";
+	statusCodes[501] = "Not Implemented";
 	statusCodes[502] = "Bad Gateway";
 	statusCodes[503] = "Service Unavailable";
-	statusCodes[505] = "HTTP Version Not Supported"; // +
+	statusCodes[505] = "HTTP Version Not Supported";
 }
 
 StatusCodeMap &StatusCodeMap::getInstance() {
