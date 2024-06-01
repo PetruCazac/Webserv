@@ -53,6 +53,7 @@ StatusCodeMap::StatusCodeMap() {
 	statusCodes[401] = "Unauthorized";
 	statusCodes[404] = "Not Found";
 	statusCodes[405] = "Method Not Allowed";
+	statusCodes[408] = "Request Timeout";
 	statusCodes[413] = "Payload too large";
 	statusCodes[415] = "Unsupported Media Type";
 	statusCodes[500] = "Internal Server Error";
