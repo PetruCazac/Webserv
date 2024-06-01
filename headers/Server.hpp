@@ -5,6 +5,7 @@
 
 #include "Socket.hpp"
 #include "Config.hpp"
+#include <signal.h>
 
 class Server {
 	public:
