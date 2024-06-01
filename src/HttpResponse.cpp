@@ -776,8 +776,16 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 		}
 		exit(1);
 	} else {
-		if(request.getMethod() == POST)
-			write(pipefd[1], arg.c_str(), arg.size());
+		if(request.getMethod() == POST) {
+			int result = write(pipefd[1], arg.c_str(), arg.size());
+            if (result == -1) {
+                LOG_ERROR("CGI for POST failed");
+            	makeDefaultResponse(500);
+		        return;
+            }
+            if (result == 0)
+                LOG_WARNING("Write call returned 0.");
+        }
 		close(pipefd[1]); 
 		fcntl(pipefd[0], F_SETFL, O_NONBLOCK); 
 		_cgi_pipe_fd = pipefd[0];
