@@ -5,7 +5,6 @@ int errorFlag = 0;
 
 Server::Server(ServerDirectives& inputConfig, size_t client_max_body_size, size_t keepalive_timeout) : _client_max_body_size(client_max_body_size), _keepalive_timeout(keepalive_timeout) {
 	_server_config.push_back(inputConfig);
-	// LOG_INFO_NAME("Constructor called. Server starting...", input_config->_directives[translateDirectives(SERVERNAME)][0]);
 	addListeningSocket();
 }
 Server::~Server() {
@@ -74,7 +73,6 @@ void Server::handleEvents(const std::vector<pollfd_t>& active_fds) {
 }
 
 void Server::handleServerSocketEvents(const pollfd_t& poll_fd) {
-	// LOG_DEBUG_NAME("Handling server socket events.", _server_config[0].server_name);
 	switch (_socket_map[poll_fd.fd]->getSocketStatus()) {
 		case LISTEN_STATE:
 			if (poll_fd.revents & POLLIN) {

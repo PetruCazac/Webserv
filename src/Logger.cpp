@@ -3,15 +3,6 @@
 void Logger::log(LogLevel level, const std::string &message, int line,
  const std::string &file, const std::string &server_name) {
     if (level <= getLogLevel() && level != SILENT) {
-        // std::ostringstream timestamp;
-        // struct timeval tv;
-        // gettimeofday(&tv, NULL);
-        // struct tm *timeinfo = localtime(&tv.tv_sec);
-        // timestamp << std::setfill('0')
-        //         << std::setw(2) << timeinfo->tm_hour << ':'
-        //         << std::setw(2) << timeinfo->tm_min << ':'
-        //         << std::setw(2) << timeinfo->tm_sec << ':'
-        //         << std::setw(3) << (tv.tv_usec / 1000); 
         std::ostream &out = (getLogFilename().empty()) ? std::cout : getLogStream();
         switch(level) {
             case INFO:
@@ -33,9 +24,6 @@ void Logger::log(LogLevel level, const std::string &message, int line,
         if (!server_name.empty()) {
             out << "[" << server_name << "] ";
         }
-        // out << "[" << translateLogLevel(level) << "]\033[95m["
-        // << timestamp.str() << "] \033[0m " << message << " | at line " 
-        // << line << " in file " << file << std::endl;
         out << "[" << translateLogLevel(level) << "] \033[0m " << message << " | at line " 
         << line << " in file " << file << std::endl;
     }

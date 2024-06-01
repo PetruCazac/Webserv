@@ -624,7 +624,6 @@ int hexCharToInt(char c) {
 	} else if (c >= 'a' && c <= 'f') {
 		return c - 'a' + 10;
 	} else {
-		// Could throw an exception
 		LOG_ERROR("Body decoding error");
 		return 0;
 	}
