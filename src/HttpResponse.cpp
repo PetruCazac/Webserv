@@ -122,7 +122,16 @@ void cleanPath(std::string& path, const std::string& serverRoot){
 
 void HttpResponse::composeDeleteUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
+	if(path.empty() || path[0] != '/'){
+		path.clear();
+		return;
+	}
 	cleanPath(path, server.root);
+	size_t i = 0;
+	while ((i = path.find("%20", i)) != std::string::npos) {
+		path.replace(i, 3, " ");
+		i += 1;
+	}
 	if(!server.locations.empty()){
 		if(path.find(server.locations[0].module, 0) == 0){
 			path = server.locations[0].root + path;
@@ -210,6 +219,11 @@ void HttpResponse::composePostUrl(const ServerDirectives& server, const HttpRequ
 	if(path.empty() || path[0] != '/'){
 		path.clear();
 		return;
+	}
+	size_t i = 0;
+	while ((i = path.find("%20", i)) != std::string::npos) {
+		path.replace(i, 3, " ");
+		i += 1;
 	}
 	cleanPath(path, server.root);
 	if(!server.locations.empty()){
@@ -314,6 +328,7 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 		}
 		if(isFile(filename.c_str())){
 			LOG_INFO("File already exists, overwriting not allowed at the: " + filename);
+			makeDefaultErrorResponse(200);
 			return true;
 		}
 		std::ofstream newFile(filename.c_str());
@@ -324,6 +339,7 @@ bool HttpResponse::handlePackage(std::string& package, std::string& path){
 	}else{
 		storeFormData(metadata.find("name")->second + "=" + package.substr(endMetadata + 4, package.size() - endMetadata - 4), path);
 	}
+	makeDefaultErrorResponse(201);
 	return true;
 }
 
@@ -381,8 +397,6 @@ void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, co
 	else if(contentType == "application/x-www-form-urlencoded"){
 		if(!storeFormData(urlDecode(request.getBody()), path))
 			makeDefaultErrorResponse(400);
-		else
-			makeDefaultErrorResponse(200);
 	}else
 		makeDefaultErrorResponse(400);
 }
@@ -457,6 +471,11 @@ void HttpResponse::setResponse() {
 
 void HttpResponse::composeLocalUrl(const ServerDirectives& server, const HttpRequest& request, std::string& path){
 	path = request.getUri();
+	size_t i = 0;
+	while ((i = path.find("%20", i)) != std::string::npos) {
+		path.replace(i, 3, " ");
+		i += 1;
+	}
 	cleanPath(path, server.root);
 	if(!server.locations.empty()){
 		if(!server.locations[0].root.empty()){

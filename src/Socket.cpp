@@ -106,7 +106,7 @@ bool Socket::bindAndListen() {
 			continue;
 		}
 
-		if (listen(_sockfd, 400) == -1) {
+		if (listen(_sockfd, 500) == -1) {
 			LOG_ERROR("Failed to listen on socket.");
 			removeSocket();
 			continue;
