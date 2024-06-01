@@ -88,7 +88,7 @@ void Config::parse(void){
 		throw EmptyConfFile();
 	if(_httpConfig.name.empty())
 		getHttpStruct(_httpConfig);
-	printConfig();
+	// printConfig();
 }
 
 void Config::parseConfig(Block& block){

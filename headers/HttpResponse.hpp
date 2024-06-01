@@ -80,8 +80,8 @@ private:
 	bool	checkAutoindex(ServerDirectives& server);
 	void	chooseServerConfig(const std::vector<ServerDirectives>& config, const HttpRequest &request, ServerDirectives& server);
 	bool	isValidPath(const char* path);
-	std::string findCgiType(std::string& request);
 	bool isIndex(std::string &path, ServerDirectives& config);
+	std::string findCgiType(std::string& request);
 
 
 public:

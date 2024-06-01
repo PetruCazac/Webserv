@@ -383,8 +383,10 @@ void HttpResponse::runPostMethod(const std::vector<ServerDirectives> &config, co
 		makeDefaultResponse(405);
 	
 	composePostUrl(server, request, path);
-	if(path.empty())
+	if(path.empty()){
 		makeDefaultResponse(400);
+		return;
+	}
 	std::string contentType(request.getHeaders().find("Content-Type")->second);
 	if(contentType.empty()){
 		LOG_ERROR("No Content-Type found.");
@@ -702,7 +704,9 @@ bool	HttpResponse::isMethodAllowed(const ServerDirectives& server, const std::st
 
 bool HttpResponse::isCGI(const std::string& uri){
 	std::string cgiBin = "/cgi_bin/";
-	if(uri.find(cgiBin) == 0)
+	if(uri.find(cgiBin) != 0)
+		return false;
+	if(!findCgiType(const_cast<std::string&>(uri)).empty())
 		return true;
 	return false;
 }
@@ -712,6 +716,11 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 	std::string arg = parseArguments(request);
 
 
+	std::string checkType = findCgiType(scriptPath);
+	if (checkType.size() == 0){
+		makeDefaultResponse(500);
+		return;
+	}
 	int pipefd[2];
 	if (pipe(pipefd) == -1) {
 		makeDefaultResponse(500);
@@ -752,7 +761,6 @@ void HttpResponse::handleCGI(const ServerDirectives &config, const HttpRequest &
 		argv.push_back(NULL);
 		// ------------------------------------------------------------------------------
 
-		std::cout << "Entering child process: \n\n";
 		if(request.getMethod() == POST)
 		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);
