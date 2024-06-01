@@ -419,7 +419,7 @@ void HttpResponse::runGetMethod(const std::vector<ServerDirectives> &config, con
 			setResponse();
 		} else if(isDirectory(path.c_str()) && checkAutoindex(server)){
 			handleAutoindex(path.c_str());
-		} else if(isIndex(path, server)){
+		} else if(isIndex(path, server) && isFile(path.c_str())){
 			readFile(path);
 			setResponse();
 		} else{
