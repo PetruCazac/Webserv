@@ -15,7 +15,7 @@ def main():
 	if not name:
 		errors.append("Name is required.")
 	if not email:
-		errors.append("Colour is required.")
+		errors.append("Email is required.")
 	if errors:
 		response_body = "<html><body><h1>Errors</h1><ul>"
 		for error in errors:
